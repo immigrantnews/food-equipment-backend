@@ -47,15 +47,22 @@ def health():
 
 @app.post("/leads", status_code=201)
 def create_lead(lead: LeadIn):
+    notes_lines = [f"Email: {lead.email}"]
+    if lead.phone:
+        notes_lines.append(f"Phone: {lead.phone}")
+    if lead.city:
+        notes_lines.append(f"City: {lead.city}")
+    if lead.equipment_type:
+        notes_lines.append(f"Equipment: {lead.equipment_type}")
+    if lead.budget is not None:
+        notes_lines.append(f"Budget: {lead.budget}")
+    if lead.message:
+        notes_lines.append(f"Message: {lead.message}")
+    if lead.source:
+        notes_lines.append(f"Source: {lead.source}")
     fields = {
         "Name": lead.name,
-        "Email": lead.email,
-        "Phone": lead.phone,
-        "EquipmentType": lead.equipment_type,
-        "Budget": lead.budget,
-        "City": lead.city,
-        "Message": lead.message,
-        "Source": lead.source,
+        "Notes": "\n".join(notes_lines),
     }
     try:
         rec = at.create_record(at.leads_table(), fields)

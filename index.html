@@ -233,6 +233,7 @@
     <p>Отправим персональные коммерческие предложения от 3–5 поставщиков в течение дня.</p>
     <div class="fields">
       <input name="name" type="text" placeholder="Имя" required>
+      <input name="email" type="email" placeholder="Email" required>
       <input name="phone" type="tel" placeholder="Телефон" required>
       <input name="city" type="text" placeholder="Город" required>
     </div>
@@ -360,6 +361,38 @@
     e.preventDefault();
     sendUserMessage(input.value);
   });
+
+  async function submitLead(e) {
+    e.preventDefault();
+    const submitBtn = leadForm.querySelector("button[type=submit]");
+    submitBtn.disabled = true;
+
+    const formData = new FormData(leadForm);
+    const firstUserMessage = history.find((m) => m.role === "user");
+    const payload = {
+      name: formData.get("name"),
+      email: formData.get("email"),
+      phone: formData.get("phone"),
+      city: formData.get("city"),
+      message: firstUserMessage ? firstUserMessage.content : "",
+    };
+
+    try {
+      const res = await fetch("https://web-production-d399a.up.railway.app/leads", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Server " + res.status);
+      leadForm.innerHTML =
+        '<div class="success">Спасибо! Мы свяжемся с вами в ближайшее время.</div>';
+    } catch (err) {
+      submitBtn.disabled = false;
+      addError("Не удалось отправить заявку. " + err.message);
+    }
+  }
+
+  leadForm.addEventListener("submit", submitLead);
 
   suggestions.addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-prompt]");
