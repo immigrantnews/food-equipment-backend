@@ -1,0 +1,379 @@
+<!doctype html>
+<!--
+  ОборудованиеПро — AI-консультант по пищевому оборудованию.
+
+  API-ключ подставляется на этапе деплоя в плейсхолдер __ANTHROPIC_API_KEY__.
+  Локально:
+      sed "s|__ANTHROPIC_API_KEY__|$ANTHROPIC_API_KEY|" index.html > dist.html
+  Или просто откройте файл и впишите ключ в строку с window.ANTHROPIC_API_KEY.
+-->
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ОборудованиеПро — AI-консультант по пищевому оборудованию</title>
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --accent: #1f6feb;
+    --accent-hover: #1858c4;
+    --user-bg: #1f6feb;
+    --user-fg: #ffffff;
+    --ai-bg: #f1f3f5;
+    --ai-fg: #111827;
+    --radius: 10px;
+    --shadow: 0 1px 2px rgba(17,24,39,.04), 0 4px 12px rgba(17,24,39,.04);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 24px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  header h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  header p {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  main {
+    max-width: 760px;
+    margin: 24px auto;
+    padding: 0 16px 48px;
+  }
+  #chat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    min-height: 320px;
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .msg {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .msg.user {
+    align-self: flex-end;
+    background: var(--user-bg);
+    color: var(--user-fg);
+    border-bottom-right-radius: 4px;
+  }
+  .msg.ai {
+    align-self: flex-start;
+    background: var(--ai-bg);
+    color: var(--ai-fg);
+    border-bottom-left-radius: 4px;
+  }
+  .msg.error {
+    align-self: stretch;
+    background: #fff1f2;
+    color: #9f1239;
+    border: 1px solid #fecdd3;
+    font-size: 13px;
+  }
+  .typing {
+    color: var(--muted);
+    font-size: 14px;
+    font-style: italic;
+  }
+  .suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 14px 0 0;
+  }
+  .suggestions button {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--text);
+    transition: border-color .15s, background .15s;
+  }
+  .suggestions button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .composer {
+    display: flex;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .composer input {
+    flex: 1;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 15px;
+    background: var(--surface);
+    outline: none;
+    transition: border-color .15s;
+  }
+  .composer input:focus { border-color: var(--accent); }
+  .composer button,
+  .lead-form button {
+    background: var(--accent);
+    color: #fff;
+    border: 0;
+    padding: 0 18px;
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .composer button:hover,
+  .lead-form button:hover { background: var(--accent-hover); }
+  .composer button:disabled { background: #9ca3af; cursor: not-allowed; }
+
+  .lead-form {
+    margin-top: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    animation: slideIn .3s ease-out;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .lead-form h3 {
+    margin: 0 0 4px;
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .lead-form p {
+    margin: 0 0 16px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .lead-form .fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .lead-form input {
+    padding: 11px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 14px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .lead-form input:focus { border-color: var(--accent); }
+  .lead-form button { padding: 11px 18px; width: 100%; }
+  .lead-form .success {
+    text-align: center;
+    padding: 24px 0;
+    color: var(--text);
+  }
+  @media (max-width: 600px) {
+    .lead-form .fields { grid-template-columns: 1fr; }
+    .msg { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>ОборудованиеПро</h1>
+    <p>AI-консультант по подбору промышленного пищевого оборудования</p>
+  </div>
+</header>
+
+<main>
+  <div id="chat"></div>
+
+  <div class="suggestions" id="suggestions">
+    <button data-prompt="Нужно оборудование для производства котлет, объём 200 кг в смену.">Котлеты</button>
+    <button data-prompt="Открываю мини-пекарню, нужно оборудование для хлеба.">Хлеб</button>
+    <button data-prompt="Нужна линия упаковки для пищевых продуктов.">Упаковка</button>
+    <button data-prompt="Подберите оборудование для переработки мяса.">Мясо</button>
+  </div>
+
+  <form class="composer" id="composer" autocomplete="off">
+    <input id="input" type="text" placeholder="Опишите вашу задачу или продукт…" required>
+    <button type="submit" id="send">Отправить</button>
+  </form>
+
+  <form class="lead-form" id="lead-form" name="leads" data-netlify="true" hidden autocomplete="off">
+    <h3>Получить КП от поставщиков</h3>
+    <p>Отправим персональные коммерческие предложения от 3–5 поставщиков в течение дня.</p>
+    <div class="fields">
+      <input name="name" type="text" placeholder="Имя" required>
+      <input name="phone" type="tel" placeholder="Телефон" required>
+      <input name="city" type="text" placeholder="Город" required>
+    </div>
+    <button type="submit">Получить КП</button>
+  </form>
+</main>
+
+<script>
+  // Ключ берётся из переменной окружения ANTHROPIC_API_KEY на этапе деплоя.
+  // См. комментарий в начале файла.
+  window.ANTHROPIC_API_KEY = "__ANTHROPIC_API_KEY__";
+
+  const MODEL = "claude-sonnet-4-20250514";
+  const SYSTEM_PROMPT =
+    "Ты консультант по пищевому оборудованию в России. " +
+    "Задаёшь максимум 3 вопроса (по одному за сообщение), потом даёшь рекомендацию " +
+    "с конкретными моделями оборудования, ценами в рублях и сроком окупаемости. " +
+    "После рекомендации обязательно добавляй маркер %%SHOW_LEAD_FORM%% в конце сообщения.";
+  const LEAD_MARKER = "%%SHOW_LEAD_FORM%%";
+
+  const chat = document.getElementById("chat");
+  const composer = document.getElementById("composer");
+  const input = document.getElementById("input");
+  const sendBtn = document.getElementById("send");
+  const suggestions = document.getElementById("suggestions");
+  const leadForm = document.getElementById("lead-form");
+
+  const history = [];
+  let leadShown = false;
+
+  function addMessage(role, text) {
+    const el = document.createElement("div");
+    el.className = "msg " + role;
+    el.textContent = text;
+    chat.appendChild(el);
+    chat.scrollTop = chat.scrollHeight;
+    return el;
+  }
+
+  function addTyping() {
+    const el = document.createElement("div");
+    el.className = "msg ai typing";
+    el.textContent = "печатает…";
+    chat.appendChild(el);
+    chat.scrollTop = chat.scrollHeight;
+    return el;
+  }
+
+  function addError(text) {
+    const el = document.createElement("div");
+    el.className = "msg error";
+    el.textContent = text;
+    chat.appendChild(el);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  async function callClaude(userText) {
+    history.push({ role: "user", content: userText });
+
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": window.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 1024,
+        system: SYSTEM_PROMPT,
+        messages: history,
+      }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error("API " + res.status + ": " + errText);
+    }
+
+    const data = await res.json();
+    const text = (data.content || [])
+      .filter((b) => b.type === "text")
+      .map((b) => b.text)
+      .join("");
+
+    history.push({ role: "assistant", content: text });
+    return text;
+  }
+
+  async function sendUserMessage(text) {
+    text = text.trim();
+    if (!text) return;
+
+    addMessage("user", text);
+    input.value = "";
+    sendBtn.disabled = true;
+    suggestions.style.display = "none";
+
+    const typing = addTyping();
+
+    try {
+      const reply = await callClaude(text);
+      typing.remove();
+
+      const showLead = reply.includes(LEAD_MARKER);
+      const cleaned = reply.replace(LEAD_MARKER, "").trim();
+      addMessage("ai", cleaned);
+
+      if (showLead && !leadShown) {
+        leadShown = true;
+        leadForm.hidden = false;
+        leadForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    } catch (err) {
+      typing.remove();
+      addError("Ошибка соединения с AI. " + err.message);
+    } finally {
+      sendBtn.disabled = false;
+      input.focus();
+    }
+  }
+
+  composer.addEventListener("submit", (e) => {
+    e.preventDefault();
+    sendUserMessage(input.value);
+  });
+
+  suggestions.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-prompt]");
+    if (!btn) return;
+    sendUserMessage(btn.dataset.prompt);
+  });
+
+  // Приветствие
+  addMessage(
+    "ai",
+    "Здравствуйте! Я помогу подобрать промышленное пищевое оборудование. " +
+    "Опишите, что вы производите или планируете производить — и я задам пару уточняющих вопросов."
+  );
+</script>
+
+</body>
+</html>
