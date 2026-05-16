@@ -322,6 +322,30 @@
     white-space: pre-wrap;
   }
 
+  .recog-block {
+    background: linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%);
+    border: 2px solid #f59e0b;
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.18);
+  }
+  .recog-block h2 {
+    margin: 0 0 6px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .recog-block .recog-sub {
+    margin: 0 0 16px;
+    color: #78350f;
+    font-size: 14px;
+  }
+  .recog-block .chat {
+    background: rgba(255, 255, 255, 0.65);
+    min-height: 0;
+  }
+
   @media (max-width: 600px) {
     .fields { grid-template-columns: 1fr; }
     .msg { max-width: 100%; }
@@ -417,6 +441,26 @@
 
   <!-- ========== TAB: Продать ========== -->
   <section data-panel="sell" hidden>
+
+    <div class="recog-block">
+      <h2>📷 Не знаете что за аппарат?</h2>
+      <p class="recog-sub">Сфотографируйте — AI определит модель, год выпуска и рыночную стоимость.</p>
+
+      <input id="file-recog" type="file" accept="image/*" multiple hidden>
+      <button type="button" class="primary" data-file="file-recog" id="recog-start-btn">📷 Сфотографировать и определить</button>
+
+      <div class="previews" id="previews-recog" style="margin-top: 14px;"></div>
+      <div id="chat-recog" class="chat" hidden style="margin-top: 14px;"></div>
+
+      <form class="composer" id="composer-recog" hidden autocomplete="off" style="margin-top: 8px;">
+        <button type="button" class="attach" data-file="file-recog" aria-label="Добавить фото">📎</button>
+        <input id="input-recog" type="text" placeholder="Уточните что нужно знать…">
+        <button type="submit" class="primary">Отправить</button>
+      </form>
+
+      <button type="button" class="primary" id="recog-fill-btn" hidden style="margin-top: 14px; width: 100%;">📝 Заполнить форму ниже</button>
+    </div>
+
     <p class="panel-intro">Заполните данные, приложите фото — AI оценит рыночную стоимость, после чего объявление будет опубликовано.</p>
     <form class="card" id="sell-form" autocomplete="off">
       <h3>Параметры оборудования</h3>
@@ -597,7 +641,7 @@
   }
 
   // ---------- Photo bucket (selection + previews) ----------
-  function createPhotoBucket({ previewsEl, fileInputEl }) {
+  function createPhotoBucket({ previewsEl, fileInputEl, onAdd }) {
     const state = { photos: [] };
 
     function render() {
@@ -634,6 +678,7 @@
         const added = await Promise.all(toAdd.map(readAsBase64Image));
         state.photos.push(...added);
         render();
+        if (onAdd && added.length > 0) onAdd();
       } catch (err) {
         alert("Не удалось прочитать файл: " + err.message);
       }
@@ -898,6 +943,91 @@
   const sellPhotoBucket = createPhotoBucket({
     previewsEl: document.getElementById("previews-sell"),
     fileInputEl: document.getElementById("file-sell"),
+  });
+
+  // ---------- Recognition block (top of Sell tab) ----------
+  const recogStartBtn = document.getElementById("recog-start-btn");
+  const recogChatEl = document.getElementById("chat-recog");
+  const recogComposerEl = document.getElementById("composer-recog");
+  const recogFillBtn = document.getElementById("recog-fill-btn");
+
+  function extractParsed(text) {
+    const match = String(text || "").match(/===PARSED===\s*([\s\S]*?)\s*===END===/);
+    if (!match) return null;
+    try {
+      return JSON.parse(match[1]);
+    } catch (err) {
+      return null;
+    }
+  }
+
+  let recogChat = null;
+  const recogBucket = createPhotoBucket({
+    previewsEl: document.getElementById("previews-recog"),
+    fileInputEl: document.getElementById("file-recog"),
+    onAdd: () => {
+      if (recogChatEl.hidden) {
+        recogStartBtn.hidden = true;
+        recogChatEl.hidden = false;
+        recogComposerEl.hidden = false;
+        if (recogChat) recogChat.sendUserMessage("");
+      }
+    },
+  });
+
+  recogChat = createChat({
+    chatEl: recogChatEl,
+    composerEl: recogComposerEl,
+    inputEl: document.getElementById("input-recog"),
+    suggestionsEl: null,
+    photoBucket: recogBucket,
+    systemPrompt:
+      "Ты эксперт по идентификации промышленного пищевого оборудования в России. " +
+      "Пользователь присылает фото оборудования, которое хочет продать. " +
+      "На основе фото определи: тип оборудования (категория), возможный бренд и модель, " +
+      "примерный год выпуска, текущую рыночную стоимость в рублях для б/у состояния, назначение. " +
+      "Дай дружелюбный понятный ответ. Задай 1-2 уточняющих вопроса (работает ли, состояние, " +
+      "комплектация, история эксплуатации). " +
+      "В КОНЦЕ ответа всегда добавляй блок:\n" +
+      "===PARSED===\n" +
+      '{"category": "...", "title": "...", "brand": "...", "year": ..., "estimated_value_rub": ...}\n' +
+      "===END===\n" +
+      "category — тип оборудования (строка). " +
+      "title — полное название модели для объявления (строка). " +
+      "brand — производитель (строка или null). " +
+      "year — год выпуска (число или null). " +
+      "estimated_value_rub — оценка рыночной стоимости б/у в рублях (число).",
+    greeting: null,
+    onAssistantReply: (reply, addMessage) => {
+      const cleaned = reply.replace(/===PARSED===[\s\S]*?===END===/g, "").trim();
+      addMessage("ai", cleaned || reply);
+      if (extractParsed(reply)) recogFillBtn.hidden = false;
+    },
+  });
+
+  recogFillBtn.addEventListener("click", () => {
+    let parsed = null;
+    for (let i = recogChat.history.length - 1; i >= 0; i--) {
+      const m = recogChat.history[i];
+      if (m.role !== "assistant") continue;
+      parsed = extractParsed(typeof m.content === "string" ? m.content : "");
+      if (parsed) break;
+    }
+    if (!parsed) {
+      alert("Не нашлось распознанных данных в чате.");
+      return;
+    }
+    const setField = (name, value) => {
+      if (value == null || value === "") return;
+      const input = sellForm.elements[name];
+      if (input) input.value = value;
+    };
+    setField("title", parsed.title);
+    setField("brand", parsed.brand);
+    setField("year", parsed.year);
+    setField("category", parsed.category);
+    setField("price", parsed.estimated_value_rub);
+    sellForm.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
   function collectSellPayload() {
