@@ -137,6 +137,12 @@
     border: 1px solid #fecdd3;
     font-size: 13px;
   }
+  .msg .msg-photo {
+    display: block;
+    max-width: 220px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+  }
   .typing {
     color: var(--muted);
     font-size: 14px;
@@ -162,12 +168,50 @@
     border-color: var(--accent);
     color: var(--accent);
   }
+
+  .previews {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .previews:empty { display: none; }
+  .previews:not(:empty) + .composer { margin-top: 8px; }
+  .preview {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .preview .remove {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 0;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .composer {
     display: flex;
     gap: 8px;
     margin-top: 14px;
   }
-  .composer input {
+  .composer input[type="text"] {
     flex: 1;
     padding: 12px 14px;
     border: 1px solid var(--border);
@@ -177,7 +221,18 @@
     outline: none;
     transition: border-color .15s;
   }
-  .composer input:focus { border-color: var(--accent); }
+  .composer input[type="text"]:focus { border-color: var(--accent); }
+  .composer .attach {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0 14px;
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+    transition: border-color .15s;
+  }
+  .composer .attach:hover { border-color: var(--accent); }
 
   button.primary {
     background: var(--accent);
@@ -205,7 +260,6 @@
   }
   button.secondary:hover { border-color: var(--accent); color: var(--accent); }
 
-  /* Forms (used in lead, sell, search, want-to-buy) */
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -258,43 +312,6 @@
     gap: 8px;
     flex-wrap: wrap;
   }
-
-  /* Listing result cards (used tab) */
-  .listing {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 14px 16px;
-    margin-bottom: 10px;
-  }
-  .listing h4 {
-    margin: 0 0 4px;
-    font-size: 15px;
-    font-weight: 600;
-  }
-  .listing .price {
-    color: var(--accent);
-    font-weight: 600;
-    margin-bottom: 4px;
-  }
-  .listing .meta {
-    color: var(--muted);
-    font-size: 13px;
-    margin-bottom: 6px;
-  }
-  .listing .desc {
-    font-size: 14px;
-    color: var(--text);
-    white-space: pre-wrap;
-  }
-  .empty {
-    text-align: center;
-    color: var(--muted);
-    padding: 24px 0;
-    font-size: 14px;
-  }
-
-  /* Valuation result (sell tab) */
   .valuation {
     background: #f0f7ff;
     border: 1px solid #cfe0ff;
@@ -302,17 +319,13 @@
     padding: 14px 16px;
     margin: 12px 0;
     font-size: 14px;
+    white-space: pre-wrap;
   }
-  .valuation .row {
-    display: flex;
-    justify-content: space-between;
-    padding: 4px 0;
-  }
-  .valuation .row strong { color: var(--accent); }
 
   @media (max-width: 600px) {
     .fields { grid-template-columns: 1fr; }
     .msg { max-width: 100%; }
+    .msg .msg-photo { max-width: 160px; }
   }
 </style>
 </head>
@@ -348,8 +361,11 @@
       <button data-prompt="Подберите оборудование для переработки мяса.">Мясо</button>
     </div>
 
+    <div class="previews" id="previews-new"></div>
     <form class="composer" id="composer-new" autocomplete="off">
-      <input id="input-new" type="text" placeholder="Опишите вашу задачу или продукт…" required>
+      <button type="button" class="attach" data-file="file-new" aria-label="Прикрепить фото">📎</button>
+      <input id="file-new" type="file" accept="image/*" multiple hidden>
+      <input id="input-new" type="text" placeholder="Опишите задачу или прикрепите фото…">
       <button type="submit" class="primary">Отправить</button>
     </form>
 
@@ -378,8 +394,11 @@
       <button data-prompt="Упаковочная линия б/у">Упаковочная линия б/у</button>
     </div>
 
+    <div class="previews" id="previews-used"></div>
     <form class="composer" id="composer-used" autocomplete="off">
-      <input id="input-used" type="text" placeholder="Какое оборудование ищете?" required>
+      <button type="button" class="attach" data-file="file-used" aria-label="Прикрепить фото">📎</button>
+      <input id="file-used" type="file" accept="image/*" multiple hidden>
+      <input id="input-used" type="text" placeholder="Какое оборудование ищете или приложите фото…">
       <button type="submit" class="primary">Спросить</button>
     </form>
 
@@ -398,7 +417,7 @@
 
   <!-- ========== TAB: Продать ========== -->
   <section data-panel="sell" hidden>
-    <p class="panel-intro">Заполните данные оборудования — AI оценит рыночную стоимость, после чего объявление будет опубликовано.</p>
+    <p class="panel-intro">Заполните данные, приложите фото — AI оценит рыночную стоимость, после чего объявление будет опубликовано.</p>
     <form class="card" id="sell-form" autocomplete="off">
       <h3>Параметры оборудования</h3>
       <div class="fields">
@@ -415,6 +434,13 @@
         <input name="price" type="number" min="0" step="1" placeholder="Цена, руб" required>
         <textarea class="full" name="description" placeholder="Описание состояния, комплектации, истории" required></textarea>
       </div>
+
+      <h3 style="margin-top:8px;">Фото оборудования</h3>
+      <p class="sub">До 5 фото — AI учитывает их при оценке.</p>
+      <div class="previews" id="previews-sell" style="margin-top:0; margin-bottom:10px;"></div>
+      <input id="file-sell" type="file" accept="image/*" multiple hidden>
+      <button type="button" class="secondary" data-file="file-sell" style="margin-bottom:14px;">📎 Добавить фото</button>
+
       <h3 style="margin-top:8px;">Контакты продавца</h3>
       <div class="fields">
         <input name="seller_name" type="text" placeholder="Имя" required>
@@ -432,7 +458,7 @@
 
   <!-- ========== TAB: Обслуживание ========== -->
   <section data-panel="service" hidden>
-    <p class="panel-intro">Опишите симптом или поломку — AI-диагност поможет найти причину и решение.</p>
+    <p class="panel-intro">Опишите симптом или приложите фото поломки — AI-диагност поможет найти причину и решение.</p>
     <div id="chat-service" class="chat"></div>
 
     <div class="suggestions" id="suggestions-service">
@@ -441,15 +467,18 @@
       <button data-prompt="Холодильная витрина шумит и плохо охлаждает.">Холодильник</button>
     </div>
 
+    <div class="previews" id="previews-service"></div>
     <form class="composer" id="composer-service" autocomplete="off">
-      <input id="input-service" type="text" placeholder="Опишите неисправность…" required>
+      <button type="button" class="attach" data-file="file-service" aria-label="Прикрепить фото">📎</button>
+      <input id="file-service" type="file" accept="image/*" multiple hidden>
+      <input id="input-service" type="text" placeholder="Опишите неисправность или приложите фото…">
       <button type="submit" class="primary">Спросить</button>
     </form>
   </section>
 
   <!-- ========== TAB: Запчасти ========== -->
   <section data-panel="parts" hidden>
-    <p class="panel-intro">Назовите модель оборудования и нужную деталь — AI подберёт подходящую запчасть.</p>
+    <p class="panel-intro">Назовите модель оборудования и нужную деталь — или приложите фото. AI подберёт подходящую запчасть.</p>
     <div id="chat-parts" class="chat"></div>
 
     <div class="suggestions" id="suggestions-parts">
@@ -458,8 +487,11 @@
       <button data-prompt="Нужна термопара для пароконвектомата Rational.">Термопара</button>
     </div>
 
+    <div class="previews" id="previews-parts"></div>
     <form class="composer" id="composer-parts" autocomplete="off">
-      <input id="input-parts" type="text" placeholder="Модель и запчасть…" required>
+      <button type="button" class="attach" data-file="file-parts" aria-label="Прикрепить фото">📎</button>
+      <input id="file-parts" type="file" accept="image/*" multiple hidden>
+      <input id="input-parts" type="text" placeholder="Модель и запчасть — или фото детали…">
       <button type="submit" class="primary">Подобрать</button>
     </form>
   </section>
@@ -473,6 +505,49 @@
   const API_BASE = "https://web-production-d399a.up.railway.app";
   const MODEL = "claude-sonnet-4-20250514";
   const LEAD_MARKER = "%%SHOW_LEAD_FORM%%";
+  const MAX_PHOTOS = 5;
+
+  const VISION_PROMPT =
+    "\n\nКогда пользователь присылает фото оборудования — определяй: " +
+    "тип оборудования, возможный бренд и модель, примерный год выпуска, назначение. " +
+    "Задавай уточняющие вопросы: работает ли, какое состояние, что идёт в комплекте. " +
+    "После уточнений давай оценку рыночной стоимости в рублях.";
+
+  // ---------- Utilities ----------
+  function escapeHtml(s) {
+    return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[c]);
+  }
+
+  function readAsBase64Image(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result;
+        const m = String(dataUrl).match(/^data:(.+);base64,(.*)$/);
+        if (!m) return reject(new Error("Не удалось прочитать файл"));
+        resolve({ dataUrl, mediaType: m[1], data: m[2] });
+      };
+      reader.onerror = () => reject(reader.error || new Error("Ошибка чтения файла"));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function contentToText(content) {
+    if (typeof content === "string") return content;
+    if (Array.isArray(content)) {
+      return content
+        .map((b) => (b.type === "text" ? b.text : "[Фото]"))
+        .join(" ")
+        .trim();
+    }
+    return "";
+  }
 
   // ---------- Tab switching ----------
   const tabButtons = document.querySelectorAll("nav.tabs .tab");
@@ -485,17 +560,15 @@
     });
   });
 
-  function escapeHtml(s) {
-    return String(s ?? "").replace(/[&<>"']/g, (c) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    })[c]);
-  }
+  // ---------- Global file-attach button delegate ----------
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-file]");
+    if (!btn) return;
+    const input = document.getElementById(btn.dataset.file);
+    if (input) input.click();
+  });
 
-  // ---------- Generic Anthropic chat call ----------
+  // ---------- Anthropic chat call ----------
   async function callClaude({ messages, system, maxTokens = 1024 }) {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -523,8 +596,58 @@
       .join("");
   }
 
+  // ---------- Photo bucket (selection + previews) ----------
+  function createPhotoBucket({ previewsEl, fileInputEl }) {
+    const state = { photos: [] };
+
+    function render() {
+      previewsEl.innerHTML = "";
+      state.photos.forEach((p, idx) => {
+        const wrap = document.createElement("div");
+        wrap.className = "preview";
+        const img = document.createElement("img");
+        img.src = p.dataUrl;
+        img.alt = "";
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "remove";
+        remove.setAttribute("aria-label", "Удалить");
+        remove.textContent = "×";
+        remove.addEventListener("click", () => {
+          state.photos.splice(idx, 1);
+          render();
+        });
+        wrap.appendChild(img);
+        wrap.appendChild(remove);
+        previewsEl.appendChild(wrap);
+      });
+    }
+
+    fileInputEl.addEventListener("change", async () => {
+      const files = Array.from(fileInputEl.files || []);
+      const remaining = MAX_PHOTOS - state.photos.length;
+      if (files.length > remaining) {
+        alert(`Можно добавить максимум ${MAX_PHOTOS} фото. Будет добавлено ${Math.max(0, remaining)}.`);
+      }
+      const toAdd = files.slice(0, Math.max(0, remaining));
+      try {
+        const added = await Promise.all(toAdd.map(readAsBase64Image));
+        state.photos.push(...added);
+        render();
+      } catch (err) {
+        alert("Не удалось прочитать файл: " + err.message);
+      }
+      fileInputEl.value = "";
+    });
+
+    return {
+      get photos() { return state.photos; },
+      clear() { state.photos = []; render(); },
+    };
+  }
+
   // ---------- Reusable chat UI ----------
-  function createChat({ chatEl, composerEl, inputEl, suggestionsEl, systemPrompt, greeting, onAssistantReply }) {
+  function createChat({ chatEl, composerEl, inputEl, suggestionsEl, photoBucket, systemPrompt, greeting, onAssistantReply }) {
     const history = [];
     const sendBtn = composerEl.querySelector("button[type=submit]");
 
@@ -535,6 +658,24 @@
       chatEl.appendChild(el);
       chatEl.scrollTop = chatEl.scrollHeight;
       return el;
+    }
+    function addUserMessageWithPhotos(text, photos) {
+      const el = document.createElement("div");
+      el.className = "msg user";
+      photos.forEach((p) => {
+        const img = document.createElement("img");
+        img.className = "msg-photo";
+        img.src = p.dataUrl;
+        img.alt = "";
+        el.appendChild(img);
+      });
+      if (text) {
+        const t = document.createElement("div");
+        t.textContent = text;
+        el.appendChild(t);
+      }
+      chatEl.appendChild(el);
+      chatEl.scrollTop = chatEl.scrollHeight;
     }
     function addTyping() {
       const el = document.createElement("div");
@@ -553,23 +694,37 @@
     }
 
     async function sendUserMessage(text) {
-      text = text.trim();
-      if (!text) return;
-      addMessage("user", text);
+      text = (text || "").trim();
+      const photos = photoBucket ? photoBucket.photos.slice() : [];
+      if (!text && photos.length === 0) return;
+
+      if (photos.length > 0) {
+        addUserMessageWithPhotos(text, photos);
+        const content = [];
+        for (const p of photos) {
+          content.push({
+            type: "image",
+            source: { type: "base64", media_type: p.mediaType, data: p.data },
+          });
+        }
+        if (text) content.push({ type: "text", text });
+        history.push({ role: "user", content });
+      } else {
+        addMessage("user", text);
+        history.push({ role: "user", content: text });
+      }
+
       inputEl.value = "";
-      sendBtn.disabled = true;
+      if (photoBucket) photoBucket.clear();
       if (suggestionsEl) suggestionsEl.style.display = "none";
+      sendBtn.disabled = true;
       const typing = addTyping();
       try {
-        history.push({ role: "user", content: text });
         const reply = await callClaude({ messages: history, system: systemPrompt });
         history.push({ role: "assistant", content: reply });
         typing.remove();
-        if (onAssistantReply) {
-          onAssistantReply(reply, addMessage);
-        } else {
-          addMessage("ai", reply);
-        }
+        if (onAssistantReply) onAssistantReply(reply, addMessage);
+        else addMessage("ai", reply);
       } catch (err) {
         typing.remove();
         addError("Ошибка соединения с AI. " + err.message);
@@ -595,20 +750,46 @@
     return { history, addMessage, sendUserMessage };
   }
 
-  // ---------- TAB: Найти новое (existing chat with lead-form trigger) ----------
+  // Helper: build a chat with attached photo bucket from element IDs.
+  function buildChat(panelKey, options) {
+    const bucket = createPhotoBucket({
+      previewsEl: document.getElementById(`previews-${panelKey}`),
+      fileInputEl: document.getElementById(`file-${panelKey}`),
+    });
+    return {
+      chat: createChat({
+        chatEl: document.getElementById(`chat-${panelKey}`),
+        composerEl: document.getElementById(`composer-${panelKey}`),
+        inputEl: document.getElementById(`input-${panelKey}`),
+        suggestionsEl: document.getElementById(`suggestions-${panelKey}`),
+        photoBucket: bucket,
+        ...options,
+      }),
+      bucket,
+    };
+  }
+
+  function buildChatTextForLead(history) {
+    return history
+      .map((m) => {
+        const label = m.role === "user" ? "Пользователь" : "AI";
+        const text = contentToText(m.content).replace(LEAD_MARKER, "").trim();
+        return `${label}: ${text}`;
+      })
+      .join("\n");
+  }
+
+  // ---------- TAB: Найти новое ----------
   const leadForm = document.getElementById("lead-form");
   let leadShown = false;
 
-  const newChat = createChat({
-    chatEl: document.getElementById("chat-new"),
-    composerEl: document.getElementById("composer-new"),
-    inputEl: document.getElementById("input-new"),
-    suggestionsEl: document.getElementById("suggestions-new"),
+  const newChatBundle = buildChat("new", {
     systemPrompt:
       "Ты консультант по пищевому оборудованию в России. " +
       "Задаёшь максимум 3 вопроса (по одному за сообщение), потом даёшь рекомендацию " +
       "с конкретными моделями оборудования, ценами в рублях и сроком окупаемости. " +
-      "После рекомендации обязательно добавляй маркер " + LEAD_MARKER + " в конце сообщения.",
+      "После рекомендации обязательно добавляй маркер " + LEAD_MARKER + " в конце сообщения." +
+      VISION_PROMPT,
     greeting:
       "Здравствуйте! Я помогу подобрать промышленное пищевое оборудование. " +
       "Опишите, что вы производите или планируете производить — и я задам пару уточняющих вопросов.",
@@ -624,26 +805,20 @@
     },
   });
 
-  async function submitLead(e) {
+  leadForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const submitBtn = leadForm.querySelector("button[type=submit]");
     submitBtn.disabled = true;
-    const formData = new FormData(leadForm);
-    const firstUserMessage = newChat.history.find((m) => m.role === "user");
-    const chatText = newChat.history
-      .map((m) => {
-        const label = m.role === "user" ? "Пользователь" : "AI";
-        const content = m.content.replace(LEAD_MARKER, "").trim();
-        return `${label}: ${content}`;
-      })
-      .join("\n");
+    const fd = new FormData(leadForm);
+    const history = newChatBundle.chat.history;
+    const firstUser = history.find((m) => m.role === "user");
     const payload = {
-      name: formData.get("name"),
-      email: formData.get("email"),
-      phone: formData.get("phone"),
-      city: formData.get("city"),
-      message: firstUserMessage ? firstUserMessage.content : "",
-      chat: chatText,
+      name: fd.get("name"),
+      email: fd.get("email"),
+      phone: fd.get("phone"),
+      city: fd.get("city"),
+      message: firstUser ? contentToText(firstUser.content) : "",
+      chat: buildChatTextForLead(history),
     };
     try {
       const res = await fetch(`${API_BASE}/leads`, {
@@ -657,25 +832,21 @@
       submitBtn.disabled = false;
       alert("Не удалось отправить заявку. " + err.message);
     }
-  }
-  leadForm.addEventListener("submit", submitLead);
+  });
 
   // ---------- TAB: Купить б/у ----------
   const usedLeadForm = document.getElementById("lead-form-used");
   let usedLeadShown = false;
 
-  const usedChat = createChat({
-    chatEl: document.getElementById("chat-used"),
-    composerEl: document.getElementById("composer-used"),
-    inputEl: document.getElementById("input-used"),
-    suggestionsEl: document.getElementById("suggestions-used"),
+  const usedChatBundle = buildChat("used", {
     systemPrompt:
       "Ты эксперт по рынку б/у промышленного пищевого оборудования в России. " +
       "Когда пользователь называет тип оборудования — рассказывай: средние цены на рынке в рублях, " +
       "срок окупаемости, самые надёжные бренды, основные риски покупки б/у, " +
       "на что обращать внимание при осмотре. " +
       "В конце всегда предлагай оставить заявку — скажи что поищешь варианты в каталоге. " +
-      "Когда пользователь готов — добавь маркер " + LEAD_MARKER,
+      "Когда пользователь готов — добавь маркер " + LEAD_MARKER +
+      VISION_PROMPT,
     greeting:
       "Расскажу про рынок б/у пищевого оборудования: цены, надёжные бренды, риски. " +
       "Какое оборудование вас интересует?",
@@ -696,21 +867,15 @@
     const submitBtn = usedLeadForm.querySelector("button[type=submit]");
     submitBtn.disabled = true;
     const fd = new FormData(usedLeadForm);
-    const firstUserMessage = usedChat.history.find((m) => m.role === "user");
-    const chatText = usedChat.history
-      .map((m) => {
-        const label = m.role === "user" ? "Пользователь" : "AI";
-        const content = m.content.replace(LEAD_MARKER, "").trim();
-        return `${label}: ${content}`;
-      })
-      .join("\n");
+    const history = usedChatBundle.chat.history;
+    const firstUser = history.find((m) => m.role === "user");
     const payload = {
       name: fd.get("name"),
       email: fd.get("email"),
       phone: fd.get("phone"),
       city: fd.get("city"),
-      message: firstUserMessage ? firstUserMessage.content : "",
-      chat: chatText,
+      message: firstUser ? contentToText(firstUser.content) : "",
+      chat: buildChatTextForLead(history),
     };
     try {
       const res = await fetch(`${API_BASE}/leads`, {
@@ -730,6 +895,10 @@
   const sellForm = document.getElementById("sell-form");
   const sellValuation = document.getElementById("sell-valuation");
   const sellEvalBtn = document.getElementById("sell-evaluate");
+  const sellPhotoBucket = createPhotoBucket({
+    previewsEl: document.getElementById("previews-sell"),
+    fileInputEl: document.getElementById("file-sell"),
+  });
 
   function collectSellPayload() {
     const fd = new FormData(sellForm);
@@ -754,34 +923,50 @@
     if (!sellForm.reportValidity()) return;
     sellEvalBtn.disabled = true;
     sellValuation.innerHTML = '<div class="valuation">Оцениваю…</div>';
+
     const p = collectSellPayload();
-    const payload = {
-      title: p.title,
-      description: p.description,
-      category: p.category,
-      condition: p.condition,
-      year: p.year,
-      brand: p.brand,
-      asking_price: p.price,
-      currency: "RUB",
-      city: p.city,
-      photos: [],
-    };
-    try {
-      const res = await fetch(`${API_BASE}/reseller/analyze`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload),
+    const photos = sellPhotoBucket.photos;
+    const conditionLabel =
+      p.condition === "new" ? "Новое" : p.condition === "refurbished" ? "Восстановленное" : "Б/у";
+    const description = [
+      `Название: ${p.title}`,
+      `Бренд: ${p.brand || "—"}`,
+      `Год: ${p.year || "—"}`,
+      `Состояние: ${conditionLabel}`,
+      `Категория: ${p.category}`,
+      `Город: ${p.city || "—"}`,
+      `Запрашиваемая цена: ${p.price.toLocaleString("ru-RU")} ₽`,
+      `Описание: ${p.description}`,
+    ].join("\n");
+
+    const content = [];
+    for (const photo of photos) {
+      content.push({
+        type: "image",
+        source: { type: "base64", media_type: photo.mediaType, data: photo.data },
       });
-      if (!res.ok) throw new Error("Server " + res.status);
-      const v = await res.json();
-      sellValuation.innerHTML = `
-        <div class="valuation">
-          <div class="row"><span>Рекомендованная цена покупки</span><strong>${v.recommended_buy_price.toLocaleString("ru-RU")} ₽</strong></div>
-          <div class="row"><span>Оценка цены продажи</span><strong>${v.estimated_resale_price.toLocaleString("ru-RU")} ₽</strong></div>
-          <div class="row"><span>Уверенность оценки</span><strong>${escapeHtml(v.confidence)}</strong></div>
-          <div style="margin-top:8px; color: var(--muted);">${escapeHtml(v.rationale || "")}</div>
-        </div>`;
+    }
+    content.push({ type: "text", text: description });
+
+    const system =
+      "Ты эксперт-оценщик промышленного пищевого оборудования в России. " +
+      "На основе фото и описания дай оценку рыночной стоимости в рублях. " +
+      "Структура ответа: " +
+      "1) Рекомендованная цена покупки для перепродажи (число в рублях). " +
+      "2) Оценка рыночной цены продажи (число в рублях). " +
+      "3) Уверенность оценки (низкая/средняя/высокая) и почему. " +
+      "4) Ключевые риски и что проверить. " +
+      "5) Рекомендации продавцу (как поднять цену). " +
+      "Будь конкретен с числами." +
+      VISION_PROMPT;
+
+    try {
+      const reply = await callClaude({
+        messages: [{ role: "user", content }],
+        system,
+        maxTokens: 1500,
+      });
+      sellValuation.innerHTML = `<div class="valuation">${escapeHtml(reply)}</div>`;
     } catch (err) {
       sellValuation.innerHTML = `<div class="valuation">Не удалось получить оценку: ${escapeHtml(err.message)}</div>`;
     } finally {
@@ -813,31 +998,25 @@
   });
 
   // ---------- TAB: Обслуживание ----------
-  createChat({
-    chatEl: document.getElementById("chat-service"),
-    composerEl: document.getElementById("composer-service"),
-    inputEl: document.getElementById("input-service"),
-    suggestionsEl: document.getElementById("suggestions-service"),
+  buildChat("service", {
     systemPrompt:
       "Ты опытный диагност промышленного пищевого оборудования в России. " +
       "Пользователь описывает симптом или поломку. Задавай уточняющие вопросы (один за сообщение), " +
       "затем предлагай конкретные причины и решения: какие узлы проверить, какие детали могут быть неисправны, " +
-      "ориентировочные стоимости ремонта в рублях. Будь практичным.",
+      "ориентировочные стоимости ремонта в рублях. Будь практичным." +
+      VISION_PROMPT,
     greeting:
       "Опишите симптом или поломку оборудования — я помогу найти причину и подскажу решение.",
   });
 
   // ---------- TAB: Запчасти ----------
-  createChat({
-    chatEl: document.getElementById("chat-parts"),
-    composerEl: document.getElementById("composer-parts"),
-    inputEl: document.getElementById("input-parts"),
-    suggestionsEl: document.getElementById("suggestions-parts"),
+  buildChat("parts", {
     systemPrompt:
       "Ты специалист по запчастям для промышленного пищевого оборудования в России. " +
       "Пользователь называет модель оборудования и нужную деталь — помоги подобрать подходящую запчасть. " +
       "Уточняй параметры (артикул, размеры, производителя), предлагай аналоги если оригинал недоступен, " +
-      "ориентируй по ценам в рублях и местам, где можно заказать.",
+      "ориентируй по ценам в рублях и местам, где можно заказать." +
+      VISION_PROMPT,
     greeting:
       "Назовите модель оборудования и нужную деталь — я подберу подходящую запчасть.",
   });
