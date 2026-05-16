@@ -40,7 +40,7 @@
   header {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
-    padding: 20px 24px;
+    padding: 20px 24px 16px;
   }
   .wrap { max-width: 760px; margin: 0 auto; }
   header h1 {
@@ -54,12 +54,52 @@
     color: var(--muted);
     font-size: 14px;
   }
+
+  nav.tabs {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  nav.tabs .wrap {
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 8px;
+  }
+  nav.tabs .wrap::-webkit-scrollbar { display: none; }
+  .tab {
+    background: transparent;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    padding: 12px 14px;
+    font: inherit;
+    font-size: 14px;
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color .15s, border-color .15s;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 500;
+  }
+
   main {
     max-width: 760px;
     margin: 24px auto;
     padding: 0 16px 48px;
   }
-  #chat {
+  .panel-intro {
+    margin: 0 0 12px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .chat {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -138,68 +178,140 @@
     transition: border-color .15s;
   }
   .composer input:focus { border-color: var(--accent); }
-  .composer button,
-  .lead-form button {
+
+  button.primary {
     background: var(--accent);
     color: #fff;
     border: 0;
-    padding: 0 18px;
+    padding: 11px 18px;
     border-radius: var(--radius);
     font-size: 15px;
     font-weight: 500;
     cursor: pointer;
     transition: background .15s;
   }
-  .composer button:hover,
-  .lead-form button:hover { background: var(--accent-hover); }
-  .composer button:disabled { background: #9ca3af; cursor: not-allowed; }
+  button.primary:hover { background: var(--accent-hover); }
+  button.primary:disabled { background: #9ca3af; cursor: not-allowed; }
+  button.secondary {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 11px 18px;
+    border-radius: var(--radius);
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color .15s, color .15s;
+  }
+  button.secondary:hover { border-color: var(--accent); color: var(--accent); }
 
-  .lead-form {
-    margin-top: 24px;
+  /* Forms (used in lead, sell, search, want-to-buy) */
+  .card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 20px;
     box-shadow: var(--shadow);
-    animation: slideIn .3s ease-out;
+    margin-bottom: 14px;
   }
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .lead-form h3 {
+  .card h3 {
     margin: 0 0 4px;
     font-size: 17px;
     font-weight: 600;
   }
-  .lead-form p {
+  .card p.sub {
     margin: 0 0 16px;
     color: var(--muted);
     font-size: 14px;
   }
-  .lead-form .fields {
+  .fields {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 10px;
     margin-bottom: 12px;
   }
-  .lead-form input {
+  .fields .full { grid-column: 1 / -1; }
+  .fields input,
+  .fields select,
+  .fields textarea {
     padding: 11px 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     font-size: 14px;
+    font-family: inherit;
     outline: none;
     transition: border-color .15s;
+    background: var(--surface);
+    color: var(--text);
   }
-  .lead-form input:focus { border-color: var(--accent); }
-  .lead-form button { padding: 11px 18px; width: 100%; }
-  .lead-form .success {
+  .fields textarea { resize: vertical; min-height: 80px; }
+  .fields input:focus,
+  .fields select:focus,
+  .fields textarea:focus { border-color: var(--accent); }
+  .card .success {
     text-align: center;
     padding: 24px 0;
     color: var(--text);
   }
+  .actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* Listing result cards (used tab) */
+  .listing {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .listing h4 {
+    margin: 0 0 4px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .listing .price {
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .listing .meta {
+    color: var(--muted);
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+  .listing .desc {
+    font-size: 14px;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 24px 0;
+    font-size: 14px;
+  }
+
+  /* Valuation result (sell tab) */
+  .valuation {
+    background: #f0f7ff;
+    border: 1px solid #cfe0ff;
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin: 12px 0;
+    font-size: 14px;
+  }
+  .valuation .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+  }
+  .valuation .row strong { color: var(--accent); }
+
   @media (max-width: 600px) {
-    .lead-form .fields { grid-template-columns: 1fr; }
+    .fields { grid-template-columns: 1fr; }
     .msg { max-width: 100%; }
   }
 </style>
@@ -213,86 +325,166 @@
   </div>
 </header>
 
-<main>
-  <div id="chat"></div>
-
-  <div class="suggestions" id="suggestions">
-    <button data-prompt="Нужно оборудование для производства котлет, объём 200 кг в смену.">Котлеты</button>
-    <button data-prompt="Открываю мини-пекарню, нужно оборудование для хлеба.">Хлеб</button>
-    <button data-prompt="Нужна линия упаковки для пищевых продуктов.">Упаковка</button>
-    <button data-prompt="Подберите оборудование для переработки мяса.">Мясо</button>
+<nav class="tabs">
+  <div class="wrap">
+    <button class="tab active" data-tab="new">🔍 Найти новое</button>
+    <button class="tab" data-tab="used">♻️ Купить б/у</button>
+    <button class="tab" data-tab="sell">📦 Продать</button>
+    <button class="tab" data-tab="service">🔧 Обслуживание</button>
+    <button class="tab" data-tab="parts">⚙️ Запчасти</button>
   </div>
+</nav>
 
-  <form class="composer" id="composer" autocomplete="off">
-    <input id="input" type="text" placeholder="Опишите вашу задачу или продукт…" required>
-    <button type="submit" id="send">Отправить</button>
-  </form>
+<main>
 
-  <form class="lead-form" id="lead-form" name="leads" data-netlify="true" hidden autocomplete="off">
-    <h3>Получить КП от поставщиков</h3>
-    <p>Отправим персональные коммерческие предложения от 3–5 поставщиков в течение дня.</p>
-    <div class="fields">
-      <input name="name" type="text" placeholder="Имя" required>
-      <input name="email" type="email" placeholder="Email" required>
-      <input name="phone" type="tel" placeholder="Телефон" required>
-      <input name="city" type="text" placeholder="Город" required>
+  <!-- ========== TAB: Найти новое ========== -->
+  <section data-panel="new">
+    <div id="chat-new" class="chat"></div>
+
+    <div class="suggestions" id="suggestions-new">
+      <button data-prompt="Нужно оборудование для производства котлет, объём 200 кг в смену.">Котлеты</button>
+      <button data-prompt="Открываю мини-пекарню, нужно оборудование для хлеба.">Хлеб</button>
+      <button data-prompt="Нужна линия упаковки для пищевых продуктов.">Упаковка</button>
+      <button data-prompt="Подберите оборудование для переработки мяса.">Мясо</button>
     </div>
-    <button type="submit">Получить КП</button>
-  </form>
+
+    <form class="composer" id="composer-new" autocomplete="off">
+      <input id="input-new" type="text" placeholder="Опишите вашу задачу или продукт…" required>
+      <button type="submit" class="primary">Отправить</button>
+    </form>
+
+    <form class="card" id="lead-form" hidden autocomplete="off" style="margin-top:24px;">
+      <h3>Получить КП от поставщиков</h3>
+      <p class="sub">Отправим персональные коммерческие предложения от 3–5 поставщиков в течение дня.</p>
+      <div class="fields">
+        <input name="name" type="text" placeholder="Имя" required>
+        <input name="email" type="email" placeholder="Email" required>
+        <input name="phone" type="tel" placeholder="Телефон" required>
+        <input name="city" type="text" placeholder="Город" required>
+      </div>
+      <button type="submit" class="primary" style="width:100%;">Получить КП</button>
+    </form>
+  </section>
+
+  <!-- ========== TAB: Купить б/у ========== -->
+  <section data-panel="used" hidden>
+    <p class="panel-intro">Опишите что ищете — AI подберёт варианты из нашего каталога.</p>
+    <form class="card" id="used-search-form" autocomplete="off">
+      <div class="fields">
+        <textarea class="full" name="query" placeholder="Что ищете? Например: тестомес на 30 кг, печь хлебопекарная, фритюрница…" required></textarea>
+        <input name="city" type="text" placeholder="Город (опционально)">
+        <input name="budget" type="number" min="0" placeholder="Бюджет до, руб (опционально)">
+      </div>
+      <button type="submit" class="primary" style="width:100%;">Найти</button>
+    </form>
+
+    <div id="used-results"></div>
+
+    <form class="card" id="want-to-buy-form" hidden autocomplete="off">
+      <h3>Оставить заявку</h3>
+      <p class="sub">Если в каталоге ничего не подошло — оставьте заявку, и мы найдём оборудование под ваш запрос.</p>
+      <div class="fields">
+        <input name="name" type="text" placeholder="Имя" required>
+        <input name="email" type="email" placeholder="Email" required>
+        <input name="phone" type="tel" placeholder="Телефон (опционально)">
+        <input name="city" type="text" placeholder="Город (опционально)">
+        <textarea class="full" name="details" placeholder="Дополнительные пожелания"></textarea>
+      </div>
+      <button type="submit" class="primary" style="width:100%;">Отправить заявку</button>
+    </form>
+  </section>
+
+  <!-- ========== TAB: Продать ========== -->
+  <section data-panel="sell" hidden>
+    <p class="panel-intro">Заполните данные оборудования — AI оценит рыночную стоимость, после чего объявление будет опубликовано.</p>
+    <form class="card" id="sell-form" autocomplete="off">
+      <h3>Параметры оборудования</h3>
+      <div class="fields">
+        <input class="full" name="title" type="text" placeholder="Название оборудования" required>
+        <input name="brand" type="text" placeholder="Бренд / производитель">
+        <input name="year" type="number" min="1900" max="2100" placeholder="Год выпуска">
+        <select name="condition" required>
+          <option value="used">Б/у</option>
+          <option value="new">Новое</option>
+          <option value="refurbished">Восстановленное</option>
+        </select>
+        <input name="category" type="text" placeholder="Категория (напр. Печь, Тестомес)" required>
+        <input name="city" type="text" placeholder="Город">
+        <input name="price" type="number" min="0" step="1" placeholder="Цена, руб" required>
+        <textarea class="full" name="description" placeholder="Описание состояния, комплектации, истории" required></textarea>
+      </div>
+      <h3 style="margin-top:8px;">Контакты продавца</h3>
+      <div class="fields">
+        <input name="seller_name" type="text" placeholder="Имя" required>
+        <input name="seller_email" type="email" placeholder="Email" required>
+        <input class="full" name="seller_phone" type="tel" placeholder="Телефон (опционально)">
+      </div>
+      <div class="actions">
+        <button type="button" class="secondary" id="sell-evaluate">Оценить стоимость</button>
+        <button type="submit" class="primary">Опубликовать объявление</button>
+      </div>
+    </form>
+
+    <div id="sell-valuation"></div>
+  </section>
+
+  <!-- ========== TAB: Обслуживание ========== -->
+  <section data-panel="service" hidden>
+    <p class="panel-intro">Опишите симптом или поломку — AI-диагност поможет найти причину и решение.</p>
+    <div id="chat-service" class="chat"></div>
+
+    <div class="suggestions" id="suggestions-service">
+      <button data-prompt="Тестомес гудит при включении, но месильный орган не вращается.">Тестомес</button>
+      <button data-prompt="Печь не выходит на заданную температуру, греется только верхний тэн.">Печь</button>
+      <button data-prompt="Холодильная витрина шумит и плохо охлаждает.">Холодильник</button>
+    </div>
+
+    <form class="composer" id="composer-service" autocomplete="off">
+      <input id="input-service" type="text" placeholder="Опишите неисправность…" required>
+      <button type="submit" class="primary">Спросить</button>
+    </form>
+  </section>
+
+  <!-- ========== TAB: Запчасти ========== -->
+  <section data-panel="parts" hidden>
+    <p class="panel-intro">Назовите модель оборудования и нужную деталь — AI подберёт подходящую запчасть.</p>
+    <div id="chat-parts" class="chat"></div>
+
+    <div class="suggestions" id="suggestions-parts">
+      <button data-prompt="Нужен ремень привода для тестомеса Прима-300.">Ремень тестомеса</button>
+      <button data-prompt="Подберите тэн для печи Восход ХПЭ-500.">Тэн печи</button>
+      <button data-prompt="Нужна термопара для пароконвектомата Rational.">Термопара</button>
+    </div>
+
+    <form class="composer" id="composer-parts" autocomplete="off">
+      <input id="input-parts" type="text" placeholder="Модель и запчасть…" required>
+      <button type="submit" class="primary">Подобрать</button>
+    </form>
+  </section>
+
 </main>
 
 <script>
   // Ключ берётся из переменной окружения ANTHROPIC_API_KEY на этапе деплоя.
-  // См. комментарий в начале файла.
   window.ANTHROPIC_API_KEY = "__ANTHROPIC_API_KEY__";
 
+  const API_BASE = "https://web-production-d399a.up.railway.app";
   const MODEL = "claude-sonnet-4-20250514";
-  const SYSTEM_PROMPT =
-    "Ты консультант по пищевому оборудованию в России. " +
-    "Задаёшь максимум 3 вопроса (по одному за сообщение), потом даёшь рекомендацию " +
-    "с конкретными моделями оборудования, ценами в рублях и сроком окупаемости. " +
-    "После рекомендации обязательно добавляй маркер %%SHOW_LEAD_FORM%% в конце сообщения.";
   const LEAD_MARKER = "%%SHOW_LEAD_FORM%%";
 
-  const chat = document.getElementById("chat");
-  const composer = document.getElementById("composer");
-  const input = document.getElementById("input");
-  const sendBtn = document.getElementById("send");
-  const suggestions = document.getElementById("suggestions");
-  const leadForm = document.getElementById("lead-form");
+  // ---------- Tab switching ----------
+  const tabButtons = document.querySelectorAll("nav.tabs .tab");
+  const panels = document.querySelectorAll("section[data-panel]");
+  tabButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const target = btn.dataset.tab;
+      tabButtons.forEach((b) => b.classList.toggle("active", b === btn));
+      panels.forEach((p) => { p.hidden = p.dataset.panel !== target; });
+    });
+  });
 
-  const history = [];
-  let leadShown = false;
-
-  function addMessage(role, text) {
-    const el = document.createElement("div");
-    el.className = "msg " + role;
-    el.textContent = text;
-    chat.appendChild(el);
-    chat.scrollTop = chat.scrollHeight;
-    return el;
-  }
-
-  function addTyping() {
-    const el = document.createElement("div");
-    el.className = "msg ai typing";
-    el.textContent = "печатает…";
-    chat.appendChild(el);
-    chat.scrollTop = chat.scrollHeight;
-    return el;
-  }
-
-  function addError(text) {
-    const el = document.createElement("div");
-    el.className = "msg error";
-    el.textContent = text;
-    chat.appendChild(el);
-    chat.scrollTop = chat.scrollHeight;
-  }
-
-  async function callClaude(userText) {
-    history.push({ role: "user", content: userText });
-
+  // ---------- Generic Anthropic chat call ----------
+  async function callClaude({ messages, system, maxTokens = 1024 }) {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -303,73 +495,130 @@
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 1024,
-        system: SYSTEM_PROMPT,
-        messages: history,
+        max_tokens: maxTokens,
+        system,
+        messages,
       }),
     });
-
     if (!res.ok) {
       const errText = await res.text();
       throw new Error("API " + res.status + ": " + errText);
     }
-
     const data = await res.json();
-    const text = (data.content || [])
+    return (data.content || [])
       .filter((b) => b.type === "text")
       .map((b) => b.text)
       .join("");
-
-    history.push({ role: "assistant", content: text });
-    return text;
   }
 
-  async function sendUserMessage(text) {
-    text = text.trim();
-    if (!text) return;
+  // ---------- Reusable chat UI ----------
+  function createChat({ chatEl, composerEl, inputEl, suggestionsEl, systemPrompt, greeting, onAssistantReply }) {
+    const history = [];
+    const sendBtn = composerEl.querySelector("button[type=submit]");
 
-    addMessage("user", text);
-    input.value = "";
-    sendBtn.disabled = true;
-    suggestions.style.display = "none";
+    function addMessage(role, text) {
+      const el = document.createElement("div");
+      el.className = "msg " + role;
+      el.textContent = text;
+      chatEl.appendChild(el);
+      chatEl.scrollTop = chatEl.scrollHeight;
+      return el;
+    }
+    function addTyping() {
+      const el = document.createElement("div");
+      el.className = "msg ai typing";
+      el.textContent = "печатает…";
+      chatEl.appendChild(el);
+      chatEl.scrollTop = chatEl.scrollHeight;
+      return el;
+    }
+    function addError(text) {
+      const el = document.createElement("div");
+      el.className = "msg error";
+      el.textContent = text;
+      chatEl.appendChild(el);
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
 
-    const typing = addTyping();
+    async function sendUserMessage(text) {
+      text = text.trim();
+      if (!text) return;
+      addMessage("user", text);
+      inputEl.value = "";
+      sendBtn.disabled = true;
+      if (suggestionsEl) suggestionsEl.style.display = "none";
+      const typing = addTyping();
+      try {
+        history.push({ role: "user", content: text });
+        const reply = await callClaude({ messages: history, system: systemPrompt });
+        history.push({ role: "assistant", content: reply });
+        typing.remove();
+        if (onAssistantReply) {
+          onAssistantReply(reply, addMessage);
+        } else {
+          addMessage("ai", reply);
+        }
+      } catch (err) {
+        typing.remove();
+        addError("Ошибка соединения с AI. " + err.message);
+      } finally {
+        sendBtn.disabled = false;
+        inputEl.focus();
+      }
+    }
 
-    try {
-      const reply = await callClaude(text);
-      typing.remove();
+    composerEl.addEventListener("submit", (e) => {
+      e.preventDefault();
+      sendUserMessage(inputEl.value);
+    });
+    if (suggestionsEl) {
+      suggestionsEl.addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-prompt]");
+        if (!btn) return;
+        sendUserMessage(btn.dataset.prompt);
+      });
+    }
+    if (greeting) addMessage("ai", greeting);
 
+    return { history, addMessage, sendUserMessage };
+  }
+
+  // ---------- TAB: Найти новое (existing chat with lead-form trigger) ----------
+  const leadForm = document.getElementById("lead-form");
+  let leadShown = false;
+
+  const newChat = createChat({
+    chatEl: document.getElementById("chat-new"),
+    composerEl: document.getElementById("composer-new"),
+    inputEl: document.getElementById("input-new"),
+    suggestionsEl: document.getElementById("suggestions-new"),
+    systemPrompt:
+      "Ты консультант по пищевому оборудованию в России. " +
+      "Задаёшь максимум 3 вопроса (по одному за сообщение), потом даёшь рекомендацию " +
+      "с конкретными моделями оборудования, ценами в рублях и сроком окупаемости. " +
+      "После рекомендации обязательно добавляй маркер " + LEAD_MARKER + " в конце сообщения.",
+    greeting:
+      "Здравствуйте! Я помогу подобрать промышленное пищевое оборудование. " +
+      "Опишите, что вы производите или планируете производить — и я задам пару уточняющих вопросов.",
+    onAssistantReply: (reply, addMessage) => {
       const showLead = reply.includes(LEAD_MARKER);
       const cleaned = reply.replace(LEAD_MARKER, "").trim();
       addMessage("ai", cleaned);
-
       if (showLead && !leadShown) {
         leadShown = true;
         leadForm.hidden = false;
         leadForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }
-    } catch (err) {
-      typing.remove();
-      addError("Ошибка соединения с AI. " + err.message);
-    } finally {
-      sendBtn.disabled = false;
-      input.focus();
-    }
-  }
-
-  composer.addEventListener("submit", (e) => {
-    e.preventDefault();
-    sendUserMessage(input.value);
+    },
   });
 
   async function submitLead(e) {
     e.preventDefault();
     const submitBtn = leadForm.querySelector("button[type=submit]");
     submitBtn.disabled = true;
-
     const formData = new FormData(leadForm);
-    const firstUserMessage = history.find((m) => m.role === "user");
-    const chatText = history
+    const firstUserMessage = newChat.history.find((m) => m.role === "user");
+    const chatText = newChat.history
       .map((m) => {
         const label = m.role === "user" ? "Пользователь" : "AI";
         const content = m.content.replace(LEAD_MARKER, "").trim();
@@ -384,36 +633,267 @@
       message: firstUserMessage ? firstUserMessage.content : "",
       chat: chatText,
     };
-
     try {
-      const res = await fetch("https://web-production-d399a.up.railway.app/leads", {
+      const res = await fetch(`${API_BASE}/leads`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Server " + res.status);
-      leadForm.innerHTML =
-        '<div class="success">Спасибо! Мы свяжемся с вами в ближайшее время.</div>';
+      leadForm.innerHTML = '<div class="success">Спасибо! Мы свяжемся с вами в ближайшее время.</div>';
     } catch (err) {
       submitBtn.disabled = false;
-      addError("Не удалось отправить заявку. " + err.message);
+      alert("Не удалось отправить заявку. " + err.message);
+    }
+  }
+  leadForm.addEventListener("submit", submitLead);
+
+  // ---------- TAB: Купить б/у ----------
+  const usedSearchForm = document.getElementById("used-search-form");
+  const usedResults = document.getElementById("used-results");
+  const wantToBuyForm = document.getElementById("want-to-buy-form");
+  let lastSearchQuery = "";
+  let lastSearchCity = "";
+  let lastSearchBudget = null;
+
+  async function extractFiltersFromQuery(queryText) {
+    const system =
+      "Ты помощник по поиску б/у пищевого оборудования. Из запроса извлеки фильтры. " +
+      'Ответь СТРОГО валидным JSON без пояснений в формате: ' +
+      '{"brand": "название бренда или null", "category": "категория оборудования по-русски или null"}';
+    try {
+      const reply = await callClaude({
+        messages: [{ role: "user", content: queryText }],
+        system,
+        maxTokens: 200,
+      });
+      const match = reply.match(/\{[\s\S]*\}/);
+      if (!match) return {};
+      const parsed = JSON.parse(match[0]);
+      return {
+        brand: parsed.brand && parsed.brand !== "null" ? parsed.brand : null,
+        category: parsed.category && parsed.category !== "null" ? parsed.category : null,
+      };
+    } catch (err) {
+      return {};
     }
   }
 
-  leadForm.addEventListener("submit", submitLead);
+  function renderListings(listings) {
+    if (!listings.length) {
+      usedResults.innerHTML = '<div class="empty">В каталоге пока нет вариантов под ваш запрос.</div>';
+      wantToBuyForm.hidden = false;
+      return;
+    }
+    wantToBuyForm.hidden = true;
+    usedResults.innerHTML = listings
+      .map((l) => {
+        const meta = [
+          l.condition === "new" ? "Новое" : l.condition === "refurbished" ? "Восстановленное" : "Б/у",
+          l.brand,
+          l.year,
+          l.city,
+        ]
+          .filter(Boolean)
+          .join(" · ");
+        return `
+          <div class="listing">
+            <h4>${escapeHtml(l.title)}</h4>
+            <div class="price">${l.price.toLocaleString("ru-RU")} ${escapeHtml(l.currency || "RUB")}</div>
+            <div class="meta">${escapeHtml(meta)}</div>
+            <div class="desc">${escapeHtml(l.description || "")}</div>
+          </div>
+        `;
+      })
+      .join("");
+  }
 
-  suggestions.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-prompt]");
-    if (!btn) return;
-    sendUserMessage(btn.dataset.prompt);
+  function escapeHtml(s) {
+    return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[c]);
+  }
+
+  usedSearchForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const submitBtn = usedSearchForm.querySelector("button[type=submit]");
+    submitBtn.disabled = true;
+    usedResults.innerHTML = '<div class="empty">Подбираю варианты…</div>';
+    wantToBuyForm.hidden = true;
+
+    const fd = new FormData(usedSearchForm);
+    lastSearchQuery = (fd.get("query") || "").toString().trim();
+    lastSearchCity = (fd.get("city") || "").toString().trim();
+    lastSearchBudget = fd.get("budget") ? Number(fd.get("budget")) : null;
+
+    try {
+      const filters = await extractFiltersFromQuery(lastSearchQuery);
+      const params = new URLSearchParams();
+      if (filters.brand) params.set("brand", filters.brand);
+      if (filters.category) params.set("category", filters.category);
+      if (lastSearchCity) params.set("city", lastSearchCity);
+      if (lastSearchBudget) params.set("price_max", String(lastSearchBudget));
+      params.set("condition", "used");
+
+      const res = await fetch(`${API_BASE}/listings?${params.toString()}`);
+      if (!res.ok) throw new Error("Server " + res.status);
+      const listings = await res.json();
+      renderListings(listings);
+    } catch (err) {
+      usedResults.innerHTML = `<div class="empty">Не удалось загрузить каталог. ${escapeHtml(err.message)}</div>`;
+      wantToBuyForm.hidden = false;
+    } finally {
+      submitBtn.disabled = false;
+    }
   });
 
-  // Приветствие
-  addMessage(
-    "ai",
-    "Здравствуйте! Я помогу подобрать промышленное пищевое оборудование. " +
-    "Опишите, что вы производите или планируете производить — и я задам пару уточняющих вопросов."
-  );
+  wantToBuyForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const submitBtn = wantToBuyForm.querySelector("button[type=submit]");
+    submitBtn.disabled = true;
+    const fd = new FormData(wantToBuyForm);
+    const payload = {
+      name: fd.get("name"),
+      email: fd.get("email"),
+      phone: fd.get("phone") || null,
+      equipment_type: lastSearchQuery || "Без описания",
+      budget_max: lastSearchBudget,
+      city: fd.get("city") || lastSearchCity || null,
+      details: fd.get("details") || null,
+    };
+    try {
+      const res = await fetch(`${API_BASE}/want-to-buy`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Server " + res.status);
+      wantToBuyForm.innerHTML = '<div class="success">Спасибо! Заявка принята — мы свяжемся с вами.</div>';
+    } catch (err) {
+      submitBtn.disabled = false;
+      alert("Не удалось отправить заявку. " + err.message);
+    }
+  });
+
+  // ---------- TAB: Продать ----------
+  const sellForm = document.getElementById("sell-form");
+  const sellValuation = document.getElementById("sell-valuation");
+  const sellEvalBtn = document.getElementById("sell-evaluate");
+
+  function collectSellPayload() {
+    const fd = new FormData(sellForm);
+    return {
+      title: fd.get("title"),
+      description: fd.get("description"),
+      category: fd.get("category"),
+      condition: fd.get("condition"),
+      price: Number(fd.get("price") || 0),
+      currency: "RUB",
+      city: fd.get("city") || null,
+      seller_name: fd.get("seller_name"),
+      seller_email: fd.get("seller_email"),
+      seller_phone: fd.get("seller_phone") || null,
+      photos: [],
+      year: fd.get("year") ? Number(fd.get("year")) : null,
+      brand: fd.get("brand") || null,
+    };
+  }
+
+  sellEvalBtn.addEventListener("click", async () => {
+    if (!sellForm.reportValidity()) return;
+    sellEvalBtn.disabled = true;
+    sellValuation.innerHTML = '<div class="valuation">Оцениваю…</div>';
+    const p = collectSellPayload();
+    const payload = {
+      title: p.title,
+      description: p.description,
+      category: p.category,
+      condition: p.condition,
+      year: p.year,
+      brand: p.brand,
+      asking_price: p.price,
+      currency: "RUB",
+      city: p.city,
+      photos: [],
+    };
+    try {
+      const res = await fetch(`${API_BASE}/reseller/analyze`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Server " + res.status);
+      const v = await res.json();
+      sellValuation.innerHTML = `
+        <div class="valuation">
+          <div class="row"><span>Рекомендованная цена покупки</span><strong>${v.recommended_buy_price.toLocaleString("ru-RU")} ₽</strong></div>
+          <div class="row"><span>Оценка цены продажи</span><strong>${v.estimated_resale_price.toLocaleString("ru-RU")} ₽</strong></div>
+          <div class="row"><span>Уверенность оценки</span><strong>${escapeHtml(v.confidence)}</strong></div>
+          <div style="margin-top:8px; color: var(--muted);">${escapeHtml(v.rationale || "")}</div>
+        </div>`;
+    } catch (err) {
+      sellValuation.innerHTML = `<div class="valuation">Не удалось получить оценку: ${escapeHtml(err.message)}</div>`;
+    } finally {
+      sellEvalBtn.disabled = false;
+    }
+  });
+
+  sellForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const submitBtn = sellForm.querySelector("button[type=submit]");
+    submitBtn.disabled = true;
+    const payload = collectSellPayload();
+    try {
+      const res = await fetch(`${API_BASE}/listings`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const t = await res.text();
+        throw new Error("Server " + res.status + ": " + t);
+      }
+      sellForm.innerHTML = '<div class="success">Объявление опубликовано! Мы свяжемся при появлении покупателей.</div>';
+      sellValuation.innerHTML = "";
+    } catch (err) {
+      submitBtn.disabled = false;
+      alert("Не удалось опубликовать объявление. " + err.message);
+    }
+  });
+
+  // ---------- TAB: Обслуживание ----------
+  createChat({
+    chatEl: document.getElementById("chat-service"),
+    composerEl: document.getElementById("composer-service"),
+    inputEl: document.getElementById("input-service"),
+    suggestionsEl: document.getElementById("suggestions-service"),
+    systemPrompt:
+      "Ты опытный диагност промышленного пищевого оборудования в России. " +
+      "Пользователь описывает симптом или поломку. Задавай уточняющие вопросы (один за сообщение), " +
+      "затем предлагай конкретные причины и решения: какие узлы проверить, какие детали могут быть неисправны, " +
+      "ориентировочные стоимости ремонта в рублях. Будь практичным.",
+    greeting:
+      "Опишите симптом или поломку оборудования — я помогу найти причину и подскажу решение.",
+  });
+
+  // ---------- TAB: Запчасти ----------
+  createChat({
+    chatEl: document.getElementById("chat-parts"),
+    composerEl: document.getElementById("composer-parts"),
+    inputEl: document.getElementById("input-parts"),
+    suggestionsEl: document.getElementById("suggestions-parts"),
+    systemPrompt:
+      "Ты специалист по запчастям для промышленного пищевого оборудования в России. " +
+      "Пользователь называет модель оборудования и нужную деталь — помоги подобрать подходящую запчасть. " +
+      "Уточняй параметры (артикул, размеры, производителя), предлагай аналоги если оригинал недоступен, " +
+      "ориентируй по ценам в рублях и местам, где можно заказать.",
+    greeting:
+      "Назовите модель оборудования и нужную деталь — я подберу подходящую запчасть.",
+  });
 </script>
 
 </body>
