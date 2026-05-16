@@ -2,6 +2,7 @@ import json
 import logging
 from typing import Optional
 
+import httpx
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -45,6 +46,28 @@ def health():
 
 # ---------- Leads ----------
 
+def _notify_telegram(lead: LeadIn) -> None:
+    s = get_settings()
+    if not s.telegram_bot_token or not s.telegram_chat_id:
+        return
+    text = (
+        "🔔 Новый лид!\n"
+        f"Имя: {lead.name}\n"
+        f"Email: {lead.email}\n"
+        f"Телефон: {lead.phone or '—'}\n"
+        f"Город: {lead.city or '—'}\n"
+        f"Сообщение: {lead.message or '—'}"
+    )
+    try:
+        httpx.post(
+            f"https://api.telegram.org/bot{s.telegram_bot_token}/sendMessage",
+            json={"chat_id": s.telegram_chat_id, "text": text},
+            timeout=5.0,
+        ).raise_for_status()
+    except Exception:
+        logger.exception("telegram notification failed")
+
+
 @app.post("/leads", status_code=201)
 def create_lead(lead: LeadIn):
     fields = {
@@ -65,6 +88,7 @@ def create_lead(lead: LeadIn):
     except Exception as e:
         logger.exception("airtable lead create failed")
         raise HTTPException(status_code=502, detail=f"Airtable error: {e}")
+    _notify_telegram(lead)
     return {"id": rec["id"], "fields": rec.get("fields", {})}
 
 
