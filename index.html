@@ -722,10 +722,24 @@
     return "";
   }
 
+  const AVITO_HINT =
+    "Авито и другие сайты блокируют автоматическое чтение. " +
+    "Скопируйте текст объявления и вставьте его сюда — " +
+    "я проанализирую за несколько секунд 📋";
+
   function extractUrls(text) {
     return (String(text || "").match(/https?:\/\/[^\s]+/g) || []).map((u) =>
       u.replace(/[.,;:!?)\]]+$/, "")
     );
+  }
+
+  function isAvitoUrl(url) {
+    try {
+      const host = new URL(url).hostname.toLowerCase();
+      return host === "avito.ru" || host.endsWith(".avito.ru");
+    } catch (e) {
+      return false;
+    }
   }
 
   async function fetchPageContent(url) {
@@ -899,15 +913,33 @@
       inputEl.value = "";
       if (photoBucket) photoBucket.clear();
       if (suggestionsEl) suggestionsEl.style.display = "none";
+
+      // Partition pasted URLs: avito gets a "paste the text" hint, others are fetched server-side.
+      const urls = extractUrls(text);
+      const avitoUrls = urls.filter(isAvitoUrl);
+      const otherUrls = urls.filter((u) => !isAvitoUrl(u));
+      if (avitoUrls.length > 0) addMessage("ai", AVITO_HINT);
+
+      // If the user sent ONLY an avito URL (no other text, photos, or URLs), stop here — no AI call.
+      const textWithoutUrls = text.replace(/https?:\/\/[^\s]+/g, "").trim();
+      if (
+        avitoUrls.length > 0 &&
+        otherUrls.length === 0 &&
+        photos.length === 0 &&
+        textWithoutUrls.length === 0
+      ) {
+        inputEl.focus();
+        return;
+      }
+
       sendBtn.disabled = true;
       const typing = addTyping();
 
-      // Detect URLs and fetch content (best-effort; failures fall through silently)
+      // Fetch any non-avito URLs (best-effort; failures fall through silently)
       let textForApi = text;
-      const urls = extractUrls(text);
-      if (urls.length > 0) {
+      if (otherUrls.length > 0) {
         typing.textContent = "Загружаю страницу…";
-        const results = await Promise.all(urls.map(async (u) => {
+        const results = await Promise.all(otherUrls.map(async (u) => {
           try {
             return { url: u, text: await fetchPageContent(u) };
           } catch (e) {
