@@ -368,27 +368,29 @@
 
   <!-- ========== TAB: Купить б/у ========== -->
   <section data-panel="used" hidden>
-    <p class="panel-intro">Опишите что ищете — AI подберёт варианты из нашего каталога.</p>
-    <form class="card" id="used-search-form" autocomplete="off">
-      <div class="fields">
-        <textarea class="full" name="query" placeholder="Что ищете? Например: тестомес на 30 кг, печь хлебопекарная, фритюрница…" required></textarea>
-        <input name="city" type="text" placeholder="Город (опционально)">
-        <input name="budget" type="number" min="0" placeholder="Бюджет до, руб (опционально)">
-      </div>
-      <button type="submit" class="primary" style="width:100%;">Найти</button>
+    <p class="panel-intro">Расскажу про рынок б/у: цены, надёжные бренды, риски, на что смотреть.</p>
+    <div id="chat-used" class="chat"></div>
+
+    <div class="suggestions" id="suggestions-used">
+      <button data-prompt="Ищу мясорубку б/у">Мясорубка б/у</button>
+      <button data-prompt="Нужна печь б/у">Печь б/у</button>
+      <button data-prompt="Куттер б/у">Куттер б/у</button>
+      <button data-prompt="Упаковочная линия б/у">Упаковочная линия б/у</button>
+    </div>
+
+    <form class="composer" id="composer-used" autocomplete="off">
+      <input id="input-used" type="text" placeholder="Какое оборудование ищете?" required>
+      <button type="submit" class="primary">Спросить</button>
     </form>
 
-    <div id="used-results"></div>
-
-    <form class="card" id="want-to-buy-form" hidden autocomplete="off">
-      <h3>Оставить заявку</h3>
-      <p class="sub">Если в каталоге ничего не подошло — оставьте заявку, и мы найдём оборудование под ваш запрос.</p>
+    <form class="card" id="lead-form-used" hidden autocomplete="off" style="margin-top:24px;">
+      <h3>Оставить заявку на поиск</h3>
+      <p class="sub">Поищем подходящие варианты в каталоге и у проверенных продавцов.</p>
       <div class="fields">
         <input name="name" type="text" placeholder="Имя" required>
         <input name="email" type="email" placeholder="Email" required>
-        <input name="phone" type="tel" placeholder="Телефон (опционально)">
-        <input name="city" type="text" placeholder="Город (опционально)">
-        <textarea class="full" name="details" placeholder="Дополнительные пожелания"></textarea>
+        <input name="phone" type="tel" placeholder="Телефон" required>
+        <input name="city" type="text" placeholder="Город" required>
       </div>
       <button type="submit" class="primary" style="width:100%;">Отправить заявку</button>
     </form>
@@ -482,6 +484,16 @@
       panels.forEach((p) => { p.hidden = p.dataset.panel !== target; });
     });
   });
+
+  function escapeHtml(s) {
+    return String(s ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[c]);
+  }
 
   // ---------- Generic Anthropic chat call ----------
   async function callClaude({ messages, system, maxTokens = 1024 }) {
@@ -649,130 +661,65 @@
   leadForm.addEventListener("submit", submitLead);
 
   // ---------- TAB: Купить б/у ----------
-  const usedSearchForm = document.getElementById("used-search-form");
-  const usedResults = document.getElementById("used-results");
-  const wantToBuyForm = document.getElementById("want-to-buy-form");
-  let lastSearchQuery = "";
-  let lastSearchCity = "";
-  let lastSearchBudget = null;
+  const usedLeadForm = document.getElementById("lead-form-used");
+  let usedLeadShown = false;
 
-  async function extractFiltersFromQuery(queryText) {
-    const system =
-      "Ты помощник по поиску б/у пищевого оборудования. Из запроса извлеки фильтры. " +
-      'Ответь СТРОГО валидным JSON без пояснений в формате: ' +
-      '{"brand": "название бренда или null", "category": "категория оборудования по-русски или null"}';
-    try {
-      const reply = await callClaude({
-        messages: [{ role: "user", content: queryText }],
-        system,
-        maxTokens: 200,
-      });
-      const match = reply.match(/\{[\s\S]*\}/);
-      if (!match) return {};
-      const parsed = JSON.parse(match[0]);
-      return {
-        brand: parsed.brand && parsed.brand !== "null" ? parsed.brand : null,
-        category: parsed.category && parsed.category !== "null" ? parsed.category : null,
-      };
-    } catch (err) {
-      return {};
-    }
-  }
-
-  function renderListings(listings) {
-    if (!listings.length) {
-      usedResults.innerHTML = '<div class="empty">В каталоге пока нет вариантов под ваш запрос.</div>';
-      wantToBuyForm.hidden = false;
-      return;
-    }
-    wantToBuyForm.hidden = true;
-    usedResults.innerHTML = listings
-      .map((l) => {
-        const meta = [
-          l.condition === "new" ? "Новое" : l.condition === "refurbished" ? "Восстановленное" : "Б/у",
-          l.brand,
-          l.year,
-          l.city,
-        ]
-          .filter(Boolean)
-          .join(" · ");
-        return `
-          <div class="listing">
-            <h4>${escapeHtml(l.title)}</h4>
-            <div class="price">${l.price.toLocaleString("ru-RU")} ${escapeHtml(l.currency || "RUB")}</div>
-            <div class="meta">${escapeHtml(meta)}</div>
-            <div class="desc">${escapeHtml(l.description || "")}</div>
-          </div>
-        `;
-      })
-      .join("");
-  }
-
-  function escapeHtml(s) {
-    return String(s ?? "").replace(/[&<>"']/g, (c) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#39;",
-    })[c]);
-  }
-
-  usedSearchForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const submitBtn = usedSearchForm.querySelector("button[type=submit]");
-    submitBtn.disabled = true;
-    usedResults.innerHTML = '<div class="empty">Подбираю варианты…</div>';
-    wantToBuyForm.hidden = true;
-
-    const fd = new FormData(usedSearchForm);
-    lastSearchQuery = (fd.get("query") || "").toString().trim();
-    lastSearchCity = (fd.get("city") || "").toString().trim();
-    lastSearchBudget = fd.get("budget") ? Number(fd.get("budget")) : null;
-
-    try {
-      const filters = await extractFiltersFromQuery(lastSearchQuery);
-      const params = new URLSearchParams();
-      if (filters.brand) params.set("brand", filters.brand);
-      if (filters.category) params.set("category", filters.category);
-      if (lastSearchCity) params.set("city", lastSearchCity);
-      if (lastSearchBudget) params.set("price_max", String(lastSearchBudget));
-      params.set("condition", "used");
-
-      const res = await fetch(`${API_BASE}/listings?${params.toString()}`);
-      if (!res.ok) throw new Error("Server " + res.status);
-      const listings = await res.json();
-      renderListings(listings);
-    } catch (err) {
-      usedResults.innerHTML = `<div class="empty">Не удалось загрузить каталог. ${escapeHtml(err.message)}</div>`;
-      wantToBuyForm.hidden = false;
-    } finally {
-      submitBtn.disabled = false;
-    }
+  const usedChat = createChat({
+    chatEl: document.getElementById("chat-used"),
+    composerEl: document.getElementById("composer-used"),
+    inputEl: document.getElementById("input-used"),
+    suggestionsEl: document.getElementById("suggestions-used"),
+    systemPrompt:
+      "Ты эксперт по рынку б/у промышленного пищевого оборудования в России. " +
+      "Когда пользователь называет тип оборудования — рассказывай: средние цены на рынке в рублях, " +
+      "срок окупаемости, самые надёжные бренды, основные риски покупки б/у, " +
+      "на что обращать внимание при осмотре. " +
+      "В конце всегда предлагай оставить заявку — скажи что поищешь варианты в каталоге. " +
+      "Когда пользователь готов — добавь маркер " + LEAD_MARKER,
+    greeting:
+      "Расскажу про рынок б/у пищевого оборудования: цены, надёжные бренды, риски. " +
+      "Какое оборудование вас интересует?",
+    onAssistantReply: (reply, addMessage) => {
+      const showLead = reply.includes(LEAD_MARKER);
+      const cleaned = reply.replace(LEAD_MARKER, "").trim();
+      addMessage("ai", cleaned);
+      if (showLead && !usedLeadShown) {
+        usedLeadShown = true;
+        usedLeadForm.hidden = false;
+        usedLeadForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    },
   });
 
-  wantToBuyForm.addEventListener("submit", async (e) => {
+  usedLeadForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const submitBtn = wantToBuyForm.querySelector("button[type=submit]");
+    const submitBtn = usedLeadForm.querySelector("button[type=submit]");
     submitBtn.disabled = true;
-    const fd = new FormData(wantToBuyForm);
+    const fd = new FormData(usedLeadForm);
+    const firstUserMessage = usedChat.history.find((m) => m.role === "user");
+    const chatText = usedChat.history
+      .map((m) => {
+        const label = m.role === "user" ? "Пользователь" : "AI";
+        const content = m.content.replace(LEAD_MARKER, "").trim();
+        return `${label}: ${content}`;
+      })
+      .join("\n");
     const payload = {
       name: fd.get("name"),
       email: fd.get("email"),
-      phone: fd.get("phone") || null,
-      equipment_type: lastSearchQuery || "Без описания",
-      budget_max: lastSearchBudget,
-      city: fd.get("city") || lastSearchCity || null,
-      details: fd.get("details") || null,
+      phone: fd.get("phone"),
+      city: fd.get("city"),
+      message: firstUserMessage ? firstUserMessage.content : "",
+      chat: chatText,
     };
     try {
-      const res = await fetch(`${API_BASE}/want-to-buy`, {
+      const res = await fetch(`${API_BASE}/leads`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Server " + res.status);
-      wantToBuyForm.innerHTML = '<div class="success">Спасибо! Заявка принята — мы свяжемся с вами.</div>';
+      usedLeadForm.innerHTML = '<div class="success">Спасибо! Поищем варианты и свяжемся с вами.</div>';
     } catch (err) {
       submitBtn.disabled = false;
       alert("Не удалось отправить заявку. " + err.message);
