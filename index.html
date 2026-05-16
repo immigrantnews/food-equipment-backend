@@ -346,6 +346,62 @@
     min-height: 0;
   }
 
+  .mode-switch {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 14px;
+  }
+  .mode-switch button {
+    flex: 1;
+    background: transparent;
+    border: 0;
+    padding: 9px 12px;
+    font: inherit;
+    font-size: 14px;
+    color: var(--muted);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .mode-switch button.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .warehouse-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 14px;
+    font-size: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .warehouse-table th, .warehouse-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .warehouse-table th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .warehouse-table tr:last-child td { border-bottom: 0; }
+  .warehouse-table .total-row td {
+    background: #f9fafb;
+    font-weight: 600;
+  }
+  .warehouse-table .price-col { text-align: right; white-space: nowrap; }
+
   @media (max-width: 600px) {
     .fields { grid-template-columns: 1fr; }
     .msg { max-width: 100%; }
@@ -408,23 +464,52 @@
 
   <!-- ========== TAB: Купить б/у ========== -->
   <section data-panel="used" hidden>
-    <p class="panel-intro">Расскажу про рынок б/у: цены, надёжные бренды, риски, на что смотреть.</p>
-    <div id="chat-used" class="chat"></div>
-
-    <div class="suggestions" id="suggestions-used">
-      <button data-prompt="Ищу мясорубку б/у">Мясорубка б/у</button>
-      <button data-prompt="Нужна печь б/у">Печь б/у</button>
-      <button data-prompt="Куттер б/у">Куттер б/у</button>
-      <button data-prompt="Упаковочная линия б/у">Упаковочная линия б/у</button>
+    <div class="mode-switch" id="used-mode-switch">
+      <button type="button" class="active" data-mode="self">👤 Для себя</button>
+      <button type="button" data-mode="reseller">💼 Перекупщик</button>
     </div>
 
-    <div class="previews" id="previews-used"></div>
-    <form class="composer" id="composer-used" autocomplete="off">
-      <button type="button" class="attach" data-file="file-used" aria-label="Прикрепить фото">📎</button>
-      <input id="file-used" type="file" accept="image/*" multiple hidden>
-      <input id="input-used" type="text" placeholder="Какое оборудование ищете или приложите фото…">
-      <button type="submit" class="primary">Спросить</button>
-    </form>
+    <!-- self mode -->
+    <div id="used-block-self">
+      <p class="panel-intro">Расскажу про рынок б/у: цены, надёжные бренды, риски, на что смотреть.</p>
+      <div id="chat-used" class="chat"></div>
+
+      <div class="suggestions" id="suggestions-used">
+        <button data-prompt="Ищу мясорубку б/у">Мясорубка б/у</button>
+        <button data-prompt="Нужна печь б/у">Печь б/у</button>
+        <button data-prompt="Куттер б/у">Куттер б/у</button>
+        <button data-prompt="Упаковочная линия б/у">Упаковочная линия б/у</button>
+      </div>
+
+      <div class="previews" id="previews-used"></div>
+      <form class="composer" id="composer-used" autocomplete="off">
+        <button type="button" class="attach" data-file="file-used" aria-label="Прикрепить фото">📎</button>
+        <input id="file-used" type="file" accept="image/*" multiple hidden>
+        <input id="input-used" type="text" placeholder="Какое оборудование ищете или приложите фото…">
+        <button type="submit" class="primary">Спросить</button>
+      </form>
+    </div>
+
+    <!-- reseller mode -->
+    <div id="used-block-reseller" hidden>
+      <p class="panel-intro">Считаю арбитраж: выкуп со скидкой, перепродажа, маржа, сроки оборота.</p>
+      <div id="chat-used-reseller" class="chat"></div>
+
+      <div class="suggestions" id="suggestions-used-reseller">
+        <button data-prompt="Тестомес Прима-300, средний рынок">Тестомес</button>
+        <button data-prompt="Печь Восход ХПЭ-500 б/у">Печь Восход</button>
+        <button data-prompt="Куттер Robot Coupe R45">Куттер R45</button>
+        <button data-prompt="Расстойный шкаф Smeg">Расстойник</button>
+      </div>
+
+      <div class="previews" id="previews-used-reseller"></div>
+      <form class="composer" id="composer-used-reseller" autocomplete="off">
+        <button type="button" class="attach" data-file="file-used-reseller" aria-label="Прикрепить фото">📎</button>
+        <input id="file-used-reseller" type="file" accept="image/*" multiple hidden>
+        <input id="input-used-reseller" type="text" placeholder="Назовите модель — посчитаю маржу">
+        <button type="submit" class="primary">Посчитать</button>
+      </form>
+    </div>
 
     <form class="card" id="lead-form-used" hidden autocomplete="off" style="margin-top:24px;">
       <h3>Оставить заявку на поиск</h3>
@@ -441,6 +526,12 @@
 
   <!-- ========== TAB: Продать ========== -->
   <section data-panel="sell" hidden>
+    <div class="mode-switch" id="sell-mode-switch">
+      <button type="button" class="active" data-mode="single">📋 Одна позиция</button>
+      <button type="button" data-mode="warehouse">📦 Продаю несколько позиций</button>
+    </div>
+
+    <div id="sell-block-single">
 
     <div class="recog-block">
       <h2>📷 Не знаете что за аппарат?</h2>
@@ -498,6 +589,39 @@
     </form>
 
     <div id="sell-valuation"></div>
+    </div><!-- /sell-block-single -->
+
+    <div id="sell-block-warehouse" hidden>
+      <p class="panel-intro">AI задаст вопросы по каждой позиции, соберёт список и поможет опубликовать всё сразу.</p>
+
+      <form class="card" id="warehouse-seller-form" autocomplete="off">
+        <h3>Контакты продавца</h3>
+        <p class="sub">Используются для всех опубликованных позиций.</p>
+        <div class="fields">
+          <input name="seller_name" type="text" placeholder="Имя" required>
+          <input name="seller_email" type="email" placeholder="Email" required>
+          <input name="seller_phone" type="tel" placeholder="Телефон">
+          <input name="seller_city" type="text" placeholder="Город">
+        </div>
+      </form>
+
+      <div id="chat-warehouse" class="chat"></div>
+
+      <div class="previews" id="previews-warehouse"></div>
+      <form class="composer" id="composer-warehouse" autocomplete="off">
+        <button type="button" class="attach" data-file="file-warehouse" aria-label="Прикрепить фото">📎</button>
+        <input id="file-warehouse" type="file" accept="image/*" multiple hidden>
+        <input id="input-warehouse" type="text" placeholder="Ответьте на вопрос или скажите 'закончил'…">
+        <button type="submit" class="primary">Отправить</button>
+      </form>
+
+      <div id="warehouse-table-wrap"></div>
+
+      <div class="actions" id="warehouse-actions" hidden style="margin-top: 14px;">
+        <button type="button" class="primary" id="warehouse-publish-all">Опубликовать всё</button>
+        <button type="button" class="secondary" id="warehouse-select-btn">Выбрать позиции</button>
+      </div>
+    </div>
   </section>
 
   <!-- ========== TAB: Обслуживание ========== -->
@@ -882,8 +1006,20 @@
   // ---------- TAB: Купить б/у ----------
   const usedLeadForm = document.getElementById("lead-form-used");
   let usedLeadShown = false;
+  let activeUsedMode = "self";
 
-  const usedChatBundle = buildChat("used", {
+  function onUsedReply(reply, addMessage) {
+    const showLead = reply.includes(LEAD_MARKER);
+    const cleaned = reply.replace(LEAD_MARKER, "").trim();
+    addMessage("ai", cleaned);
+    if (showLead && !usedLeadShown) {
+      usedLeadShown = true;
+      usedLeadForm.hidden = false;
+      usedLeadForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }
+
+  const usedSelfBundle = buildChat("used", {
     systemPrompt:
       "Ты эксперт по рынку б/у промышленного пищевого оборудования в России. " +
       "Когда пользователь называет тип оборудования — рассказывай: средние цены на рынке в рублях, " +
@@ -895,16 +1031,39 @@
     greeting:
       "Расскажу про рынок б/у пищевого оборудования: цены, надёжные бренды, риски. " +
       "Какое оборудование вас интересует?",
-    onAssistantReply: (reply, addMessage) => {
-      const showLead = reply.includes(LEAD_MARKER);
-      const cleaned = reply.replace(LEAD_MARKER, "").trim();
-      addMessage("ai", cleaned);
-      if (showLead && !usedLeadShown) {
-        usedLeadShown = true;
-        usedLeadForm.hidden = false;
-        usedLeadForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
-    },
+    onAssistantReply: onUsedReply,
+  });
+
+  const usedResellerBundle = buildChat("used-reseller", {
+    systemPrompt:
+      "Ты помогаешь перекупщику промышленного оборудования зарабатывать на арбитраже. " +
+      "Когда называют оборудование — показывай: цена выкупа (с дисконтом 30-40% от рынка), " +
+      "цена перепродажи, маржа в рублях и процентах, срок оборота (как быстро продаётся), " +
+      "основные риски. Формат — чёткая таблица с цифрами. " +
+      "В конце предложи оставить заявку — скажи что поищешь конкретные варианты под перепродажу. " +
+      "Когда пользователь готов — добавь маркер " + LEAD_MARKER +
+      VISION_PROMPT,
+    greeting:
+      "Считаю арбитраж по б/у оборудованию: выкуп с дисконтом, перепродажа, маржа, оборот, риски. " +
+      "Назовите модель — соберу таблицу с цифрами.",
+    onAssistantReply: onUsedReply,
+  });
+
+  const usedModeSwitch = document.getElementById("used-mode-switch");
+  const usedBlocks = {
+    self: document.getElementById("used-block-self"),
+    reseller: document.getElementById("used-block-reseller"),
+  };
+  usedModeSwitch.querySelectorAll("button[data-mode]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const mode = btn.dataset.mode;
+      if (mode === activeUsedMode) return;
+      activeUsedMode = mode;
+      usedModeSwitch.querySelectorAll("button[data-mode]").forEach((b) => {
+        b.classList.toggle("active", b === btn);
+      });
+      Object.entries(usedBlocks).forEach(([k, el]) => { el.hidden = k !== mode; });
+    });
   });
 
   usedLeadForm.addEventListener("submit", async (e) => {
@@ -912,7 +1071,8 @@
     const submitBtn = usedLeadForm.querySelector("button[type=submit]");
     submitBtn.disabled = true;
     const fd = new FormData(usedLeadForm);
-    const history = usedChatBundle.chat.history;
+    const bundle = activeUsedMode === "reseller" ? usedResellerBundle : usedSelfBundle;
+    const history = bundle.chat.history;
     const firstUser = history.find((m) => m.role === "user");
     const payload = {
       name: fd.get("name"),
@@ -1125,6 +1285,191 @@
       submitBtn.disabled = false;
       alert("Не удалось опубликовать объявление. " + err.message);
     }
+  });
+
+  // ---------- TAB: Продать — warehouse mode ----------
+  const sellModeSwitch = document.getElementById("sell-mode-switch");
+  const sellBlocks = {
+    single: document.getElementById("sell-block-single"),
+    warehouse: document.getElementById("sell-block-warehouse"),
+  };
+  let activeSellMode = "single";
+  sellModeSwitch.querySelectorAll("button[data-mode]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const mode = btn.dataset.mode;
+      if (mode === activeSellMode) return;
+      activeSellMode = mode;
+      sellModeSwitch.querySelectorAll("button[data-mode]").forEach((b) => {
+        b.classList.toggle("active", b === btn);
+      });
+      Object.entries(sellBlocks).forEach(([k, el]) => { el.hidden = k !== mode; });
+    });
+  });
+
+  const warehouseSellerForm = document.getElementById("warehouse-seller-form");
+  const warehouseTableWrap = document.getElementById("warehouse-table-wrap");
+  const warehouseActions = document.getElementById("warehouse-actions");
+  const warehousePublishAllBtn = document.getElementById("warehouse-publish-all");
+  const warehouseSelectBtn = document.getElementById("warehouse-select-btn");
+
+  let warehouseItems = [];
+  let warehouseSelectionMode = false;
+
+  function extractItems(text) {
+    const match = String(text || "").match(/===ITEMS===\s*([\s\S]*?)\s*===END===/);
+    if (!match) return null;
+    try {
+      const parsed = JSON.parse(match[1]);
+      return Array.isArray(parsed) ? parsed : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function conditionLabel(c) {
+    if (c === "new") return "Новое";
+    if (c === "refurbished") return "Восстановленное";
+    return "Б/у";
+  }
+
+  function renderWarehouseTable() {
+    if (!warehouseItems.length) {
+      warehouseTableWrap.innerHTML = "";
+      warehouseActions.hidden = true;
+      return;
+    }
+    const total = warehouseItems.reduce((s, it) => s + (Number(it.price) || 0), 0);
+    const rows = warehouseItems.map((it, idx) => {
+      const name = [it.title, it.brand, it.model].filter(Boolean).join(" ");
+      const check = warehouseSelectionMode
+        ? `<td><input type="checkbox" data-idx="${idx}" checked></td>`
+        : "";
+      return (
+        `<tr>${check}` +
+        `<td>${escapeHtml(name) || "—"}</td>` +
+        `<td>${escapeHtml(it.year || "—")}</td>` +
+        `<td>${escapeHtml(conditionLabel(it.condition))}</td>` +
+        `<td class="price-col">${Number(it.price || 0).toLocaleString("ru-RU")} ₽</td>` +
+        `</tr>`
+      );
+    }).join("");
+    const totalCols = warehouseSelectionMode ? 4 : 3;
+    warehouseTableWrap.innerHTML =
+      `<table class="warehouse-table"><thead><tr>` +
+      (warehouseSelectionMode ? "<th></th>" : "") +
+      `<th>Позиция</th><th>Год</th><th>Состояние</th><th class="price-col">Цена</th>` +
+      `</tr></thead><tbody>${rows}` +
+      `<tr class="total-row"><td colspan="${totalCols}">Итого (${warehouseItems.length} поз.)</td>` +
+      `<td class="price-col">${total.toLocaleString("ru-RU")} ₽</td></tr>` +
+      `</tbody></table>`;
+    warehouseActions.hidden = false;
+  }
+
+  const warehouseChatBundle = buildChat("warehouse", {
+    systemPrompt:
+      "Ты помогаешь продавцу опубликовать несколько позиций промышленного пищевого оборудования. " +
+      "Задавай вопросы по одной позиции за раз, кратко и по делу: название, бренд/модель, год выпуска, " +
+      "состояние (new/used/refurbished), желаемая цена в рублях, краткое описание. " +
+      "После каждой позиции спрашивай: 'Добавить ещё одну позицию или закончили?'. " +
+      "В КАЖДОМ своём ответе обязательно поддерживай и обновляй полный список собранных позиций в формате:\n" +
+      "===ITEMS===\n" +
+      '[{"title":"...","brand":"...","model":"...","year":...,"condition":"used","price":...,"category":"...","description":"..."}]\n' +
+      "===END===\n" +
+      "condition должно быть одним из: new, used, refurbished. " +
+      "price — число в рублях (без валюты). year — число или null. " +
+      "Если что-то ещё не уточнено — ставь null." +
+      VISION_PROMPT,
+    greeting:
+      "Соберём список позиций для публикации. Расскажите про первую: что это, бренд, модель, " +
+      "год выпуска, состояние и желаемая цена в рублях.",
+    onAssistantReply: (reply, addMessage) => {
+      const items = extractItems(reply);
+      const cleaned = reply.replace(/===ITEMS===[\s\S]*?===END===/g, "").trim();
+      addMessage("ai", cleaned || reply);
+      if (items) {
+        warehouseItems = items;
+        warehouseSelectionMode = false;
+        warehouseSelectBtn.textContent = "Выбрать позиции";
+        warehousePublishAllBtn.textContent = "Опубликовать всё";
+        renderWarehouseTable();
+      }
+    },
+  });
+
+  function buildListingPayload(item, seller) {
+    const condition = ["new", "used", "refurbished"].includes(item.condition) ? item.condition : "used";
+    const name = [item.title, item.brand, item.model].filter(Boolean).join(" ").trim();
+    return {
+      title: name || "Без названия",
+      description: item.description || name || "—",
+      category: item.category || "Прочее",
+      condition,
+      price: Number(item.price) || 0,
+      currency: "RUB",
+      city: seller.city || null,
+      seller_name: seller.name,
+      seller_email: seller.email,
+      seller_phone: seller.phone || null,
+      photos: [],
+      year: item.year ? Number(item.year) : null,
+      brand: item.brand || null,
+    };
+  }
+
+  async function publishWarehouseItems(items) {
+    if (!warehouseSellerForm.reportValidity()) return;
+    if (!items.length) {
+      alert("Нет позиций для публикации.");
+      return;
+    }
+    const fd = new FormData(warehouseSellerForm);
+    const seller = {
+      name: fd.get("seller_name"),
+      email: fd.get("seller_email"),
+      phone: fd.get("seller_phone") || null,
+      city: fd.get("seller_city") || null,
+    };
+    warehousePublishAllBtn.disabled = true;
+    warehouseSelectBtn.disabled = true;
+    let success = 0;
+    const failures = [];
+    for (const it of items) {
+      const payload = buildListingPayload(it, seller);
+      try {
+        const res = await fetch(`${API_BASE}/listings`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) success += 1;
+        else failures.push(`${payload.title}: HTTP ${res.status}`);
+      } catch (err) {
+        failures.push(`${payload.title}: ${err.message}`);
+      }
+    }
+    warehousePublishAllBtn.disabled = false;
+    warehouseSelectBtn.disabled = false;
+    const summary = `Опубликовано: ${success} из ${items.length}.` +
+      (failures.length ? `\nОшибки:\n${failures.join("\n")}` : "");
+    alert(summary);
+  }
+
+  warehousePublishAllBtn.addEventListener("click", () => {
+    if (warehouseSelectionMode) {
+      const checked = warehouseTableWrap.querySelectorAll("input[type=checkbox]:checked");
+      const indices = Array.from(checked).map((c) => Number(c.dataset.idx));
+      const selected = indices.map((i) => warehouseItems[i]).filter(Boolean);
+      publishWarehouseItems(selected);
+    } else {
+      publishWarehouseItems(warehouseItems);
+    }
+  });
+
+  warehouseSelectBtn.addEventListener("click", () => {
+    warehouseSelectionMode = !warehouseSelectionMode;
+    warehouseSelectBtn.textContent = warehouseSelectionMode ? "Отмена" : "Выбрать позиции";
+    warehousePublishAllBtn.textContent = warehouseSelectionMode ? "Опубликовать выбранные" : "Опубликовать всё";
+    renderWarehouseTable();
   });
 
   // ---------- TAB: Обслуживание ----------
