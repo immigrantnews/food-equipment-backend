@@ -369,12 +369,20 @@
 
     const formData = new FormData(leadForm);
     const firstUserMessage = history.find((m) => m.role === "user");
+    const chatText = history
+      .map((m) => {
+        const label = m.role === "user" ? "Пользователь" : "AI";
+        const content = m.content.replace(LEAD_MARKER, "").trim();
+        return `${label}: ${content}`;
+      })
+      .join("\n");
     const payload = {
       name: formData.get("name"),
       email: formData.get("email"),
       phone: formData.get("phone"),
       city: formData.get("city"),
       message: firstUserMessage ? firstUserMessage.content : "",
+      chat: chatText,
     };
 
     try {

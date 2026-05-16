@@ -11,6 +11,7 @@ class LeadIn(BaseModel):
     city: Optional[str] = Field(None, max_length=100)
     message: Optional[str] = Field(None, max_length=2000)
     source: Optional[str] = Field(None, max_length=100)
+    chat: Optional[str] = Field(None, max_length=50000)
 
 
 class ListingIn(BaseModel):

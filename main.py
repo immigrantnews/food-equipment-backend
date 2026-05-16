@@ -58,6 +58,8 @@ def create_lead(lead: LeadIn):
         fields["City"] = lead.city
     if lead.message is not None:
         fields["Message"] = lead.message
+    if lead.chat:
+        fields["Chat"] = lead.chat
     try:
         rec = at.create_record(at.leads_table(), fields)
     except Exception as e:
