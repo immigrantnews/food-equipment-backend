@@ -1,6 +1,8 @@
 import json
 import logging
+import re
 from typing import Optional
+from urllib.parse import urlparse
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query
@@ -12,6 +14,8 @@ from config import get_settings
 from schemas import (
     ChatIn,
     ChatOut,
+    FetchUrlIn,
+    FetchUrlOut,
     LeadIn,
     ListingIn,
     ListingOut,
@@ -245,3 +249,60 @@ def reseller_analyze(item: ResellerAnalyzeIn):
     except Exception as e:
         logger.exception("reseller analyze failed")
         raise HTTPException(status_code=502, detail=f"AI error: {e}")
+
+
+# ---------- URL fetch (for AI analysis of marketplace listings) ----------
+
+_FETCH_BLOCKED_HOSTS = {"localhost", "127.0.0.1", "0.0.0.0", "::1"}
+_FETCH_TEXT_LIMIT = 10000
+_HTML_ENTITIES = {
+    "&nbsp;": " ",
+    "&amp;": "&",
+    "&lt;": "<",
+    "&gt;": ">",
+    "&quot;": '"',
+    "&#39;": "'",
+    "&apos;": "'",
+}
+
+
+def _strip_html_to_text(html: str) -> str:
+    html = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", html, flags=re.DOTALL | re.IGNORECASE)
+    html = re.sub(r"<br\s*/?>", "\n", html, flags=re.IGNORECASE)
+    html = re.sub(r"</(p|div|h[1-6]|li|tr)>", "\n", html, flags=re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", " ", html)
+    for k, v in _HTML_ENTITIES.items():
+        text = text.replace(k, v)
+    text = re.sub(r"&#(\d+);", lambda m: chr(int(m.group(1))), text)
+    text = re.sub(r"&#x([0-9a-fA-F]+);", lambda m: chr(int(m.group(1), 16)), text)
+    lines = [re.sub(r"[ \t]+", " ", line).strip() for line in text.split("\n")]
+    return "\n".join(line for line in lines if line)
+
+
+@app.post("/fetch-url", response_model=FetchUrlOut)
+def fetch_url(req: FetchUrlIn):
+    parsed = urlparse(req.url)
+    if parsed.scheme not in ("http", "https"):
+        raise HTTPException(status_code=400, detail="Only http/https URLs are allowed")
+    host = (parsed.hostname or "").lower()
+    if host in _FETCH_BLOCKED_HOSTS or host.endswith(".local"):
+        raise HTTPException(status_code=400, detail="Blocked host")
+    try:
+        res = httpx.get(
+            req.url,
+            timeout=10.0,
+            follow_redirects=True,
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
+                "Accept-Language": "ru-RU,ru;q=0.9,en;q=0.8",
+            },
+        )
+        res.raise_for_status()
+    except httpx.HTTPError as e:
+        logger.exception("fetch-url failed")
+        raise HTTPException(status_code=502, detail=f"Fetch failed: {e}")
+    return FetchUrlOut(text=_strip_html_to_text(res.text)[:_FETCH_TEXT_LIMIT])

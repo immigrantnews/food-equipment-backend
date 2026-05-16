@@ -706,15 +706,37 @@
     });
   }
 
+  const FETCHED_RE = /\[FETCHED_PAGE [^\]]*\][\s\S]*?\[\/FETCHED_PAGE\]/g;
+  function stripFetched(text) {
+    return String(text || "").replace(FETCHED_RE, "[ссылка с объявлением]");
+  }
+
   function contentToText(content) {
-    if (typeof content === "string") return content;
+    if (typeof content === "string") return stripFetched(content);
     if (Array.isArray(content)) {
       return content
-        .map((b) => (b.type === "text" ? b.text : "[Фото]"))
+        .map((b) => (b.type === "text" ? stripFetched(b.text) : "[Фото]"))
         .join(" ")
         .trim();
     }
     return "";
+  }
+
+  function extractUrls(text) {
+    return (String(text || "").match(/https?:\/\/[^\s]+/g) || []).map((u) =>
+      u.replace(/[.,;:!?)\]]+$/, "")
+    );
+  }
+
+  async function fetchPageContent(url) {
+    const res = await fetch(`${API_BASE}/fetch-url`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    if (!res.ok) throw new Error("fetch-url " + res.status);
+    const data = await res.json();
+    return data.text || "";
   }
 
   // ---------- Tab switching ----------
@@ -867,20 +889,11 @@
       const photos = photoBucket ? photoBucket.photos.slice() : [];
       if (!text && photos.length === 0) return;
 
+      // Show original user message (URLs visible, not the fetched body)
       if (photos.length > 0) {
         addUserMessageWithPhotos(text, photos);
-        const content = [];
-        for (const p of photos) {
-          content.push({
-            type: "image",
-            source: { type: "base64", media_type: p.mediaType, data: p.data },
-          });
-        }
-        if (text) content.push({ type: "text", text });
-        history.push({ role: "user", content });
       } else {
         addMessage("user", text);
-        history.push({ role: "user", content: text });
       }
 
       inputEl.value = "";
@@ -888,6 +901,43 @@
       if (suggestionsEl) suggestionsEl.style.display = "none";
       sendBtn.disabled = true;
       const typing = addTyping();
+
+      // Detect URLs and fetch content (best-effort; failures fall through silently)
+      let textForApi = text;
+      const urls = extractUrls(text);
+      if (urls.length > 0) {
+        typing.textContent = "Загружаю страницу…";
+        const results = await Promise.all(urls.map(async (u) => {
+          try {
+            return { url: u, text: await fetchPageContent(u) };
+          } catch (e) {
+            return { url: u, text: null };
+          }
+        }));
+        const blocks = results
+          .filter((r) => r.text)
+          .map((r) => `[FETCHED_PAGE url=${r.url}]\n${r.text}\n[/FETCHED_PAGE]`);
+        if (blocks.length > 0) {
+          textForApi = `${text}\n\n${blocks.join("\n\n")}`;
+        }
+        typing.textContent = "печатает…";
+      }
+
+      // Push API-augmented turn to history
+      if (photos.length > 0) {
+        const content = [];
+        for (const p of photos) {
+          content.push({
+            type: "image",
+            source: { type: "base64", media_type: p.mediaType, data: p.data },
+          });
+        }
+        if (textForApi) content.push({ type: "text", text: textForApi });
+        history.push({ role: "user", content });
+      } else {
+        history.push({ role: "user", content: textForApi });
+      }
+
       try {
         const reply = await callClaude({ messages: history, system: systemPrompt });
         history.push({ role: "assistant", content: reply });
@@ -939,13 +989,14 @@
   }
 
   function buildChatTextForLead(history) {
-    return history
+    const text = history
       .map((m) => {
         const label = m.role === "user" ? "Пользователь" : "AI";
-        const text = contentToText(m.content).replace(LEAD_MARKER, "").trim();
-        return `${label}: ${text}`;
+        const t = contentToText(m.content).replace(LEAD_MARKER, "").trim();
+        return `${label}: ${t}`;
       })
       .join("\n");
+    return text.length > 49000 ? text.slice(0, 49000) + "\n…[усечено]" : text;
   }
 
   // ---------- TAB: Найти новое ----------

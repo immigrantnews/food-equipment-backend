@@ -82,6 +82,14 @@ class ResellerAnalyzeOut(BaseModel):
     suggested_actions: list[str]
 
 
+class FetchUrlIn(BaseModel):
+    url: str = Field(..., max_length=2000)
+
+
+class FetchUrlOut(BaseModel):
+    text: str
+
+
 class ListingOut(BaseModel):
     id: str
     title: str
