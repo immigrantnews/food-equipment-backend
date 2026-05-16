@@ -448,22 +448,75 @@
 
   <!-- ========== TAB: Найти новое ========== -->
   <section data-panel="new">
-    <div id="chat-new" class="chat"></div>
-
-    <div class="suggestions" id="suggestions-new">
-      <button data-prompt="Нужно оборудование для производства котлет, объём 200 кг в смену.">Котлеты</button>
-      <button data-prompt="Открываю мини-пекарню, нужно оборудование для хлеба.">Хлеб</button>
-      <button data-prompt="Нужна линия упаковки для пищевых продуктов.">Упаковка</button>
-      <button data-prompt="Подберите оборудование для переработки мяса.">Мясо</button>
+    <div class="mode-switch" id="new-mode-switch">
+      <button type="button" class="active" data-submode="single">📦 Одна позиция</button>
+      <button type="button" data-submode="line">🔗 Собрать линию</button>
+      <button type="button" data-submode="turnkey">🏭 Цех под ключ</button>
     </div>
 
-    <div class="previews" id="previews-new"></div>
-    <form class="composer" id="composer-new" autocomplete="off">
-      <button type="button" class="attach" data-file="file-new" aria-label="Прикрепить фото">📎</button>
-      <input id="file-new" type="file" accept="image/*" multiple hidden>
-      <input id="input-new" type="text" placeholder="Опишите задачу или прикрепите фото…">
-      <button type="submit" class="primary">Отправить</button>
-    </form>
+    <!-- submode 1: single position -->
+    <div id="new-block-single">
+      <div id="chat-new" class="chat"></div>
+
+      <div class="suggestions" id="suggestions-new">
+        <button data-prompt="Нужно оборудование для производства котлет, объём 200 кг в смену.">Котлеты</button>
+        <button data-prompt="Открываю мини-пекарню, нужно оборудование для хлеба.">Хлеб</button>
+        <button data-prompt="Нужна линия упаковки для пищевых продуктов.">Упаковка</button>
+        <button data-prompt="Подберите оборудование для переработки мяса.">Мясо</button>
+      </div>
+
+      <div class="previews" id="previews-new"></div>
+      <form class="composer" id="composer-new" autocomplete="off">
+        <button type="button" class="attach" data-file="file-new" aria-label="Прикрепить фото">📎</button>
+        <input id="file-new" type="file" accept="image/*" multiple hidden>
+        <input id="input-new" type="text" placeholder="Опишите задачу или прикрепите фото…">
+        <button type="submit" class="primary">Отправить</button>
+      </form>
+    </div>
+
+    <!-- submode 2: line -->
+    <div id="new-block-line" hidden>
+      <p class="panel-intro">Соберём производственную линию: подберу агрегаты, цены, на что смотреть при покупке.</p>
+      <div id="chat-new-line" class="chat"></div>
+
+      <div class="suggestions" id="suggestions-new-line">
+        <button data-prompt="Хочу мини-пекарню, 200 кг хлеба в день">Пекарня 200 кг</button>
+        <button data-prompt="Цех котлет, объём 500 кг в смену">Котлеты 500 кг</button>
+        <button data-prompt="Линия упаковки для замороженных продуктов">Упаковка заморозки</button>
+      </div>
+
+      <div class="previews" id="previews-new-line"></div>
+      <form class="composer" id="composer-new-line" autocomplete="off">
+        <button type="button" class="attach" data-file="file-new-line" aria-label="Прикрепить фото">📎</button>
+        <input id="file-new-line" type="file" accept="image/*" multiple hidden>
+        <input id="input-new-line" type="text" placeholder="Что производите и в каком объёме?">
+        <button type="submit" class="primary">Отправить</button>
+      </form>
+
+      <div id="new-line-table"></div>
+    </div>
+
+    <!-- submode 3: turnkey -->
+    <div id="new-block-turnkey" hidden>
+      <p class="panel-intro">Спланируем цех под ключ: список оборудования, обязательное vs желательное, минимальный и оптимальный бюджет.</p>
+      <div id="chat-new-turnkey" class="chat"></div>
+
+      <div class="suggestions" id="suggestions-new-turnkey">
+        <button data-prompt="Цех замороженных полуфабрикатов, 1 тонна в смену">Заморозка 1т</button>
+        <button data-prompt="Мини-завод по производству колбас">Колбасы</button>
+        <button data-prompt="Кондитерский цех, 300 кг продукции в день">Кондитерский 300 кг</button>
+      </div>
+
+      <div class="previews" id="previews-new-turnkey"></div>
+      <form class="composer" id="composer-new-turnkey" autocomplete="off">
+        <button type="button" class="attach" data-file="file-new-turnkey" aria-label="Прикрепить фото">📎</button>
+        <input id="file-new-turnkey" type="file" accept="image/*" multiple hidden>
+        <input id="input-new-turnkey" type="text" placeholder="Что планируете производить?">
+        <button type="submit" class="primary">Отправить</button>
+      </form>
+
+      <div id="new-turnkey-table"></div>
+    </div>
 
     <form class="card" id="lead-form" hidden autocomplete="off" style="margin-top:24px;">
       <h3>Получить КП от поставщиков</h3>
@@ -487,23 +540,76 @@
 
     <!-- self mode -->
     <div id="used-block-self">
-      <p class="panel-intro">Расскажу про рынок б/у: цены, надёжные бренды, риски, на что смотреть.</p>
-      <div id="chat-used" class="chat"></div>
-
-      <div class="suggestions" id="suggestions-used">
-        <button data-prompt="Ищу мясорубку б/у">Мясорубка б/у</button>
-        <button data-prompt="Нужна печь б/у">Печь б/у</button>
-        <button data-prompt="Куттер б/у">Куттер б/у</button>
-        <button data-prompt="Упаковочная линия б/у">Упаковочная линия б/у</button>
+      <div class="mode-switch" id="self-submode-switch">
+        <button type="button" class="active" data-submode="single">📦 Одна позиция</button>
+        <button type="button" data-submode="line">🔗 Собрать линию</button>
+        <button type="button" data-submode="turnkey">🏭 Цех под ключ</button>
       </div>
 
-      <div class="previews" id="previews-used"></div>
-      <form class="composer" id="composer-used" autocomplete="off">
-        <button type="button" class="attach" data-file="file-used" aria-label="Прикрепить фото">📎</button>
-        <input id="file-used" type="file" accept="image/*" multiple hidden>
-        <input id="input-used" type="text" placeholder="Какое оборудование ищете или приложите фото…">
-        <button type="submit" class="primary">Спросить</button>
-      </form>
+      <!-- self submode 1 -->
+      <div id="self-block-single">
+        <p class="panel-intro">Расскажу про рынок б/у: цены, надёжные бренды, риски, на что смотреть.</p>
+        <div id="chat-used" class="chat"></div>
+
+        <div class="suggestions" id="suggestions-used">
+          <button data-prompt="Ищу мясорубку б/у">Мясорубка б/у</button>
+          <button data-prompt="Нужна печь б/у">Печь б/у</button>
+          <button data-prompt="Куттер б/у">Куттер б/у</button>
+          <button data-prompt="Упаковочная линия б/у">Упаковочная линия б/у</button>
+        </div>
+
+        <div class="previews" id="previews-used"></div>
+        <form class="composer" id="composer-used" autocomplete="off">
+          <button type="button" class="attach" data-file="file-used" aria-label="Прикрепить фото">📎</button>
+          <input id="file-used" type="file" accept="image/*" multiple hidden>
+          <input id="input-used" type="text" placeholder="Какое оборудование ищете или приложите фото…">
+          <button type="submit" class="primary">Спросить</button>
+        </form>
+      </div>
+
+      <!-- self submode 2: line -->
+      <div id="self-block-line" hidden>
+        <p class="panel-intro">Соберём линию из б/у оборудования: список агрегатов, цены, на что смотреть при покупке.</p>
+        <div id="chat-self-line" class="chat"></div>
+
+        <div class="suggestions" id="suggestions-self-line">
+          <button data-prompt="Нужна б/у линия для пекарни, 200 кг хлеба в день">Пекарня 200 кг</button>
+          <button data-prompt="Цех котлет на б/у, 500 кг в смену">Котлеты 500 кг</button>
+          <button data-prompt="Линия упаковки заморозки на б/у">Упаковка</button>
+        </div>
+
+        <div class="previews" id="previews-self-line"></div>
+        <form class="composer" id="composer-self-line" autocomplete="off">
+          <button type="button" class="attach" data-file="file-self-line" aria-label="Прикрепить фото">📎</button>
+          <input id="file-self-line" type="file" accept="image/*" multiple hidden>
+          <input id="input-self-line" type="text" placeholder="Что производите и в каком объёме?">
+          <button type="submit" class="primary">Отправить</button>
+        </form>
+
+        <div id="self-line-table"></div>
+      </div>
+
+      <!-- self submode 3: turnkey -->
+      <div id="self-block-turnkey" hidden>
+        <p class="panel-intro">Спланируем цех под ключ: обязательное vs желательное, минимальный и оптимальный бюджет, окупаемость.</p>
+        <div id="chat-self-turnkey" class="chat"></div>
+
+        <div class="suggestions" id="suggestions-self-turnkey">
+          <button data-prompt="Цех замороженных полуфабрикатов, 1 тонна в смену">Заморозка 1т</button>
+          <button data-prompt="Мини-завод по производству колбас">Колбасы</button>
+          <button data-prompt="Кондитерский цех, 300 кг в день">Кондитерский 300 кг</button>
+        </div>
+
+        <div class="previews" id="previews-self-turnkey"></div>
+        <form class="composer" id="composer-self-turnkey" autocomplete="off">
+          <button type="button" class="attach" data-file="file-self-turnkey" aria-label="Прикрепить фото">📎</button>
+          <input id="file-self-turnkey" type="file" accept="image/*" multiple hidden>
+          <input id="input-self-turnkey" type="text" placeholder="Что планируете производить?">
+          <button type="submit" class="primary">Отправить</button>
+        </form>
+
+        <div id="self-turnkey-table"></div>
+      </div>
     </div>
 
     <!-- reseller mode -->
@@ -1100,6 +1206,130 @@
     return text.length > 49000 ? text.slice(0, 49000) + "\n…[усечено]" : text;
   }
 
+  // Shared system prompts for "Собрать линию" and "Цех под ключ" submodes
+  const LINE_SYSTEM =
+    "Помоги собрать производственную линию из б/у оборудования. " +
+    "Спроси что производить и объём. " +
+    "Подбери все необходимые агрегаты. По каждому: название, бренд/модель, " +
+    "примерная цена б/у в рублях, на что смотреть при покупке. " +
+    "Итого: общая стоимость линии и срок окупаемости. " +
+    "В КАЖДОМ ответе обновляй полный список в формате:\n" +
+    "===ITEMS===\n" +
+    '{"items":[{"title":"...","brand":"...","price_used":...,"notes":"..."}],"payback_months":"12-18"}\n' +
+    "===END===\n" +
+    "price_used — число в рублях. notes — короткая фраза на что смотреть.";
+  const TURNKEY_SYSTEM =
+    "Помоги спланировать цех под ключ. " +
+    "Спроси: что производить, объём в смену, бюджет, новое или б/у оборудование. " +
+    "Составь полный список оборудования с ценами в рублях. " +
+    "Раздели на: обязательное (без чего цех не запустится) и желательное (улучшает производство). " +
+    "Итого: минимальный бюджет (только обязательное) и оптимальный (всё). " +
+    "Срок окупаемости при минимальном и оптимальном сценариях. " +
+    "В КАЖДОМ ответе обновляй полный список в формате:\n" +
+    "===ITEMS===\n" +
+    '{"items":[{"title":"...","brand":"...","price":...,"tier":"required"}],"payback_min_months":"10-14","payback_optimal_months":"14-18"}\n' +
+    "===END===\n" +
+    'tier — строго одно из: "required", "desirable".';
+
+  // Factory: chat that builds a list of items + payback for "Собрать линию"
+  function createLineSubmode(panelKey, tableElId, greeting) {
+    const tableEl = document.getElementById(tableElId);
+    const state = { items: [], payback: "" };
+    function render() {
+      if (!state.items.length) { tableEl.innerHTML = ""; return; }
+      const total = state.items.reduce(
+        (s, it) => s + (Number(it.price_used) || Number(it.price) || 0), 0
+      );
+      const rows = state.items.map((it) => {
+        const name = [it.title, it.brand, it.model].filter(Boolean).join(" ");
+        const price = Number(it.price_used) || Number(it.price) || 0;
+        return (
+          `<tr><td>${escapeHtml(name) || "—"}</td>` +
+          `<td class="price-col">${fmtRub(price)}</td>` +
+          `<td>${escapeHtml(it.notes || it.inspect || "—")}</td></tr>`
+        );
+      }).join("");
+      const paybackNote = state.payback ? ` — окупаемость ${escapeHtml(state.payback)} мес` : "";
+      tableEl.innerHTML =
+        `<table class="warehouse-table"><thead><tr>` +
+        `<th>Позиция</th><th class="price-col">Цена</th><th>На что смотреть</th>` +
+        `</tr></thead><tbody>${rows}` +
+        `<tr class="total-row"><td>Итого по линии${paybackNote}</td>` +
+        `<td class="price-col">${fmtRub(total)}</td><td></td></tr>` +
+        `</tbody></table>`;
+    }
+    return buildChat(panelKey, {
+      systemPrompt: LINE_SYSTEM + VISION_PROMPT,
+      greeting,
+      onAssistantReply: (reply, addMessage) => {
+        const parsed = extractItemsBlock(reply);
+        const cleaned = reply.replace(/===ITEMS===[\s\S]*?===END===/g, "").trim();
+        addMessage("ai", cleaned || reply);
+        if (parsed && Array.isArray(parsed.items)) {
+          state.items = parsed.items;
+          if (parsed.payback_months != null) state.payback = String(parsed.payback_months);
+          render();
+        }
+      },
+    });
+  }
+
+  // Factory: chat that produces required/desirable plan for "Цех под ключ"
+  function createTurnkeySubmode(panelKey, tableElId, greeting) {
+    const tableEl = document.getElementById(tableElId);
+    const state = { items: [], paybackMin: "", paybackOpt: "" };
+    function render() {
+      if (!state.items.length) { tableEl.innerHTML = ""; return; }
+      const tierLabel = (t) =>
+        t === "required" ? "Обязательное" : t === "desirable" ? "Желательное" : "—";
+      const order = { required: 0, desirable: 1 };
+      const sorted = state.items.slice().sort(
+        (a, b) => (order[a.tier] ?? 2) - (order[b.tier] ?? 2)
+      );
+      const reqSum = sorted
+        .filter((it) => it.tier === "required")
+        .reduce((s, it) => s + (Number(it.price) || 0), 0);
+      const desSum = sorted
+        .filter((it) => it.tier === "desirable")
+        .reduce((s, it) => s + (Number(it.price) || 0), 0);
+      const rows = sorted.map((it) => {
+        const name = [it.title, it.brand, it.model].filter(Boolean).join(" ");
+        const rowClass = it.tier === "desirable" ? ' class="row-yellow"' : "";
+        return (
+          `<tr${rowClass}><td>${escapeHtml(name) || "—"}</td>` +
+          `<td class="price-col">${fmtRub(it.price)}</td>` +
+          `<td>${escapeHtml(tierLabel(it.tier))}</td></tr>`
+        );
+      }).join("");
+      const minNote = state.paybackMin ? ` — окупаемость ${escapeHtml(state.paybackMin)} мес` : "";
+      const optNote = state.paybackOpt ? ` — окупаемость ${escapeHtml(state.paybackOpt)} мес` : "";
+      tableEl.innerHTML =
+        `<table class="warehouse-table"><thead><tr>` +
+        `<th>Позиция</th><th class="price-col">Цена</th><th>Категория</th>` +
+        `</tr></thead><tbody>${rows}` +
+        `<tr class="total-row"><td>Минимальный бюджет (обязательное)${minNote}</td>` +
+        `<td class="price-col">${fmtRub(reqSum)}</td><td></td></tr>` +
+        `<tr class="total-row"><td>Оптимальный бюджет (с желательным)${optNote}</td>` +
+        `<td class="price-col">${fmtRub(reqSum + desSum)}</td><td></td></tr>` +
+        `</tbody></table>`;
+    }
+    return buildChat(panelKey, {
+      systemPrompt: TURNKEY_SYSTEM + VISION_PROMPT,
+      greeting,
+      onAssistantReply: (reply, addMessage) => {
+        const parsed = extractItemsBlock(reply);
+        const cleaned = reply.replace(/===ITEMS===[\s\S]*?===END===/g, "").trim();
+        addMessage("ai", cleaned || reply);
+        if (parsed && Array.isArray(parsed.items)) {
+          state.items = parsed.items;
+          if (parsed.payback_min_months != null) state.paybackMin = String(parsed.payback_min_months);
+          if (parsed.payback_optimal_months != null) state.paybackOpt = String(parsed.payback_optimal_months);
+          render();
+        }
+      },
+    });
+  }
+
   // ---------- TAB: Найти новое ----------
   const leadForm = document.getElementById("lead-form");
   let leadShown = false;
@@ -1126,12 +1356,48 @@
     },
   });
 
+  const newLineBundle = createLineSubmode(
+    "new-line",
+    "new-line-table",
+    "Соберём производственную линию. Что планируете производить и в каком объёме за смену?"
+  );
+  const newTurnkeyBundle = createTurnkeySubmode(
+    "new-turnkey",
+    "new-turnkey-table",
+    "Спланируем цех под ключ. Что собираетесь производить, какой объём в смену и есть ли ориентир по бюджету?"
+  );
+
+  let activeNewSubmode = "single";
+  const newModeSwitch = document.getElementById("new-mode-switch");
+  const newBlocks = {
+    single: document.getElementById("new-block-single"),
+    line: document.getElementById("new-block-line"),
+    turnkey: document.getElementById("new-block-turnkey"),
+  };
+  newModeSwitch.querySelectorAll("button[data-submode]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const sm = btn.dataset.submode;
+      if (sm === activeNewSubmode) return;
+      activeNewSubmode = sm;
+      newModeSwitch.querySelectorAll("button[data-submode]").forEach((b) => {
+        b.classList.toggle("active", b === btn);
+      });
+      Object.entries(newBlocks).forEach(([k, el]) => { el.hidden = k !== sm; });
+    });
+  });
+
+  function getActiveNewBundle() {
+    if (activeNewSubmode === "line") return newLineBundle;
+    if (activeNewSubmode === "turnkey") return newTurnkeyBundle;
+    return newChatBundle;
+  }
+
   leadForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const submitBtn = leadForm.querySelector("button[type=submit]");
     submitBtn.disabled = true;
     const fd = new FormData(leadForm);
-    const history = newChatBundle.chat.history;
+    const history = getActiveNewBundle().chat.history;
     const firstUser = history.find((m) => m.role === "user");
     const payload = {
       name: fd.get("name"),
@@ -1406,8 +1672,43 @@
     },
   });
 
+  // Self-mode submodes (single / line / turnkey)
+  const selfLineBundle = createLineSubmode(
+    "self-line",
+    "self-line-table",
+    "Соберём линию из б/у оборудования. Что планируете производить и в каком объёме?"
+  );
+  const selfTurnkeyBundle = createTurnkeySubmode(
+    "self-turnkey",
+    "self-turnkey-table",
+    "Спланируем цех под ключ. Что собираетесь производить, какой объём в смену и есть ли ориентир по бюджету?"
+  );
+
+  let activeSelfSubmode = "single";
+  const selfSubmodeSwitch = document.getElementById("self-submode-switch");
+  const selfBlocks = {
+    single: document.getElementById("self-block-single"),
+    line: document.getElementById("self-block-line"),
+    turnkey: document.getElementById("self-block-turnkey"),
+  };
+  selfSubmodeSwitch.querySelectorAll("button[data-submode]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const sm = btn.dataset.submode;
+      if (sm === activeSelfSubmode) return;
+      activeSelfSubmode = sm;
+      selfSubmodeSwitch.querySelectorAll("button[data-submode]").forEach((b) => {
+        b.classList.toggle("active", b === btn);
+      });
+      Object.entries(selfBlocks).forEach(([k, el]) => { el.hidden = k !== sm; });
+    });
+  });
+
   function getActiveUsedChatBundle() {
-    if (activeUsedMode === "self") return usedSelfBundle;
+    if (activeUsedMode === "self") {
+      if (activeSelfSubmode === "line") return selfLineBundle;
+      if (activeSelfSubmode === "turnkey") return selfTurnkeyBundle;
+      return usedSelfBundle;
+    }
     if (activeResellerSubmode === "line") return resellerLineBundle;
     if (activeResellerSubmode === "warehouse") return resellerWarehouseBundle;
     return usedResellerBundle;
