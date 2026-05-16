@@ -401,6 +401,22 @@
     font-weight: 600;
   }
   .warehouse-table .price-col { text-align: right; white-space: nowrap; }
+  .warehouse-table .verdict-cell { font-weight: 500; white-space: nowrap; }
+  .warehouse-table tr.row-green { background: #f0fdf4; }
+  .warehouse-table tr.row-yellow { background: #fefce8; }
+  .warehouse-table tr.row-red { background: #fef2f2; }
+  .warehouse-table .verdict-green { color: #15803d; }
+  .warehouse-table .verdict-yellow { color: #a16207; }
+  .warehouse-table .verdict-red { color: #b91c1c; }
+  .reseller-summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-top: 12px;
+    font-size: 14px;
+    white-space: pre-wrap;
+  }
 
   @media (max-width: 600px) {
     .fields { grid-template-columns: 1fr; }
@@ -492,23 +508,76 @@
 
     <!-- reseller mode -->
     <div id="used-block-reseller" hidden>
-      <p class="panel-intro">Считаю арбитраж: выкуп со скидкой, перепродажа, маржа, сроки оборота.</p>
-      <div id="chat-used-reseller" class="chat"></div>
-
-      <div class="suggestions" id="suggestions-used-reseller">
-        <button data-prompt="Тестомес Прима-300, средний рынок">Тестомес</button>
-        <button data-prompt="Печь Восход ХПЭ-500 б/у">Печь Восход</button>
-        <button data-prompt="Куттер Robot Coupe R45">Куттер R45</button>
-        <button data-prompt="Расстойный шкаф Smeg">Расстойник</button>
+      <div class="mode-switch" id="reseller-submode-switch">
+        <button type="button" class="active" data-submode="single">📦 Одна позиция</button>
+        <button type="button" data-submode="line">🏭 Линия целиком</button>
+        <button type="button" data-submode="warehouse">🗂️ Выбрать из склада</button>
       </div>
 
-      <div class="previews" id="previews-used-reseller"></div>
-      <form class="composer" id="composer-used-reseller" autocomplete="off">
-        <button type="button" class="attach" data-file="file-used-reseller" aria-label="Прикрепить фото">📎</button>
-        <input id="file-used-reseller" type="file" accept="image/*" multiple hidden>
-        <input id="input-used-reseller" type="text" placeholder="Назовите модель — посчитаю маржу">
-        <button type="submit" class="primary">Посчитать</button>
-      </form>
+      <!-- submode 1: single position -->
+      <div id="reseller-block-single">
+        <p class="panel-intro">Считаю арбитраж: выкуп со скидкой, перепродажа, маржа, сроки оборота.</p>
+        <div id="chat-used-reseller" class="chat"></div>
+
+        <div class="suggestions" id="suggestions-used-reseller">
+          <button data-prompt="Тестомес Прима-300, средний рынок">Тестомес</button>
+          <button data-prompt="Печь Восход ХПЭ-500 б/у">Печь Восход</button>
+          <button data-prompt="Куттер Robot Coupe R45">Куттер R45</button>
+          <button data-prompt="Расстойный шкаф Smeg">Расстойник</button>
+        </div>
+
+        <div class="previews" id="previews-used-reseller"></div>
+        <form class="composer" id="composer-used-reseller" autocomplete="off">
+          <button type="button" class="attach" data-file="file-used-reseller" aria-label="Прикрепить фото">📎</button>
+          <input id="file-used-reseller" type="file" accept="image/*" multiple hidden>
+          <input id="input-used-reseller" type="text" placeholder="Назовите модель — посчитаю маржу">
+          <button type="submit" class="primary">Посчитать</button>
+        </form>
+      </div>
+
+      <!-- submode 2: whole line -->
+      <div id="reseller-block-line" hidden>
+        <p class="panel-intro">Расскажите про позиции линии — посчитаю выкуп, продажу, маржу и бонус за комплектность.</p>
+        <div id="chat-reseller-line" class="chat"></div>
+
+        <div class="suggestions" id="suggestions-reseller-line">
+          <button data-prompt="Линия для пекарни: расстойник, тестомес, печь конвекционная">Пекарня</button>
+          <button data-prompt="Линия мясопереработки: куттер, шприц, термокамера">Мясопереработка</button>
+          <button data-prompt="Линия упаковки: дозатор, термоупаковщик, маркировщик">Упаковка</button>
+        </div>
+
+        <div class="previews" id="previews-reseller-line"></div>
+        <form class="composer" id="composer-reseller-line" autocomplete="off">
+          <button type="button" class="attach" data-file="file-reseller-line" aria-label="Прикрепить фото">📎</button>
+          <input id="file-reseller-line" type="file" accept="image/*" multiple hidden>
+          <input id="input-reseller-line" type="text" placeholder="Расскажите про позицию линии…">
+          <button type="submit" class="primary">Отправить</button>
+        </form>
+
+        <div id="reseller-line-table"></div>
+      </div>
+
+      <!-- submode 3: pick from warehouse -->
+      <div id="reseller-block-warehouse" hidden>
+        <p class="panel-intro">Опишите позиции на складе — выделю 🟢 выгодные, 🟡 средние, 🔴 невыгодные.</p>
+        <div id="chat-reseller-warehouse" class="chat"></div>
+
+        <div class="suggestions" id="suggestions-reseller-warehouse">
+          <button data-prompt="На складе: печь Восход 2018, тестомес Прима 2015, два куттера Robot Coupe 2020">Микс</button>
+          <button data-prompt="Б/у пекарское: расстойный шкаф, тестомес, печь конвекционная Unox">Пекарское</button>
+          <button data-prompt="Холодильное оборудование: витрины, лари, моноблоки">Холод</button>
+        </div>
+
+        <div class="previews" id="previews-reseller-warehouse"></div>
+        <form class="composer" id="composer-reseller-warehouse" autocomplete="off">
+          <button type="button" class="attach" data-file="file-reseller-warehouse" aria-label="Прикрепить фото">📎</button>
+          <input id="file-reseller-warehouse" type="file" accept="image/*" multiple hidden>
+          <input id="input-reseller-warehouse" type="text" placeholder="Опишите складские позиции…">
+          <button type="submit" class="primary">Отправить</button>
+        </form>
+
+        <div id="reseller-warehouse-table"></div>
+      </div>
     </div>
 
     <form class="card" id="lead-form-used" hidden autocomplete="off" style="margin-top:24px;">
@@ -1149,12 +1218,207 @@
     });
   });
 
+  // ---------- Reseller submodes (single / line / warehouse-pick) ----------
+  let activeResellerSubmode = "single";
+  const resellerSubmodeSwitch = document.getElementById("reseller-submode-switch");
+  const resellerSubmodeBlocks = {
+    single: document.getElementById("reseller-block-single"),
+    line: document.getElementById("reseller-block-line"),
+    warehouse: document.getElementById("reseller-block-warehouse"),
+  };
+  resellerSubmodeSwitch.querySelectorAll("button[data-submode]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const sm = btn.dataset.submode;
+      if (sm === activeResellerSubmode) return;
+      activeResellerSubmode = sm;
+      resellerSubmodeSwitch.querySelectorAll("button[data-submode]").forEach((b) => {
+        b.classList.toggle("active", b === btn);
+      });
+      Object.entries(resellerSubmodeBlocks).forEach(([k, el]) => { el.hidden = k !== sm; });
+    });
+  });
+
+  function extractItemsBlock(text) {
+    const match = String(text || "").match(/===ITEMS===\s*([\s\S]*?)\s*===END===/);
+    if (!match) return null;
+    try {
+      return JSON.parse(match[1]);
+    } catch (err) {
+      return null;
+    }
+  }
+  const fmtRub = (n) => Number(n || 0).toLocaleString("ru-RU") + " ₽";
+
+  // Submode 2 — Линия целиком
+  const resellerLineTableWrap = document.getElementById("reseller-line-table");
+  let resellerLineItems = [];
+  let resellerLineBonusPct = 20;
+
+  function renderResellerLineTable() {
+    if (!resellerLineItems.length) {
+      resellerLineTableWrap.innerHTML = "";
+      return;
+    }
+    const sumBuy = resellerLineItems.reduce((s, it) => s + (Number(it.buy_price) || 0), 0);
+    const sumSell = resellerLineItems.reduce((s, it) => s + (Number(it.sell_price) || 0), 0);
+    const partsMargin = sumSell - sumBuy;
+    const bonusRub = Math.round(sumSell * resellerLineBonusPct / 100);
+    const totalSell = sumSell + bonusRub;
+    const totalMargin = totalSell - sumBuy;
+    const rows = resellerLineItems.map((it) => {
+      const name = [it.title, it.brand, it.model].filter(Boolean).join(" ");
+      const m = (Number(it.sell_price) || 0) - (Number(it.buy_price) || 0);
+      return (
+        `<tr><td>${escapeHtml(name) || "—"}</td>` +
+        `<td class="price-col">${fmtRub(it.buy_price)}</td>` +
+        `<td class="price-col">${fmtRub(it.sell_price)}</td>` +
+        `<td class="price-col">${fmtRub(m)}</td></tr>`
+      );
+    }).join("");
+    resellerLineTableWrap.innerHTML =
+      `<table class="warehouse-table"><thead><tr>` +
+      `<th>Позиция</th><th class="price-col">Выкуп</th><th class="price-col">Продажа</th><th class="price-col">Маржа</th>` +
+      `</tr></thead><tbody>${rows}` +
+      `<tr class="total-row"><td>Сумма частей</td>` +
+      `<td class="price-col">${fmtRub(sumBuy)}</td>` +
+      `<td class="price-col">${fmtRub(sumSell)}</td>` +
+      `<td class="price-col">${fmtRub(partsMargin)}</td></tr>` +
+      `<tr class="total-row"><td>Бонус за комплектность +${resellerLineBonusPct}%</td>` +
+      `<td class="price-col">—</td>` +
+      `<td class="price-col">+${fmtRub(bonusRub)}</td>` +
+      `<td class="price-col">+${fmtRub(bonusRub)}</td></tr>` +
+      `<tr class="total-row"><td>Итого по линии</td>` +
+      `<td class="price-col">${fmtRub(sumBuy)}</td>` +
+      `<td class="price-col">${fmtRub(totalSell)}</td>` +
+      `<td class="price-col">${fmtRub(totalMargin)}</td></tr>` +
+      `</tbody></table>`;
+  }
+
+  const resellerLineBundle = buildChat("reseller-line", {
+    systemPrompt:
+      "Ты помогаешь перекупщику промышленного пищевого оборудования оценить целую линию для арбитража. " +
+      "Спрашивай о позициях линии по одной (название, бренд/модель, состояние, год). " +
+      "По каждой позиции считай buy_price (выкуп со скидкой 30-40% от рынка) " +
+      "и sell_price (цена перепродажи) в рублях. " +
+      "Учитывай что линия целиком продаётся дороже суммы частей — обычно +15-25% (line_bonus_pct). " +
+      "В КАЖДОМ ответе обновляй полный список в формате:\n" +
+      "===ITEMS===\n" +
+      '{"items":[{"title":"...","brand":"...","buy_price":...,"sell_price":...}],"line_bonus_pct":20}\n' +
+      "===END===\n" +
+      "После сбора 2-3+ позиций спрашивай готов ли пользователь увидеть итоги или добавить ещё." +
+      VISION_PROMPT,
+    greeting:
+      "Расскажите про первую позицию линии: что это, бренд/модель, состояние. " +
+      "Соберу таблицу с маржей и бонусом за комплектность.",
+    onAssistantReply: (reply, addMessage) => {
+      const parsed = extractItemsBlock(reply);
+      const cleaned = reply.replace(/===ITEMS===[\s\S]*?===END===/g, "").trim();
+      addMessage("ai", cleaned || reply);
+      if (parsed && Array.isArray(parsed.items)) {
+        resellerLineItems = parsed.items;
+        if (Number.isFinite(Number(parsed.line_bonus_pct))) {
+          resellerLineBonusPct = Number(parsed.line_bonus_pct);
+        }
+        renderResellerLineTable();
+      }
+    },
+  });
+
+  // Submode 3 — Выбрать из склада
+  const resellerPickTableWrap = document.getElementById("reseller-warehouse-table");
+  let resellerPickItems = [];
+  const VERDICT_LABEL = { green: "🟢 Выгодно", yellow: "🟡 Средне", red: "🔴 Невыгодно" };
+  const verdictKey = (v) => {
+    const x = String(v || "").toLowerCase();
+    return x === "green" || x === "yellow" || x === "red" ? x : "yellow";
+  };
+
+  function renderResellerPickTable() {
+    if (!resellerPickItems.length) {
+      resellerPickTableWrap.innerHTML = "";
+      return;
+    }
+    const order = { green: 0, yellow: 1, red: 2 };
+    const sorted = resellerPickItems.slice().sort(
+      (a, b) => order[verdictKey(a.verdict)] - order[verdictKey(b.verdict)]
+    );
+    const rows = sorted.map((it) => {
+      const v = verdictKey(it.verdict);
+      const name = [it.title, it.brand, it.model].filter(Boolean).join(" ");
+      const buy = Number(it.buy_price) || 0;
+      const sell = Number(it.sell_price) || 0;
+      const m = sell - buy;
+      const mp = it.margin_pct != null ? Math.round(Number(it.margin_pct)) :
+        (buy ? Math.round((m / buy) * 100) : 0);
+      return (
+        `<tr class="row-${v}"><td>${escapeHtml(name) || "—"}</td>` +
+        `<td class="price-col">${fmtRub(buy)}</td>` +
+        `<td class="price-col">${fmtRub(sell)}</td>` +
+        `<td class="price-col">${fmtRub(m)}</td>` +
+        `<td class="price-col">${mp}%</td>` +
+        `<td class="verdict-cell verdict-${v}">${VERDICT_LABEL[v]}</td></tr>`
+      );
+    }).join("");
+    const greens = sorted.filter((it) => verdictKey(it.verdict) === "green");
+    const greenBuy = greens.reduce((s, it) => s + (Number(it.buy_price) || 0), 0);
+    const greenSell = greens.reduce((s, it) => s + (Number(it.sell_price) || 0), 0);
+    const greenMargin = greenSell - greenBuy;
+    resellerPickTableWrap.innerHTML =
+      `<table class="warehouse-table"><thead><tr>` +
+      `<th>Позиция</th><th class="price-col">Выкуп</th><th class="price-col">Продажа</th>` +
+      `<th class="price-col">Маржа</th><th class="price-col">%</th><th>Вердикт</th>` +
+      `</tr></thead><tbody>${rows}` +
+      (greens.length
+        ? `<tr class="total-row"><td>Итого 🟢 (брать, ${greens.length} поз.)</td>` +
+          `<td class="price-col">${fmtRub(greenBuy)}</td>` +
+          `<td class="price-col">${fmtRub(greenSell)}</td>` +
+          `<td class="price-col">${fmtRub(greenMargin)}</td>` +
+          `<td class="price-col">${greenBuy ? Math.round((greenMargin / greenBuy) * 100) : 0}%</td>` +
+          `<td></td></tr>`
+        : "") +
+      `</tbody></table>`;
+  }
+
+  const resellerWarehouseBundle = buildChat("reseller-warehouse", {
+    systemPrompt:
+      "Ты помогаешь перекупщику просеять складские позиции на предмет арбитража. " +
+      "Пользователь описывает что есть на складе. По каждой позиции рассчитай: " +
+      "buy_price (выкуп со скидкой 30-40% от рынка) и sell_price (цена перепродажи) в рублях, " +
+      "margin_pct (маржа в %), verdict (green если маржа >30% и быстро продаётся, " +
+      "yellow если 15-30%, red если <15% или долго продаётся) и короткое reason. " +
+      "В КАЖДОМ ответе обновляй полный список в формате:\n" +
+      "===ITEMS===\n" +
+      '[{"title":"...","brand":"...","buy_price":...,"sell_price":...,"margin_pct":...,"verdict":"green","reason":"..."}]\n' +
+      "===END===\n" +
+      "verdict — строго одно из: green, yellow, red. " +
+      "Под таблицей кратко резюмируй: что брать, сколько потратить и сколько заработать." +
+      VISION_PROMPT,
+    greeting:
+      "Опишите позиции на складе — пройдусь по каждой и помечу 🟢 выгодные / 🟡 средние / 🔴 невыгодные.",
+    onAssistantReply: (reply, addMessage) => {
+      const parsed = extractItemsBlock(reply);
+      const cleaned = reply.replace(/===ITEMS===[\s\S]*?===END===/g, "").trim();
+      addMessage("ai", cleaned || reply);
+      if (Array.isArray(parsed)) {
+        resellerPickItems = parsed;
+        renderResellerPickTable();
+      }
+    },
+  });
+
+  function getActiveUsedChatBundle() {
+    if (activeUsedMode === "self") return usedSelfBundle;
+    if (activeResellerSubmode === "line") return resellerLineBundle;
+    if (activeResellerSubmode === "warehouse") return resellerWarehouseBundle;
+    return usedResellerBundle;
+  }
+
   usedLeadForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const submitBtn = usedLeadForm.querySelector("button[type=submit]");
     submitBtn.disabled = true;
     const fd = new FormData(usedLeadForm);
-    const bundle = activeUsedMode === "reseller" ? usedResellerBundle : usedSelfBundle;
+    const bundle = getActiveUsedChatBundle();
     const history = bundle.chat.history;
     const firstUser = history.find((m) => m.role === "user");
     const payload = {
