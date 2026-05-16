@@ -52,6 +52,12 @@ def create_lead(lead: LeadIn):
         "Email": lead.email,
         "Source": "website",
     }
+    if lead.phone is not None:
+        fields["Phone"] = lead.phone
+    if lead.city is not None:
+        fields["City"] = lead.city
+    if lead.message is not None:
+        fields["Message"] = lead.message
     try:
         rec = at.create_record(at.leads_table(), fields)
     except Exception as e:
