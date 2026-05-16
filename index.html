@@ -423,6 +423,125 @@
     .msg { max-width: 100%; }
     .msg .msg-photo { max-width: 160px; }
   }
+
+  /* ---------- New navigation (home → category → chat) ---------- */
+  nav.tabs { display: none; }
+  .mode-switch { display: none; }
+
+  .home-screen h1 {
+    margin: 4px 0 4px;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .home-screen p.lead {
+    margin: 0 0 22px;
+    color: var(--muted);
+    font-size: 15px;
+  }
+  .home-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .home-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 20px;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s, transform .1s;
+    font: inherit;
+    color: inherit;
+    display: block;
+    width: 100%;
+  }
+  .home-card:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow);
+  }
+  .home-card:active { transform: scale(0.99); }
+  .home-card .icon {
+    display: block;
+    font-size: 34px;
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+  .home-card .label {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .home-card .desc {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .category-screen h2 {
+    margin: 0 0 14px;
+    font-size: 20px;
+    font-weight: 600;
+  }
+  .category-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .category-buttons button {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color .15s, color .15s, transform .1s;
+    color: var(--text);
+  }
+  .category-buttons button:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .category-buttons button:active { transform: scale(0.99); }
+  .category-buttons button .sub {
+    display: block;
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 400;
+    margin-top: 4px;
+  }
+
+  .back-link {
+    background: transparent;
+    border: 0;
+    padding: 8px 0;
+    font: inherit;
+    font-size: 14px;
+    color: var(--muted);
+    cursor: pointer;
+    margin-bottom: 4px;
+    align-self: flex-start;
+  }
+  .back-link:hover { color: var(--text); }
+
+  section[data-screen]:not([hidden]),
+  section[data-panel]:not([hidden]) {
+    animation: screenFadeIn 0.18s ease-out;
+  }
+  @keyframes screenFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 600px) {
+    .home-cards { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
@@ -434,20 +553,75 @@
   </div>
 </header>
 
-<nav class="tabs">
-  <div class="wrap">
-    <button class="tab active" data-tab="new">🔍 Найти новое</button>
-    <button class="tab" data-tab="used">♻️ Купить б/у</button>
-    <button class="tab" data-tab="sell">📦 Продать</button>
-    <button class="tab" data-tab="service">🔧 Обслуживание</button>
-    <button class="tab" data-tab="parts">⚙️ Запчасти</button>
-  </div>
-</nav>
-
 <main>
+  <button type="button" id="back-button" class="back-link" hidden>← Назад</button>
 
-  <!-- ========== TAB: Найти новое ========== -->
-  <section data-panel="new">
+  <!-- ========== Home screen ========== -->
+  <section class="home-screen" data-screen="home">
+    <p class="lead">Выберите, что вы хотите сделать:</p>
+    <div class="home-cards">
+      <button class="home-card" type="button" data-go-screen="category-buy">
+        <span class="icon">🛒</span>
+        <span class="label">Купить оборудование</span>
+        <span class="desc">Новое или б/у — подберём и рассчитаем окупаемость</span>
+      </button>
+      <button class="home-card" type="button" data-go-screen="category-sell">
+        <span class="icon">📦</span>
+        <span class="label">Продать оборудование</span>
+        <span class="desc">Оценим стоимость, поможем разместить объявление</span>
+      </button>
+      <button class="home-card" type="button" data-go-screen="category-service">
+        <span class="icon">🔧</span>
+        <span class="label">Обслуживание и ремонт</span>
+        <span class="desc">Диагностика неисправностей и подбор запчастей</span>
+      </button>
+      <button class="home-card" type="button" data-go-screen="category-reseller">
+        <span class="icon">💼</span>
+        <span class="label">Я перекупщик</span>
+        <span class="desc">Расчёт выкупа, маржи и потенциала перепродажи</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ========== Category screens ========== -->
+  <section class="category-screen" data-screen="category-buy" hidden>
+    <h2>🛒 Купить оборудование</h2>
+    <div class="category-buttons">
+      <button type="button" data-go-screen="chat-buy-new">Новое<span class="sub">Подбор новых моделей под задачу и объём</span></button>
+      <button type="button" data-go-screen="chat-buy-used">Б/у<span class="sub">Цены на рынке, надёжные бренды, риски</span></button>
+      <button type="button" data-go-screen="chat-buy-turnkey">Цех под ключ<span class="sub">Полный план: обязательное и желательное</span></button>
+    </div>
+  </section>
+
+  <section class="category-screen" data-screen="category-sell" hidden>
+    <h2>📦 Продать оборудование</h2>
+    <div class="category-buttons">
+      <button type="button" data-go-screen="chat-sell-single">Одна позиция<span class="sub">Оценка + публикация одного объявления</span></button>
+      <button type="button" data-go-screen="chat-sell-warehouse">Несколько позиций / склад<span class="sub">AI соберёт список и опубликует всё сразу</span></button>
+    </div>
+  </section>
+
+  <section class="category-screen" data-screen="category-service" hidden>
+    <h2>🔧 Обслуживание и ремонт</h2>
+    <div class="category-buttons">
+      <button type="button" data-go-screen="chat-service">Диагностика<span class="sub">Причины поломки и решения</span></button>
+      <button type="button" data-go-screen="chat-parts">Запчасти<span class="sub">Подбор детали под модель</span></button>
+    </div>
+  </section>
+
+  <section class="category-screen" data-screen="category-reseller" hidden>
+    <h2>💼 Я перекупщик</h2>
+    <div class="category-buttons">
+      <button type="button" data-go-screen="chat-reseller-single">Одна позиция<span class="sub">Выкуп, маржа, срок оборота, риски</span></button>
+      <button type="button" data-go-screen="chat-reseller-line">Линия<span class="sub">Список позиций линии + бонус за комплектность</span></button>
+      <button type="button" data-go-screen="chat-reseller-warehouse">Выбрать из склада<span class="sub">🟢 / 🟡 / 🔴 по марже и обороту</span></button>
+    </div>
+  </section>
+
+  <!-- ========== Chat panels (shown via navigation) ========== -->
+
+  <!-- Panel: новое оборудование -->
+  <section data-panel="new" hidden>
     <div class="mode-switch" id="new-mode-switch">
       <button type="button" class="active" data-submode="single">📦 Одна позиция</button>
       <button type="button" data-submode="line">🔗 Собрать линию</button>
@@ -928,15 +1102,73 @@
     return data.text || "";
   }
 
-  // ---------- Tab switching ----------
-  const tabButtons = document.querySelectorAll("nav.tabs .tab");
-  const panels = document.querySelectorAll("section[data-panel]");
-  tabButtons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const target = btn.dataset.tab;
-      tabButtons.forEach((b) => b.classList.toggle("active", b === btn));
-      panels.forEach((p) => { p.hidden = p.dataset.panel !== target; });
+  // ---------- Navigation (home → category → chat) ----------
+  const backBtn = document.getElementById("back-button");
+
+  const CHAT_CONFIG = {
+    "chat-buy-new":            { panel: "new",     newSubmode: "single",                                     category: "buy" },
+    "chat-buy-used":           { panel: "used",    usedMode: "self",     selfSubmode: "single",              category: "buy" },
+    "chat-buy-turnkey":        { panel: "new",     newSubmode: "turnkey",                                    category: "buy" },
+    "chat-sell-single":        { panel: "sell",    sellMode: "single",                                       category: "sell" },
+    "chat-sell-warehouse":     { panel: "sell",    sellMode: "warehouse",                                    category: "sell" },
+    "chat-service":            { panel: "service",                                                           category: "service" },
+    "chat-parts":              { panel: "parts",                                                             category: "service" },
+    "chat-reseller-single":    { panel: "used",    usedMode: "reseller", resellerSubmode: "single",          category: "reseller" },
+    "chat-reseller-line":      { panel: "used",    usedMode: "reseller", resellerSubmode: "line",            category: "reseller" },
+    "chat-reseller-warehouse": { panel: "used",    usedMode: "reseller", resellerSubmode: "warehouse",       category: "reseller" },
+  };
+
+  function _setBlocks(map, active) {
+    Object.entries(map).forEach(([k, el]) => { if (el) el.hidden = k !== active; });
+  }
+  function setUsedMode(mode) { activeUsedMode = mode; _setBlocks(usedBlocks, mode); }
+  function setSelfSubmode(sm) { activeSelfSubmode = sm; _setBlocks(selfBlocks, sm); }
+  function setResellerSubmode(sm) { activeResellerSubmode = sm; _setBlocks(resellerSubmodeBlocks, sm); }
+  function setNewSubmode(sm) { activeNewSubmode = sm; _setBlocks(newBlocks, sm); }
+  function setSellMode(m) { activeSellMode = m; _setBlocks(sellBlocks, m); }
+
+  function navigate(target) {
+    document.querySelectorAll("section[data-screen], section[data-panel]").forEach((el) => {
+      el.hidden = true;
     });
+
+    if (target === "home") {
+      document.querySelector('section[data-screen="home"]').hidden = false;
+      backBtn.hidden = true;
+      return;
+    }
+
+    if (target.startsWith("category-")) {
+      const el = document.querySelector(`section[data-screen="${target}"]`);
+      if (el) el.hidden = false;
+      backBtn.hidden = false;
+      backBtn.dataset.target = "home";
+      return;
+    }
+
+    const config = CHAT_CONFIG[target];
+    if (!config) { navigate("home"); return; }
+    const panelEl = document.querySelector(`section[data-panel="${config.panel}"]`);
+    if (panelEl) panelEl.hidden = false;
+    if (config.usedMode) setUsedMode(config.usedMode);
+    if (config.selfSubmode) setSelfSubmode(config.selfSubmode);
+    if (config.newSubmode) setNewSubmode(config.newSubmode);
+    if (config.resellerSubmode) setResellerSubmode(config.resellerSubmode);
+    if (config.sellMode) setSellMode(config.sellMode);
+    backBtn.hidden = false;
+    backBtn.dataset.target = "category-" + config.category;
+  }
+
+  document.addEventListener("click", (e) => {
+    const goBtn = e.target.closest("[data-go-screen]");
+    if (!goBtn) return;
+    navigate(goBtn.dataset.goScreen);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  backBtn.addEventListener("click", () => {
+    navigate(backBtn.dataset.target || "home");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
   // ---------- Global file-attach button delegate ----------
