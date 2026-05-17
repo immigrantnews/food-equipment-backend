@@ -110,8 +110,31 @@
     flex-direction: column;
     gap: 10px;
   }
+  .msg-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    max-width: 92%;
+  }
+  .msg-row.ai { align-self: flex-start; }
+  .msg-row.user { align-self: flex-end; }
+  .msg-row .avatar {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--ai-bg);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    line-height: 1;
+  }
+  .msg-row.user .avatar {
+    background: rgba(31, 111, 235, 0.12);
+  }
   .msg {
-    max-width: 85%;
+    max-width: 100%;
     padding: 10px 14px;
     border-radius: 12px;
     font-size: 15px;
@@ -119,13 +142,11 @@
     word-wrap: break-word;
   }
   .msg.user {
-    align-self: flex-end;
     background: var(--user-bg);
     color: var(--user-fg);
     border-bottom-right-radius: 4px;
   }
   .msg.ai {
-    align-self: flex-start;
     background: var(--ai-bg);
     color: var(--ai-fg);
     border-bottom-left-radius: 4px;
@@ -136,6 +157,73 @@
     color: #9f1239;
     border: 1px solid #fecdd3;
     font-size: 13px;
+  }
+
+  .specialist-link {
+    background: transparent;
+    border: 0;
+    padding: 10px 4px;
+    margin-top: 6px;
+    font: inherit;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    text-align: center;
+    display: block;
+    width: 100%;
+    transition: color .15s;
+  }
+  .specialist-link:hover { color: var(--accent); }
+  .specialist-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-top: 10px;
+    box-shadow: var(--shadow);
+  }
+  .specialist-form h4 {
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .specialist-form p.sub {
+    margin: 0 0 14px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .specialist-form .time-options {
+    display: flex;
+    gap: 8px;
+    margin: 4px 0 14px;
+  }
+  .specialist-form .time-options label {
+    flex: 1;
+    cursor: pointer;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-align: center;
+    font-size: 14px;
+    background: var(--surface);
+    transition: border-color .15s, background .15s, color .15s;
+  }
+  .specialist-form .time-options input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .specialist-form .time-options label:has(input:checked) {
+    border-color: var(--accent);
+    background: #eff6ff;
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .specialist-form .success {
+    text-align: center;
+    padding: 14px 0;
+    color: var(--text);
+    font-size: 14px;
   }
   .msg .msg-photo {
     display: block;
@@ -747,10 +835,10 @@
       <div id="chat-new" class="chat"></div>
 
       <div class="suggestions" id="suggestions-new">
-        <button data-prompt="Нужно оборудование для производства котлет, объём 200 кг в смену.">Котлеты</button>
-        <button data-prompt="Открываю мини-пекарню, нужно оборудование для хлеба.">Хлеб</button>
-        <button data-prompt="Нужна линия упаковки для пищевых продуктов.">Упаковка</button>
-        <button data-prompt="Подберите оборудование для переработки мяса.">Мясо</button>
+        <button data-prompt="Хочу производить котлеты">Хочу производить котлеты</button>
+        <button data-prompt="Нужна печь для хлеба">Нужна печь для хлеба</button>
+        <button data-prompt="Автоматизировать упаковку">Автоматизировать упаковку</button>
+        <button data-prompt="Расширить мясопереработку">Расширить мясопереработку</button>
       </div>
 
       <div class="previews" id="previews-new"></div>
@@ -1373,43 +1461,63 @@
   }
 
   // ---------- Reusable chat UI ----------
-  function createChat({ chatEl, composerEl, inputEl, suggestionsEl, photoBucket, systemPrompt, greeting, onAssistantReply }) {
+  function createChat({ chatEl, composerEl, inputEl, suggestionsEl, photoBucket, systemPrompt, greeting, onAssistantReply, showSpecialistLink = true }) {
     const history = [];
     const sendBtn = composerEl.querySelector("button[type=submit]");
 
+    function buildRow(role, bubble) {
+      const row = document.createElement("div");
+      row.className = "msg-row " + role;
+      const avatar = document.createElement("span");
+      avatar.className = "avatar";
+      avatar.textContent = role === "user" ? "👤" : "🤖";
+      if (role === "user") {
+        row.appendChild(bubble);
+        row.appendChild(avatar);
+      } else {
+        row.appendChild(avatar);
+        row.appendChild(bubble);
+      }
+      return row;
+    }
+
     function addMessage(role, text) {
-      const el = document.createElement("div");
-      el.className = "msg " + role;
-      el.textContent = text;
-      chatEl.appendChild(el);
+      const bubble = document.createElement("div");
+      bubble.className = "msg " + role;
+      bubble.textContent = text;
+      const row = buildRow(role, bubble);
+      chatEl.appendChild(row);
       chatEl.scrollTop = chatEl.scrollHeight;
-      return el;
+      return bubble;
     }
     function addUserMessageWithPhotos(text, photos) {
-      const el = document.createElement("div");
-      el.className = "msg user";
+      const bubble = document.createElement("div");
+      bubble.className = "msg user";
       photos.forEach((p) => {
         const img = document.createElement("img");
         img.className = "msg-photo";
         img.src = p.dataUrl;
         img.alt = "";
-        el.appendChild(img);
+        bubble.appendChild(img);
       });
       if (text) {
         const t = document.createElement("div");
         t.textContent = text;
-        el.appendChild(t);
+        bubble.appendChild(t);
       }
-      chatEl.appendChild(el);
+      chatEl.appendChild(buildRow("user", bubble));
       chatEl.scrollTop = chatEl.scrollHeight;
     }
     function addTyping() {
-      const el = document.createElement("div");
-      el.className = "msg ai typing";
-      el.textContent = "печатает…";
-      chatEl.appendChild(el);
+      const bubble = document.createElement("div");
+      bubble.className = "msg ai typing";
+      bubble.textContent = "печатает…";
+      const row = buildRow("ai", bubble);
+      chatEl.appendChild(row);
       chatEl.scrollTop = chatEl.scrollHeight;
-      return el;
+      // .remove() removes the whole row; .textContent still updates the bubble naturally
+      bubble.remove = function () { row.remove(); };
+      return bubble;
     }
     function addError(text) {
       const el = document.createElement("div");
@@ -1518,6 +1626,73 @@
       });
     }
     if (greeting) addMessage("ai", greeting);
+
+    if (showSpecialistLink && composerEl.parentNode) {
+      const link = document.createElement("button");
+      link.type = "button";
+      link.className = "specialist-link";
+      link.textContent = "Нужен живой специалист? →";
+
+      const form = document.createElement("form");
+      form.className = "specialist-form";
+      form.hidden = true;
+      form.innerHTML =
+        '<h4>Запросить звонок специалиста</h4>' +
+        '<p class="sub">Свяжемся в указанное удобное время.</p>' +
+        '<div class="fields">' +
+          '<input name="name" type="text" placeholder="Имя" required>' +
+          '<input name="phone" type="tel" placeholder="Телефон" required>' +
+        '</div>' +
+        '<div class="time-options">' +
+          '<label><input type="radio" name="time" value="утро" required><span>Утро</span></label>' +
+          '<label><input type="radio" name="time" value="день"><span>День</span></label>' +
+          '<label><input type="radio" name="time" value="вечер"><span>Вечер</span></label>' +
+        '</div>' +
+        '<button type="submit" class="primary" style="width:100%;">Запросить звонок</button>';
+
+      link.addEventListener("click", () => {
+        form.hidden = !form.hidden;
+        if (!form.hidden) {
+          form.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          const nameInput = form.querySelector('input[name="name"]');
+          if (nameInput) nameInput.focus();
+        }
+      });
+
+      let specialistSubmitted = false;
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (specialistSubmitted) return;
+        const submitBtn = form.querySelector("button[type=submit]");
+        submitBtn.disabled = true;
+        const fd = new FormData(form);
+        const time = fd.get("time");
+        const payload = {
+          name: fd.get("name"),
+          phone: fd.get("phone"),
+          message: `Запрос звонка специалиста. Удобное время: ${time}`,
+          chat: buildChatTextForLead(history),
+          source: "specialist_request",
+        };
+        try {
+          const res = await fetch(`${API_BASE}/leads`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) throw new Error("Server " + res.status);
+          specialistSubmitted = true;
+          form.innerHTML = '<div class="success">Специалист свяжется с вами в указанное время 🤝</div>';
+          link.hidden = true;
+        } catch (err) {
+          submitBtn.disabled = false;
+          alert("Не удалось отправить запрос. " + err.message);
+        }
+      });
+
+      composerEl.insertAdjacentElement("afterend", link);
+      link.insertAdjacentElement("afterend", form);
+    }
 
     return { history, addMessage, sendUserMessage };
   }

@@ -57,10 +57,11 @@ def _notify_telegram(lead: LeadIn) -> None:
     text = (
         "🔔 Новый лид!\n"
         f"Имя: {lead.name}\n"
-        f"Email: {lead.email}\n"
+        f"Email: {lead.email or '—'}\n"
         f"Телефон: {lead.phone or '—'}\n"
         f"Город: {lead.city or '—'}\n"
-        f"Сообщение: {lead.message or '—'}"
+        f"Сообщение: {lead.message or '—'}\n"
+        f"Источник: {lead.source or 'website'}"
     )
     try:
         httpx.post(
@@ -77,7 +78,7 @@ def create_lead(lead: LeadIn):
     fields = {
         "Name": lead.name,
         "Email": lead.email,
-        "Source": "website",
+        "Source": lead.source or "website",
     }
     if lead.phone is not None:
         fields["Phone"] = lead.phone

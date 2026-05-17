@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 class LeadIn(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
-    email: EmailStr
+    email: Optional[EmailStr] = None
     phone: Optional[str] = Field(None, max_length=50)
     equipment_type: Optional[str] = Field(None, max_length=200)
     budget: Optional[float] = Field(None, ge=0)
