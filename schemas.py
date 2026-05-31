@@ -82,6 +82,27 @@ class ResellerAnalyzeOut(BaseModel):
     suggested_actions: list[str]
 
 
+class AvitoEvalIn(BaseModel):
+    title: str
+    price: int
+    region: str = ""
+    description: str = ""
+
+
+class AvitoEvalOut(BaseModel):
+    category: str
+    brand: Optional[str] = None
+    model: Optional[str] = None
+    market_min: int
+    market_max: int
+    verdict: str  # green / yellow / red / flash
+    reseller_margin: int
+    turnover_days: str
+    demand: str  # high / medium / low
+    comment: str
+    data_source: str = "ai"
+
+
 class FetchUrlIn(BaseModel):
     url: str = Field(..., max_length=2000)
 

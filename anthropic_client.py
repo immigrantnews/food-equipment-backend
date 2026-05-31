@@ -84,3 +84,45 @@ def analyze_for_reseller(item: ResellerAnalyzeIn) -> ResellerAnalyzeOut:
         text = text.strip()
     data = json.loads(text)
     return ResellerAnalyzeOut(**data)
+
+
+AVITO_EVAL_SYSTEM = """Ты эксперт по рынку б/у пищевого оборудования России.
+Тебе дают данные объявления с Авито.
+Верни ТОЛЬКО валидный JSON без markdown и комментариев:
+{
+  "category": "тип оборудования на русском",
+  "brand": "бренд или null",
+  "model": "модель или null",
+  "market_min": минимальная рыночная цена в рублях,
+  "market_max": максимальная рыночная цена в рублях,
+  "verdict": "green/yellow/red/flash",
+  "reseller_margin": потенциальная прибыль перекупщика в рублях,
+  "turnover_days": "X-Y дней",
+  "demand": "high/medium/low",
+  "comment": "одно предложение совет перекупщику"
+}
+Вердикт:
+- flash = цена ниже рынка более чем на 35%
+- green = цена ниже рынка на 15-35%
+- yellow = цена в рынке ±15%
+- red = цена выше рынка более чем на 15%
+Категории: тестомес, ротационная печь, подовая печь, расстойный шкаф,
+тестораскаточная машина, делитель-округлитель, миксер планетарный,
+просеиватель, холодильное оборудование, мясорубка, слайсер, фритюрница."""
+
+
+def evaluate_avito_listing(title: str, price: int, region: str, description: str) -> dict:
+    user_msg = f"Заголовок: {title}\nЦена: {price} ₽\nРегион: {region}\nОписание: {description[:300]}"
+    resp = _client().messages.create(
+        model=get_settings().anthropic_model,
+        max_tokens=500,
+        system=AVITO_EVAL_SYSTEM,
+        messages=[{"role": "user", "content": user_msg}],
+    )
+    text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text").strip()
+    if text.startswith("```"):
+        text = text.strip("`")
+        if text.startswith("json"):
+            text = text[4:]
+        text = text.strip()
+    return json.loads(text)

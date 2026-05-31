@@ -12,6 +12,8 @@ import airtable_client as at
 import anthropic_client as ai
 from config import get_settings
 from schemas import (
+    AvitoEvalIn,
+    AvitoEvalOut,
     ChatIn,
     ChatOut,
     FetchUrlIn,
@@ -32,6 +34,9 @@ app = FastAPI(title="Food Equipment API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().cors_origins_list,
+    # chrome-extension://* is a wildcard, so it must be matched via regex
+    # (allow_origins only does exact string matching).
+    allow_origin_regex=r"^(chrome-extension://.*|https://(.*\.)?indmart\.ru)$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -249,6 +254,26 @@ def reseller_analyze(item: ResellerAnalyzeIn):
         raise HTTPException(status_code=502, detail=f"AI returned invalid JSON: {e}")
     except Exception as e:
         logger.exception("reseller analyze failed")
+        raise HTTPException(status_code=502, detail=f"AI error: {e}")
+
+
+# ---------- Avito eval (Chrome extension) ----------
+
+@app.post("/avito-eval", response_model=AvitoEvalOut)
+def avito_eval(req: AvitoEvalIn):
+    try:
+        data = ai.evaluate_avito_listing(
+            title=req.title,
+            price=req.price,
+            region=req.region,
+            description=req.description,
+        )
+        return AvitoEvalOut(**data, data_source="ai")
+    except json.JSONDecodeError as e:
+        logger.exception("avito eval JSON parse failed")
+        raise HTTPException(status_code=502, detail=f"AI returned invalid JSON: {e}")
+    except Exception as e:
+        logger.exception("avito eval failed")
         raise HTTPException(status_code=502, detail=f"AI error: {e}")
 
 
