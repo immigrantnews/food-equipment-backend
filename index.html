@@ -1,11 +1,6 @@
 <!doctype html>
 <!--
   ОборудованиеПро — AI-консультант по пищевому оборудованию.
-
-  API-ключ подставляется на этапе деплоя в плейсхолдер __ANTHROPIC_API_KEY__.
-  Локально:
-      sed "s|__ANTHROPIC_API_KEY__|$ANTHROPIC_API_KEY|" index.html > dist.html
-  Или просто откройте файл и впишите ключ в строку с window.ANTHROPIC_API_KEY.
 -->
 <html lang="ru">
 <head>
@@ -1218,9 +1213,6 @@
 </main>
 
 <script>
-  // Ключ берётся из переменной окружения ANTHROPIC_API_KEY на этапе деплоя.
-  window.ANTHROPIC_API_KEY = "__ANTHROPIC_API_KEY__";
-
   const API_BASE = "https://web-production-d399a.up.railway.app";
   const MODEL = "claude-sonnet-4-20250514";
   const LEAD_MARKER = "%%SHOW_LEAD_FORM%%";
@@ -1396,19 +1388,13 @@
 
   // ---------- Anthropic chat call ----------
   async function callClaude({ messages, system, maxTokens = 1024 }) {
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch(API_BASE + "/chat", {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": window.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true",
-      },
+      headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        model: MODEL,
-        max_tokens: maxTokens,
-        system,
         messages,
+        system,
+        max_tokens: maxTokens,
       }),
     });
     if (!res.ok) {
@@ -1416,10 +1402,7 @@
       throw new Error("API " + res.status + ": " + errText);
     }
     const data = await res.json();
-    return (data.content || [])
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("");
+    return data.reply || "";
   }
 
   // ---------- Photo bucket (selection + previews) ----------
