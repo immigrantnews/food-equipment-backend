@@ -238,20 +238,18 @@ async function evaluatePage() {
   });
 }
 
-// MutationObserver — следим за сменой URL в SPA
+// Поллинг — следим за сменой URL и пытаемся оценить страницу
 let lastUrl = location.href;
-function startObserver() {
-  if (currentObserver) currentObserver.disconnect();
-  currentObserver = new MutationObserver(() => {
-    if (location.href !== lastUrl) {
-      lastUrl = location.href;
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(evaluatePage, 1500);
-    }
-  });
-  currentObserver.observe(document.body, {childList: true, subtree: true});
+
+function tryEvaluate() {
+  evaluatePage();
 }
 
-// Запуск
-startObserver();
-setTimeout(evaluatePage, 2000);
+setInterval(() => {
+  if (location.href !== lastUrl) {
+    lastUrl = location.href;
+    evaluated.delete(lastUrl);
+  }
+}, 800);
+
+setInterval(tryEvaluate, 500);
