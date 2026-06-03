@@ -1,0 +1,92 @@
+#indmart-widget {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2147483647;
+  width: 300px;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+.indmart-header {
+  background: #1a1a2e;
+  color: #fff;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.indmart-logo { font-weight: 700; font-size: 15px; letter-spacing: 0.5px; }
+.indmart-close {
+  background: none; border: none; color: #fff;
+  font-size: 20px; cursor: pointer; padding: 0; line-height: 1;
+}
+.indmart-badge {
+  padding: 10px 16px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  text-align: center;
+}
+.indmart-body { padding: 12px 16px; }
+.indmart-name { font-weight: 600; font-size: 14px; margin-bottom: 8px; }
+.indmart-row { margin-bottom: 4px; color: #444; }
+.indmart-reseller {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 10px 0;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.indmart-comment {
+  font-style: italic;
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.indmart-btn {
+  display: block;
+  background: #1a1a2e;
+  color: #fff;
+  text-align: center;
+  padding: 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+}
+.indmart-btn:hover { background: #2d2d4e; }
+#indmart-loader {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 2147483647;
+  background: #1a1a2e;
+  color: #fff;
+  padding: 16px 20px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+.indmart-dots { display: flex; gap: 4px; }
+.indmart-dots span {
+  width: 6px; height: 6px;
+  background: #fff;
+  border-radius: 50%;
+  animation: indmart-bounce 1.2s infinite;
+}
+.indmart-dots span:nth-child(2) { animation-delay: 0.2s; }
+.indmart-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes indmart-bounce {
+  0%,80%,100% { transform: scale(0.6); opacity: 0.5; }
+  40% { transform: scale(1); opacity: 1; }
+}

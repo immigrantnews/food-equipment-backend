@@ -87,35 +87,49 @@ def analyze_for_reseller(item: ResellerAnalyzeIn) -> ResellerAnalyzeOut:
 
 
 AVITO_EVAL_SYSTEM = """Ты эксперт по рынку б/у пищевого оборудования России.
-Тебе дают данные объявления с Авито.
-Верни ТОЛЬКО валидный JSON без markdown и комментариев:
+Анализируешь объявления с Авито для перекупщиков пищевого оборудования.
+
+ВАЖНО при анализе:
+1. Внимательно читай заголовок и описание — модель и бренд часто указаны явно (MAC.PAN SV 130, Apach ATR 20, Rational SCC WE 101)
+2. Определи новое это или б/у — если продаёт дилер/компания или написано "новое" — condition=new, verdict=new_item, reseller_margin=0
+3. Ищи признаки срочности: "срочно", "быстро", "в связи с закрытием", "банкротство", "ликвидация", "уезжаю", "закрываемся" → urgency=urgent или liquidation
+4. Ищи оптовые лоты: "несколько", "партия", "комплект", "линия", "цех", "весь ресторан", числа штук → bulk_opportunity=true
+5. Учитывай регион — Москва/СПб дороже регионов на 20-30%
+6. Учитывай год выпуска если указан — старше 10 лет дешевле на 30-50%
+
+Верни ТОЛЬКО валидный JSON без markdown:
 {
   "category": "тип оборудования на русском",
-  "brand": "бренд или null",
-  "model": "модель или null",
-  "market_min": минимальная рыночная цена в рублях,
-  "market_max": максимальная рыночная цена в рублях,
-  "verdict": "green/yellow/red/flash",
-  "reseller_margin": потенциальная прибыль перекупщика в рублях,
+  "brand": "бренд из текста или null",
+  "model": "модель из текста или null",
+  "year": "год выпуска или null",
+  "condition": "new/used/unknown",
+  "market_min": минимальная рыночная цена руб,
+  "market_max": максимальная рыночная цена руб,
+  "verdict": "green/yellow/red/flash/new_item",
+  "reseller_margin": прибыль перекупщика руб,
   "turnover_days": "X-Y дней",
   "demand": "high/medium/low",
-  "comment": "одно предложение совет перекупщику"
+  "urgency": "normal/urgent/liquidation",
+  "lot_type": "single/bulk/full_workshop",
+  "bulk_opportunity": false,
+  "notification_reason": "причина уведомления или null",
+  "comment": "один совет перекупщику"
 }
+
 Вердикт:
+- new_item = новое от дилера
 - flash = цена ниже рынка более чем на 35%
 - green = цена ниже рынка на 15-35%
 - yellow = цена в рынке ±15%
-- red = цена выше рынка более чем на 15%
-Категории: тестомес, ротационная печь, подовая печь, расстойный шкаф,
-тестораскаточная машина, делитель-округлитель, миксер планетарный,
-просеиватель, холодильное оборудование, мясорубка, слайсер, фритюрница."""
+- red = цена выше рынка более чем на 15%"""
 
 
-def evaluate_avito_listing(title: str, price: int, region: str, description: str) -> dict:
+def evaluate_avito_listing(title: str, price: int, region: str, description: str, photos: list = []) -> dict:
     user_msg = f"Заголовок: {title}\nЦена: {price} ₽\nРегион: {region}\nОписание: {description[:300]}"
     resp = _client().messages.create(
         model=get_settings().anthropic_model,
-        max_tokens=500,
+        max_tokens=600,
         system=AVITO_EVAL_SYSTEM,
         messages=[{"role": "user", "content": user_msg}],
     )
@@ -125,4 +139,24 @@ def evaluate_avito_listing(title: str, price: int, region: str, description: str
         if text.startswith("json"):
             text = text[4:]
         text = text.strip()
-    return json.loads(text)
+    result = json.loads(text)
+
+    import datetime
+    record = {
+        "ts": datetime.datetime.utcnow().isoformat(),
+        "title": title,
+        "price": price,
+        "region": region,
+        "category": result.get("category"),
+        "brand": result.get("brand"),
+        "model": result.get("model"),
+        "verdict": result.get("verdict")
+    }
+    data_file = "/root/food-equipment-backend/price_data.jsonl"
+    try:
+        with open(data_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+
+    return result

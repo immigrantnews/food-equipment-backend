@@ -15,10 +15,22 @@
   }
   function makeButton() {
     if (document.getElementById('indmart-btn') || document.getElementById('indmart-widget')) return;
+
+    const url = location.href;
+    const isEquipment =
+      url.includes('oborudovanie') ||
+      url.includes('pishchevoe') ||
+      url.includes('tovary_dlya_biznesa') ||
+      url.includes('selskoe_hozyaystvo') ||
+      url.includes('promyshlennoe') ||
+      url.includes('horeca');
+    if (!isEquipment) return;
+
     const title = getText(['h1[itemprop="name"]','[data-marker="item-view/title"]','h1']);
     const price = getPrice();
     if (!title || !price) return;
     if (!KEYWORDS.some(k => title.toLowerCase().includes(k))) return;
+
     const btn = document.createElement('div');
     btn.id = 'indmart-btn';
     btn.textContent = '📊 IndMart: оценить';
@@ -28,29 +40,56 @@
   }
   function evaluate(title, price) {
     const btn = document.getElementById('indmart-btn');
-    if (btn && btn.dataset.loading === '1') return; // защита от двойного клика
+    if (btn && btn.dataset.loading === '1') return;
     if (btn) { btn.textContent = '⏳ Анализирую...'; btn.dataset.loading = '1'; }
+
     const region = getText(['[data-marker="item-address/name"]','[class*="address"]']);
     const description = getText(['[data-marker="item-view/item-description"]','[itemprop="description"]']).slice(0,300);
+
+    const photoEls = document.querySelectorAll('[data-marker="image-frame/image"], .photo-slider img, [class*="photo-slider"] img, [class*="gallery"] img');
+    const photos = Array.from(photoEls).slice(0,3).map(el => el.src || el.getAttribute('data-src')).filter(Boolean);
+
     fetch('https://indmart.ru/api/avito-eval', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({title, price, region, description})
+      body: JSON.stringify({title, price, region, description, photos})
     }).then(r => r.json()).then(d => showWidget(d, price))
-      .catch(e => { if (btn) { btn.textContent = '❌ Ошибка'; btn.dataset.loading = '0'; } });
+      .catch(e => {
+        if (btn) { btn.textContent = '❌ Ошибка'; btn.dataset.loading = '0'; }
+      });
   }
   function showWidget(d, price) {
     document.getElementById('indmart-btn')?.remove();
     document.getElementById('indmart-widget')?.remove();
-    const verdicts = {flash:['#8b5cf6','⚡ СРОЧНО БЕРИТЕ'],green:['#22c55e','🟢 ХОРОШАЯ ЦЕНА'],yellow:['#f59e0b','🟡 В РЫНКЕ'],red:['#ef4444','🔴 ЗАВЫШЕНО']};
+    if (!document.getElementById('indmart-style')) {
+      const st = document.createElement('style');
+      st.id = 'indmart-style';
+      st.textContent = '@keyframes indmart-blink{0%,100%{border-color:#ef4444}50%{border-color:transparent}}';
+      document.head.appendChild(st);
+    }
+    const verdicts = {flash:['#8b5cf6','⚡ СРОЧНО БЕРИТЕ'],green:['#22c55e','🟢 ХОРОШАЯ ЦЕНА'],yellow:['#f59e0b','🟡 В РЫНКЕ'],red:['#ef4444','🔴 ЗАВЫШЕНО'],new_item:['#64748b','🏭 НОВОЕ ОТ ДИЛЕРА']};
     const v = verdicts[d.verdict] || verdicts.yellow;
     const name = [d.category, d.brand, d.model].filter(Boolean).join(' ');
     const demand = {high:'высокий',medium:'средний',low:'низкий'}[d.demand] || d.demand;
+    const urgent = d.urgency === 'urgent' || d.urgency === 'liquidation';
+
+    let banners = '';
+    if (urgent)
+      banners += '<div style="background:#ef4444;color:#fff;padding:8px 16px;text-align:center;font-weight:700">⚡ СРОЧНАЯ ПРОДАЖА — торгуйтесь!</div>';
+    if (d.bulk_opportunity === true)
+      banners += '<div style="background:#0ea5e9;color:#fff;padding:8px 16px;text-align:center;font-weight:700">📦 ОПТОВЫЙ ЛОТ — можно взять всё дешевле</div>';
+    if (d.verdict === 'new_item')
+      banners += '<div style="background:#64748b;color:#fff;padding:8px 16px;text-align:center;font-weight:600">🏭 Новое от дилера — перекупщику неинтересно</div>';
+    if (d.notification_reason)
+      banners += '<div style="background:#fef3c7;color:#92400e;padding:10px 16px;font-weight:600;border-left:4px solid #f59e0b">'+d.notification_reason+'</div>';
+
     const w = document.createElement('div');
     w.id = 'indmart-widget';
-    w.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:2147483647;width:300px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.18);font-family:system-ui,sans-serif;font-size:14px;background:#fff;overflow:hidden';
+    w.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:2147483647;width:300px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.18);font-family:system-ui,sans-serif;font-size:14px;background:#fff;overflow:hidden' +
+      (urgent ? ';border:3px solid #ef4444;animation:indmart-blink 1s infinite' : '');
     w.innerHTML =
       '<div style="background:#1a1a2e;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><b>IndMart</b><span style="cursor:pointer" onclick="this.closest(\'#indmart-widget\').remove()">✕</span></div>' +
       '<div style="background:'+v[0]+';color:#fff;padding:10px;text-align:center;font-weight:700">'+v[1]+'</div>' +
+      banners +
       '<div style="padding:14px 16px">' +
       '<div style="font-weight:600;margin-bottom:8px">'+name+'</div>' +
       '<div style="color:#444;margin-bottom:4px">Рынок: <b>'+d.market_min.toLocaleString('ru')+' – '+d.market_max.toLocaleString('ru')+' ₽</b></div>' +

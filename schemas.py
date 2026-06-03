@@ -87,18 +87,25 @@ class AvitoEvalIn(BaseModel):
     price: int
     region: str = ""
     description: str = ""
+    photos: list[str] = []
 
 
 class AvitoEvalOut(BaseModel):
     category: str
     brand: Optional[str] = None
     model: Optional[str] = None
+    year: Optional[str] = None
+    condition: str = "unknown"
     market_min: int
     market_max: int
-    verdict: str  # green / yellow / red / flash
+    verdict: str
     reseller_margin: int
     turnover_days: str
-    demand: str  # high / medium / low
+    demand: str
+    urgency: str = "normal"
+    lot_type: str = "single"
+    bulk_opportunity: bool = False
+    notification_reason: Optional[str] = None
     comment: str
     data_source: str = "ai"
 
