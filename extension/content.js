@@ -1,7 +1,5 @@
 // Кеш оценённых страниц
 const evaluated = new Map();
-let debounceTimer = null;
-let currentObserver = null;
 
 // Keepalive — будим service worker перед запросом
 function wakeUpServiceWorker() {
@@ -238,8 +236,8 @@ async function evaluatePage() {
   });
 }
 
-// Поллинг — следим за сменой URL и пытаемся оценить страницу
 let lastUrl = location.href;
+let pollTimer = null;
 
 function tryEvaluate() {
   evaluatePage();
@@ -249,7 +247,9 @@ setInterval(() => {
   if (location.href !== lastUrl) {
     lastUrl = location.href;
     evaluated.delete(lastUrl);
+    clearInterval(pollTimer);
+    pollTimer = setInterval(tryEvaluate, 500);
   }
 }, 800);
 
-setInterval(tryEvaluate, 500);
+pollTimer = setInterval(tryEvaluate, 500);
