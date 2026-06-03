@@ -38,7 +38,7 @@
     btn.onclick = () => evaluate(title, price);
     document.body.appendChild(btn);
   }
-  function evaluate(title, price) {
+  async function evaluate(title, price) {
     const btn = document.getElementById('indmart-btn');
     if (btn && btn.dataset.loading === '1') return;
     if (btn) { btn.textContent = '⏳ Анализирую...'; btn.dataset.loading = '1'; }
@@ -46,16 +46,54 @@
     const region = getText(['[data-marker="item-address/name"]','[class*="address"]']);
     const description = getText(['[data-marker="item-view/item-description"]','[itemprop="description"]']).slice(0,300);
 
+    // Собираем первые 3 фото и качаем их как base64 прямо в браузере
     const photoEls = document.querySelectorAll('[data-marker="image-frame/image"], .photo-slider img, [class*="photo-slider"] img, [class*="gallery"] img');
-    const photos = Array.from(photoEls).slice(0,3).map(el => el.src || el.getAttribute('data-src')).filter(Boolean);
+    const photoUrls = Array.from(photoEls).slice(0,3).map(el => el.src || el.getAttribute('data-src')).filter(Boolean);
 
-    fetch('https://indmart.ru/api/avito-eval', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({title, price, region, description, photos})
-    }).then(r => r.json()).then(d => showWidget(d, price))
-      .catch(e => {
-        if (btn) { btn.textContent = '❌ Ошибка'; btn.dataset.loading = '0'; }
+    const photos = [];
+    for (const url of photoUrls) {
+      try {
+        const resp = await fetch(url);
+        const blob = await resp.blob();
+        // Сжимаем через canvas до ширины 800px
+        const compressed = await compressImage(blob);
+        photos.push(compressed);
+      } catch (e) {}
+    }
+
+    try {
+      const resp = await fetch('https://indmart.ru/api/avito-eval', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({title, price, region, description, photos})
       });
+      const d = await resp.json();
+      showWidget(d, price);
+    } catch (e) {
+      if (btn) { btn.textContent = '❌ Ошибка'; btn.dataset.loading = '0'; }
+    }
+  }
+
+  // Сжатие картинки до ширины 800px и конвертация в base64 jpeg
+  function compressImage(blob) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(blob);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const maxW = 800;
+        const scale = Math.min(1, maxW / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        // отдаём только base64 часть без префикса
+        resolve(dataUrl.split(',')[1]);
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
   }
   function showWidget(d, price) {
     document.getElementById('indmart-btn')?.remove();
