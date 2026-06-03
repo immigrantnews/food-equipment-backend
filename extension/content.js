@@ -46,9 +46,13 @@
     const region = getText(['[data-marker="item-address/name"]','[class*="address"]']);
     const description = getText(['[data-marker="item-view/item-description"]','[itemprop="description"]']).slice(0,300);
 
-    // Собираем первые 3 фото и качаем их как base64 прямо в браузере
-    const photoEls = document.querySelectorAll('[data-marker="image-frame/image"], .photo-slider img, [class*="photo-slider"] img, [class*="gallery"] img');
-    const photoUrls = Array.from(photoEls).slice(0,3).map(el => el.src || el.getAttribute('data-src')).filter(Boolean);
+    // Берём фото больше 200px шириной (не миниатюры)
+    const allImgs = document.querySelectorAll('img');
+    const photoUrls = Array.from(allImgs)
+      .filter(el => el.src && el.src.includes('avito.st') && el.width > 200)
+      .slice(0, 3)
+      .map(el => el.src)
+      .filter(Boolean);
 
     const photos = [];
     for (const url of photoUrls) {
