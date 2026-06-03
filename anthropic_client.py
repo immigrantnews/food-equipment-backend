@@ -126,12 +126,29 @@ AVITO_EVAL_SYSTEM = """Ты эксперт по рынку б/у пищевог�
 
 
 def evaluate_avito_listing(title: str, price: int, region: str, description: str, photos: list = []) -> dict:
-    user_msg = f"Заголовок: {title}\nЦена: {price} ₽\nРегион: {region}\nОписание: {description[:300]}"
+    content = []
+
+    # photos are now base64 JPEG strings (already compressed in the extension)
+    for b64 in photos[:3]:
+        if not b64:
+            continue
+        content.append({
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": "image/jpeg",
+                "data": b64
+            }
+        })
+
+    user_msg = f"Заголовок: {title}\nЦена: {price} ₽\nРегион: {region}\nОписание: {description[:300]}\n\nЕсли есть фото — определи модель и бренд по шильдику или внешнему виду оборудования."
+    content.append({"type": "text", "text": user_msg})
+
     resp = _client().messages.create(
         model=get_settings().anthropic_model,
         max_tokens=600,
         system=AVITO_EVAL_SYSTEM,
-        messages=[{"role": "user", "content": user_msg}],
+        messages=[{"role": "user", "content": content}],
     )
     text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text").strip()
     if text.startswith("```"):
@@ -152,9 +169,8 @@ def evaluate_avito_listing(title: str, price: int, region: str, description: str
         "model": result.get("model"),
         "verdict": result.get("verdict")
     }
-    data_file = "/root/food-equipment-backend/price_data.jsonl"
     try:
-        with open(data_file, "a", encoding="utf-8") as f:
+        with open("/root/food-equipment-backend/price_data.jsonl", "a", encoding="utf-8") as f:
             f.write(json.dumps(record, ensure_ascii=False) + "\n")
     except Exception:
         pass
