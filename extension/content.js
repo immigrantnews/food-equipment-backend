@@ -27,15 +27,16 @@
     document.body.appendChild(btn);
   }
   function evaluate(title, price) {
+    const btn = document.getElementById('indmart-btn');
+    if (btn && btn.dataset.loading === '1') return; // защита от двойного клика
+    if (btn) { btn.textContent = '⏳ Анализирую...'; btn.dataset.loading = '1'; }
     const region = getText(['[data-marker="item-address/name"]','[class*="address"]']);
     const description = getText(['[data-marker="item-view/item-description"]','[itemprop="description"]']).slice(0,300);
-    const btn = document.getElementById('indmart-btn');
-    if (btn) btn.textContent = '⏳ Анализирую...';
     fetch('https://indmart.ru/api/avito-eval', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({title, price, region, description})
     }).then(r => r.json()).then(d => showWidget(d, price))
-      .catch(e => { if (btn) btn.textContent = '❌ Ошибка'; });
+      .catch(e => { if (btn) { btn.textContent = '❌ Ошибка'; btn.dataset.loading = '0'; } });
   }
   function showWidget(d, price) {
     document.getElementById('indmart-btn')?.remove();
