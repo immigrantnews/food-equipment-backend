@@ -278,6 +278,40 @@ def avito_eval(req: AvitoEvalIn):
         raise HTTPException(status_code=502, detail=f"AI error: {e}")
 
 
+@app.get("/price-stats")
+def price_stats():
+    """Returns median prices from collected price_data.jsonl grouped by category+brand+model"""
+    import json, os
+    from collections import defaultdict
+    import statistics
+
+    data_file = "/root/food-equipment-backend/price_data.jsonl"
+    if not os.path.exists(data_file):
+        return {}
+
+    groups = defaultdict(list)
+    with open(data_file, encoding="utf-8") as f:
+        for line in f:
+            try:
+                r = json.loads(line.strip())
+                key = f"{r.get('category','')}/{r.get('brand','')}/{r.get('model','')}".lower()
+                if r.get('price') and r['price'] > 0:
+                    groups[key].append(r['price'])
+            except Exception:
+                pass
+
+    result = {}
+    for key, prices in groups.items():
+        if len(prices) >= 3:
+            result[key] = {
+                "median": statistics.median(prices),
+                "count": len(prices),
+                "min": min(prices),
+                "max": max(prices)
+            }
+    return result
+
+
 # ---------- URL fetch (for AI analysis of marketplace listings) ----------
 
 _FETCH_BLOCKED_HOSTS = {"localhost", "127.0.0.1", "0.0.0.0", "::1"}

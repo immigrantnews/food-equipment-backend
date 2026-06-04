@@ -1,6 +1,78 @@
 (function () {
   const KEYWORDS = ["тестомес","расстойк","тестораскаточ","делитель","миксер планетарн","хлебопекарн","пекарн","дежа","ротационн","подовая","конвекционн","просеиватель","слайсер","мясорубк","фритюрниц","пароконвектомат","холодильн витрин","шкаф расстойн","тестомесильн","взбивалк","куттер","вакуумн упаковщ","жарочн шкаф","печь","тестоделитель","округлитель","котел пищевой","картофелечистк","овощерезк","коптильн","льдогенератор"];
 
+  // Кеш статистики цен
+  let priceStats = null;
+  let priceStatsLoaded = false;
+
+  async function loadPriceStats() {
+    if (priceStatsLoaded) return;
+    try {
+      const resp = await fetch('https://indmart.ru/api/price-stats');
+      priceStats = await resp.json();
+      priceStatsLoaded = true;
+    } catch(e) {
+      priceStatsLoaded = true; // не повторяем при ошибке
+    }
+  }
+
+  function getVerdictFromStats(title, price) {
+    if (!priceStats || !price) return null;
+    const titleLower = title.toLowerCase();
+
+    for (const [key, stats] of Object.entries(priceStats)) {
+      const parts = key.split('/');
+      const category = parts[0];
+      const brand = parts[1];
+      const model = parts[2];
+
+      // Проверяем совпадение по бренду или модели
+      if ((brand && titleLower.includes(brand)) ||
+          (model && titleLower.includes(model)) ||
+          (category && titleLower.includes(category))) {
+        const median = stats.median;
+        const ratio = price / median;
+        if (ratio < 0.65) return {verdict: 'flash', label: '⚡', median};
+        if (ratio < 0.85) return {verdict: 'green', label: '🟢', median};
+        if (ratio < 1.15) return {verdict: 'yellow', label: '🟡', median};
+        return {verdict: 'red', label: '🔴', median};
+      }
+    }
+    return null;
+  }
+
+  function addCatalogBadges() {
+    if (!priceStats) return;
+
+    // Находим карточки в каталоге
+    const items = document.querySelectorAll('[data-marker="item"]');
+    items.forEach(item => {
+      if (item.querySelector('.indmart-badge-mini')) return; // уже добавили
+
+      const titleEl = item.querySelector('[itemprop="name"], [data-marker="item-title"]');
+      const priceEl = item.querySelector('[itemprop="price"], [data-marker="item-price"]');
+
+      if (!titleEl || !priceEl) return;
+
+      const title = titleEl.textContent.trim();
+      const price = parseInt((priceEl.getAttribute('content') || priceEl.textContent).replace(/\D/g,''));
+
+      if (!price || !KEYWORDS.some(k => title.toLowerCase().includes(k))) return;
+
+      const result = getVerdictFromStats(title, price);
+      if (!result) return;
+
+      const colors = {flash:'#8b5cf6', green:'#22c55e', yellow:'#f59e0b', red:'#ef4444'};
+      const badge = document.createElement('span');
+      badge.className = 'indmart-badge-mini';
+      badge.title = `IndMart: медиана ${result.median.toLocaleString('ru')} ₽`;
+      badge.style.cssText = `display:inline-block;background:${colors[result.verdict]};color:#fff;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;margin-left:6px;vertical-align:middle`;
+      badge.textContent = result.label + ' IndMart';
+
+      titleEl.appendChild(badge);
+    });
+  }
+
   function getText(sels) {
     for (const s of sels) {
       const el = document.querySelector(s);
@@ -149,13 +221,24 @@
     document.body.appendChild(w);
   }
   let lastUrl = '';
-  setInterval(() => {
+  setInterval(async () => {
+    // Загружаем статистику цен при первом запуске
+    await loadPriceStats();
+
     if (location.href !== lastUrl) {
       lastUrl = location.href;
       document.getElementById('indmart-btn')?.remove();
       document.getElementById('indmart-widget')?.remove();
     }
-    makeButton();
+
+    // Добавляем метки в каталог
+    const isCatalog = document.querySelector('[data-marker="catalog-serp"]') ||
+                      document.querySelector('[data-marker="search-results"]');
+    if (isCatalog) {
+      addCatalogBadges();
+    } else {
+      makeButton();
+    }
   }, 1000);
   console.log('IndMart loaded');
 })();
