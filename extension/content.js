@@ -253,6 +253,74 @@
       sendNotification(d, title || '', price || 0);
     }
     document.body.appendChild(w);
+
+    checkFilters(d, sellerType || 'unknown').then(({matches, reason}) => {
+      const widget = document.getElementById('indmart-widget');
+      if (!widget) return;
+
+      if (matches && (d.urgency !== 'normal' || d.bulk_opportunity)) {
+        widget.style.border = '3px solid #22c55e';
+        // Add animation style only once
+        if (!document.getElementById('indmart-pulse-style')) {
+          const style = document.createElement('style');
+          style.id = 'indmart-pulse-style';
+          style.textContent = '@keyframes indmart-pulse{0%,100%{box-shadow:0 8px 32px rgba(34,197,94,0.3)}50%{box-shadow:0 8px 32px rgba(34,197,94,0.8)}}';
+          document.head.appendChild(style);
+        }
+        widget.style.animation = 'indmart-pulse 1s ease-in-out 3';
+        const matchBadge = document.createElement('div');
+        matchBadge.style.cssText = 'background:#22c55e;color:#fff;text-align:center;padding:6px;font-weight:700;font-size:13px;';
+        matchBadge.textContent = '✅ Соответствует вашим критериям!';
+        widget.insertBefore(matchBadge, widget.firstChild);
+      } else if (!matches && reason) {
+        const mismatch = document.createElement('div');
+        mismatch.style.cssText = 'background:#f5f5f5;color:#888;text-align:center;padding:6px;font-size:12px;border-bottom:1px solid #eee;';
+        mismatch.textContent = '⚠️ Не соответствует: ' + reason;
+        const body = widget.querySelector('.indmart-body');
+        widget.insertBefore(mismatch, body || widget.firstChild);
+      }
+    });
+  }
+
+  function parseTurnoverMax(turnoverStr) {
+    if (!turnoverStr) return 999;
+    const nums = turnoverStr.match(/\d+/g);
+    if (!nums) return 999;
+    return Math.max(...nums.map(Number));
+  }
+
+  async function checkFilters(data, sellerType) {
+    return new Promise(resolve => {
+      chrome.storage.sync.get('filters', ({filters}) => {
+        if (!filters) return resolve({matches: true, reason: ''});
+
+        const issues = [];
+
+        if (filters.minMargin > 0 && data.reseller_margin < filters.minMargin) {
+          issues.push(`маржа ${data.reseller_margin.toLocaleString('ru')} ₽ < минимума ${filters.minMargin.toLocaleString('ru')} ₽`);
+        }
+
+        if (filters.maxTurnover > 0) {
+          const maxDays = parseTurnoverMax(data.turnover_days);
+          if (maxDays > filters.maxTurnover) {
+            issues.push(`оборот ${data.turnover_days} > ${filters.maxTurnover} дней`);
+          }
+        }
+
+        if (filters.privateOnly && sellerType === 'company') {
+          issues.push('продавец — компания');
+        }
+
+        if (filters.urgentOnly && data.urgency === 'normal') {
+          issues.push('не срочная продажа');
+        }
+
+        resolve({
+          matches: issues.length === 0,
+          reason: issues.join(', ')
+        });
+      });
+    });
   }
 
   function sendNotification(data, title, price) {
