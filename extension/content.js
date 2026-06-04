@@ -85,7 +85,7 @@
     const raw = getText(['[itemprop="price"]','[data-marker="item-view/item-price"]','[class*="price-value"]','[class*="item-price"]']);
     return parseInt(raw.replace(/\D/g, '')) || 0;
   }
-  function makeButton() {
+  async function makeButton() {
     if (document.getElementById('indmart-btn') || document.getElementById('indmart-widget')) return;
 
     const url = location.href;
@@ -102,6 +102,12 @@
     const price = getPrice();
     if (!title || !price) return;
     if (!KEYWORDS.some(k => title.toLowerCase().includes(k))) return;
+
+    // Проверяем режим — в режиме покупателя кнопку не показываем пока не готово
+    const userMode = await new Promise(resolve =>
+      chrome.storage.sync.get('userMode', ({userMode}) => resolve(userMode || 'reseller'))
+    );
+    if (userMode === 'buyer') return;
 
     const btn = document.createElement('div');
     btn.id = 'indmart-btn';
@@ -146,6 +152,9 @@
     const region = getText(['[data-marker="item-address/name"]','[class*="address"]']);
     const description = getText(['[data-marker="item-view/item-description"]','[itemprop="description"]']).slice(0,300);
     const sellerType = getSellerType();
+    const userMode = await new Promise(resolve =>
+      chrome.storage.sync.get('userMode', ({userMode}) => resolve(userMode || 'reseller'))
+    );
 
     // Берём фото больше 200px шириной (не миниатюры)
     const allImgs = document.querySelectorAll('img');
@@ -169,10 +178,10 @@
     try {
       const resp = await fetch('https://indmart.ru/api/avito-eval', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({title, price, region, description, photos, seller_type: sellerType})
+        body: JSON.stringify({title, price, region, description, photos, seller_type: sellerType, user_mode: userMode})
       });
       const d = await resp.json();
-      showWidget(d, price, title, sellerType);
+      showWidget(d, price, title, sellerType, userMode);
     } catch (e) {
       if (btn) { btn.textContent = '❌ Ошибка'; btn.dataset.loading = '0'; }
     }
@@ -200,7 +209,7 @@
       img.src = url;
     });
   }
-  function showWidget(d, price, title, sellerType) {
+  function showWidget(d, price, title, sellerType, userMode) {
     document.getElementById('indmart-btn')?.remove();
     document.getElementById('indmart-widget')?.remove();
     if (!document.getElementById('indmart-style')) {
@@ -237,7 +246,7 @@
     w.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:2147483647;width:300px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.18);font-family:system-ui,sans-serif;font-size:14px;background:#fff;overflow:hidden' +
       (urgent ? ';border:3px solid #ef4444;animation:indmart-blink 1s infinite' : '');
     w.innerHTML =
-      '<div style="background:#1a1a2e;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><b>IndMart</b><span style="cursor:pointer" onclick="this.closest(\'#indmart-widget\').remove()">✕</span></div>' +
+      '<div style="background:#1a1a2e;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><span><b>IndMart</b><span style="font-size:10px;background:rgba(255,255,255,0.2);padding:2px 6px;border-radius:4px;margin-left:6px">'+(userMode === 'buyer' ? '🏭 Покупатель' : '💼 Перекупщик')+'</span></span><span style="cursor:pointer" onclick="this.closest(\'#indmart-widget\').remove()">✕</span></div>' +
       (sellerType === 'private' ? '<div style="background:#dcfce7;color:#166534;padding:8px 16px;text-align:center;font-weight:600">👤 Частное лицо — торгуйтесь!</div>' : '') +
       (sellerType === 'company' ? '<div style="background:#f1f5f9;color:#475569;padding:8px 16px;text-align:center;font-weight:600">🏢 Компания — цена фиксированная</div>' : '') +
       '<div style="background:'+v[0]+';color:#fff;padding:10px;text-align:center;font-weight:700">'+v[1]+'</div>' +

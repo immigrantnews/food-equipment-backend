@@ -40,3 +40,30 @@ chrome.storage.local.get(['limitDate', 'limitCount'], data => {
   const count = data.limitDate === today ? (data.limitCount || 0) : 0;
   stat.textContent = `Проверено сегодня: ${count} / 10`;
 });
+
+const modeReseller = document.getElementById('modeReseller');
+const modeBuyer = document.getElementById('modeBuyer');
+const modeDesc = document.getElementById('modeDesc');
+const filtersSection = document.querySelector('.section');
+
+chrome.storage.sync.get('userMode', ({userMode}) => {
+  setMode(userMode || 'reseller');
+});
+
+function setMode(mode) {
+  if (mode === 'reseller') {
+    modeReseller.classList.add('active');
+    modeBuyer.classList.remove('active');
+    if (filtersSection) filtersSection.style.display = 'block';
+    modeDesc.textContent = 'Оценка маржи и срока оборота для перепродажи';
+  } else {
+    modeBuyer.classList.add('active');
+    modeReseller.classList.remove('active');
+    if (filtersSection) filtersSection.style.display = 'none';
+    modeDesc.textContent = '🚧 В разработке — скоро расчёт окупаемости для покупателей';
+  }
+  chrome.storage.sync.set({userMode: mode});
+}
+
+modeReseller.addEventListener('click', () => setMode('reseller'));
+modeBuyer.addEventListener('click', () => setMode('buyer'));

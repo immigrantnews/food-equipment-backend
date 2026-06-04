@@ -89,6 +89,7 @@ class AvitoEvalIn(BaseModel):
     description: str = ""
     photos: list[str] = []
     seller_type: str = "unknown"  # private/company/unknown
+    user_mode: str = "reseller"
 
 
 class AvitoEvalOut(BaseModel):
