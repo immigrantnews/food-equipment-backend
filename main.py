@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import re
 from typing import Optional
 from urllib.parse import urlparse
@@ -12,7 +13,7 @@ from pydantic import BaseModel
 import airtable_client as at
 import anthropic_client as ai
 from config import get_settings
-from db import save_subscriber, get_matching_subscribers, unsubscribe
+from db import save_subscriber, get_matching_subscribers, unsubscribe, get_conn as get_db_conn
 from schemas import (
     AvitoEvalIn,
     AvitoEvalOut,
@@ -275,14 +276,74 @@ def avito_eval(req: AvitoEvalIn):
         if data.get('urgency') in ('urgent', 'liquidation'):
             try:
                 subs = get_matching_subscribers(
-                    req.region, data.get('reseller_margin', 0),
-                    True, req.seller_type == 'private'
+                    req.region,
+                    data.get('reseller_margin', 0),
+                    True,
+                    req.seller_type == 'private',
+                    data.get('category', ''),
                 )
                 if subs:
-                    logger.info(f"URGENT matched {len(subs)} subscribers: {req.title}")
-                    # TODO: send Telegram messages to matched subscribers
+                    import threading
+                    import httpx as _httpx
+                    bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+                    listing_url = getattr(req, 'listing_url', '')
+
+                    def send_notifications():
+                        for sub in subs:
+                            chat_id = sub.get('telegram_chat_id')
+                            if not chat_id or not bot_token:
+                                continue
+                            # Check duplicate
+                            try:
+                                with get_db_conn() as conn:
+                                    with conn.cursor() as cur:
+                                        cur.execute("""
+                                            SELECT id FROM urgent_alerts
+                                            WHERE subscriber_id=%s AND listing_url=%s
+                                        """, (sub['id'], listing_url))
+                                        if cur.fetchone():
+                                            continue
+                                        cur.execute("""
+                                            INSERT INTO urgent_alerts
+                                            (subscriber_id, listing_url, listing_title, listing_price, region, verdict)
+                                            VALUES (%s, %s, %s, %s, %s, %s)
+                                        """, (sub['id'], listing_url, req.title, req.price, req.region, data.get('verdict')))
+                                        conn.commit()
+                            except Exception as e:
+                                logger.warning(f"Alert dedup error: {e}")
+                                continue
+                            urgency_emoji = "🔥" if data.get('urgency') == 'liquidation' else "⚡"
+                            msg = (
+                                f"{urgency_emoji} *Срочная продажа!*\n\n"
+                                f"*{data.get('category', req.title)}*\n"
+                                f"💰 Цена: {req.price:,} ₽\n"
+                                f"📍 Регион: {req.region or 'не указан'}\n"
+                                f"💵 Маржа: ~{data.get('reseller_margin', 0):,} ₽\n"
+                                f"⏱ Оборот: {data.get('turnover_days', '')}\n"
+                                f"👤 {'Частное лицо' if req.seller_type == 'private' else 'Компания'}\n\n"
+                                f"_{data.get('comment', '')}_\n\n"
+                            )
+                            if listing_url:
+                                msg += f"🔗 [Открыть объявление]({listing_url})"
+                            try:
+                                _httpx.post(
+                                    f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                                    json={
+                                        "chat_id": chat_id,
+                                        "text": msg,
+                                        "parse_mode": "Markdown",
+                                        "disable_web_page_preview": False
+                                    },
+                                    timeout=10
+                                )
+                            except Exception as e:
+                                logger.warning(f"Telegram send failed for {chat_id}: {e}")
+
+                    thread = threading.Thread(target=send_notifications, daemon=True)
+                    thread.start()
+                    logger.info(f"Started notification thread for {len(subs)} subscribers")
             except Exception as e:
-                logger.warning(f"Subscriber check failed: {e}")
+                logger.warning(f"Notification setup failed: {e}")
         return AvitoEvalOut(**data, data_source="ai")
     except json.JSONDecodeError as e:
         logger.exception("avito eval JSON parse failed")

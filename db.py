@@ -31,7 +31,7 @@ def save_subscriber(name, telegram_username, region, categories, user_type, filt
             conn.commit()
             return cur.fetchone()[0], token
 
-def get_matching_subscribers(region, margin, is_urgent, is_private):
+def get_matching_subscribers(region, margin, is_urgent, is_private, category=''):
     try:
         with get_conn() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -42,7 +42,9 @@ def get_matching_subscribers(region, margin, is_urgent, is_private):
                     AND (min_margin = 0 OR min_margin <= %s)
                     AND (private_only = false OR %s = true)
                     AND (urgent_only = false OR %s = true)
-                """, (region, margin, is_private, is_urgent))
+                    AND (categories IS NULL OR array_length(categories, 1) IS NULL
+                         OR %s = ANY(categories) OR 'Всё оборудование' = ANY(categories))
+                """, (region, margin, is_private, is_urgent, category))
                 return cur.fetchall()
     except Exception:
         return []

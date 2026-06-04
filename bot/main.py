@@ -15,6 +15,7 @@ import os
 from io import BytesIO
 
 import httpx
+import psycopg2
 from aiogram import Bot, Dispatcher, F
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ChatAction
@@ -36,6 +37,7 @@ from anthropic import AsyncAnthropic
 from dotenv import load_dotenv
 
 load_dotenv()
+load_dotenv("/root/food-equipment-backend/.env")  # robust to cwd / systemd
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("food-equipment-bot")
@@ -51,6 +53,107 @@ if not ANTHROPIC_API_KEY:
     raise RuntimeError("ANTHROPIC_API_KEY env var is required")
 
 LEAD_MARKER = "%%SHOW_LEAD_FORM%%"
+
+
+# ---------- IndMart subscriber DB (Telegram notifications) ----------
+# Reuses the same PostgreSQL `subscribers` table as the backend. The web
+# subscribe form stores the user's @username + criteria; the bot links the
+# Telegram chat_id on /start so urgent-listing alerts can be delivered.
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+
+def _db_conn():
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL env var is required")
+    return psycopg2.connect(DATABASE_URL)
+
+
+def link_chat_id(telegram_username: str, chat_id: int):
+    """Attach chat_id to an existing subscriber row (matched by username).
+
+    Returns (id, name, was_existing). If no subscriber exists yet (user hit
+    /start before subscribing on the site), an INACTIVE placeholder row is
+    created so the chat_id is remembered — inactive to avoid notifying someone
+    who never set criteria. Returns None on any failure.
+    """
+    if not telegram_username or not DATABASE_URL:
+        return None
+    username = telegram_username.lstrip("@").lower()
+    try:
+        with _db_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    UPDATE subscribers
+                    SET telegram_chat_id = %s
+                    WHERE LOWER(telegram_username) = %s
+                    RETURNING id, name
+                    """,
+                    (str(chat_id), username),
+                )
+                rows = cur.fetchall()
+                if rows:
+                    conn.commit()
+                    return rows[0][0], rows[0][1], True
+                # No existing subscriber — remember chat_id as inactive placeholder.
+                cur.execute(
+                    """
+                    INSERT INTO subscribers (telegram_username, telegram_chat_id, name, is_active)
+                    VALUES (%s, %s, %s, false)
+                    RETURNING id, name
+                    """,
+                    (username, str(chat_id), telegram_username),
+                )
+                result = cur.fetchone()
+                conn.commit()
+                return result[0], result[1], False
+    except Exception:
+        logger.exception("link_chat_id failed")
+        return None
+
+
+def deactivate_subscriber(telegram_username: str) -> bool:
+    username = (telegram_username or "").lstrip("@").lower()
+    if not username:
+        return False
+    try:
+        with _db_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE subscribers SET is_active = false WHERE LOWER(telegram_username) = %s RETURNING id",
+                    (username,),
+                )
+                ok = cur.fetchone() is not None
+                conn.commit()
+                return ok
+    except Exception:
+        logger.exception("deactivate_subscriber failed")
+        return False
+
+
+def get_subscription(telegram_username: str):
+    username = (telegram_username or "").lstrip("@").lower()
+    if not username:
+        return None
+    try:
+        with _db_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT name, region, min_margin, max_turnover,
+                           private_only, urgent_only, is_active, telegram_chat_id
+                    FROM subscribers
+                    WHERE LOWER(telegram_username) = %s
+                    ORDER BY is_active DESC, id DESC
+                    LIMIT 1
+                    """,
+                    (username,),
+                )
+                return cur.fetchone()
+    except Exception:
+        logger.exception("get_subscription failed")
+        return None
 
 # Mirrors VISION_PROMPT in ../index.html. Keep these aligned when editing either.
 VISION_PROMPT = (
@@ -264,10 +367,60 @@ def chat_anchor_kb(mode_key: str) -> InlineKeyboardMarkup:
 async def cmd_start(message: Message, state: FSMContext) -> None:
     user_state.pop(message.from_user.id, None)
     await state.clear()
+
+    # IndMart: link this chat to the subscriber row so urgent alerts can be sent.
+    linked = link_chat_id(message.from_user.username or "", message.chat.id)
+    if linked and linked[2]:
+        await message.answer(
+            "🔔 Telegram привязан — вы будете первым получать уведомления "
+            "о срочных продажах по вашим критериям.\n"
+            "/status — проверить подписку · /stop — отписаться"
+        )
+    elif message.from_user.username:
+        await message.answer(
+            "🔔 Хотите получать уведомления о срочных продажах оборудования? "
+            "Настройте критерии на indmart.ru/#subscribe-screen — и я сразу напишу, "
+            "когда появится выгодный вариант."
+        )
+
     await message.answer(
         "ОборудованиеПро — бесплатный AI-консультант для пищевых производств.\n\n"
         "Выберите раздел:",
         reply_markup=main_menu_kb(),
+    )
+
+
+@dp.message(Command("status"))
+async def cmd_status(message: Message, state: FSMContext) -> None:
+    sub = get_subscription(message.from_user.username or "")
+    if not sub:
+        await message.answer(
+            "Вы пока не подписаны на уведомления.\n\n"
+            "👉 Подпишитесь на indmart.ru/#subscribe-screen"
+        )
+        return
+    name, region, min_margin, max_turnover, private_only, urgent_only, is_active, chat_id = sub
+    status_icon = "✅ Активна" if is_active else "❌ Отключена"
+    chat_linked = "✅" if chat_id else "❌"
+    await message.answer(
+        "📊 Ваша подписка IndMart\n\n"
+        f"Статус: {status_icon}\n"
+        f"Chat ID привязан: {chat_linked}\n"
+        f"Регион: {region or 'Все регионы'}\n"
+        f"Мин. маржа: {(min_margin or 0):,} ₽\n"
+        f"Макс. оборот: {max_turnover or 0} дней\n"
+        f"Только частные: {'Да' if private_only else 'Нет'}\n"
+        f"Только срочные: {'Да' if urgent_only else 'Нет'}\n\n"
+        "Изменить критерии: indmart.ru/#subscribe-screen"
+    )
+
+
+@dp.message(Command("stop"))
+async def cmd_stop(message: Message, state: FSMContext) -> None:
+    deactivate_subscriber(message.from_user.username or "")
+    await message.answer(
+        "✅ Вы отписались от уведомлений IndMart.\n\n"
+        "Чтобы подписаться снова — зайдите на indmart.ru/#subscribe-screen"
     )
 
 

@@ -178,7 +178,7 @@
     try {
       const resp = await fetch('https://indmart.ru/api/avito-eval', {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({title, price, region, description, photos, seller_type: sellerType, user_mode: userMode})
+        body: JSON.stringify({title, price, region, description, photos, seller_type: sellerType, user_mode: userMode, listing_url: location.href})
       });
       const d = await resp.json();
       showWidget(d, price, title, sellerType, userMode);
