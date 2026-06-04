@@ -3,7 +3,7 @@
   "name": "IndMart — Оценка оборудования",
   "version": "1.0.0",
   "description": "Бесплатная оценка пищевого оборудования прямо на Авито",
-  "permissions": ["storage", "activeTab"],
+  "permissions": ["storage", "activeTab", "notifications"],
   "host_permissions": ["https://www.avito.ru/*", "https://avito.ru/*"],
   "content_scripts": [{
     "matches": ["https://www.avito.ru/*", "https://avito.ru/*"],

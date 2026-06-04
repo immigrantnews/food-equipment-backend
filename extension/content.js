@@ -143,7 +143,7 @@
         body: JSON.stringify({title, price, region, description, photos})
       });
       const d = await resp.json();
-      showWidget(d, price);
+      showWidget(d, price, title);
     } catch (e) {
       if (btn) { btn.textContent = '❌ Ошибка'; btn.dataset.loading = '0'; }
     }
@@ -171,7 +171,7 @@
       img.src = url;
     });
   }
-  function showWidget(d, price) {
+  function showWidget(d, price, title) {
     document.getElementById('indmart-btn')?.remove();
     document.getElementById('indmart-widget')?.remove();
     if (!document.getElementById('indmart-style')) {
@@ -218,7 +218,49 @@
       '<div style="font-style:italic;color:#666;font-size:13px;margin-bottom:12px">"'+d.comment+'"</div>' +
       '<a href="https://indmart.ru" target="_blank" style="display:block;background:#1a1a2e;color:#fff;text-align:center;padding:10px;border-radius:8px;text-decoration:none;font-weight:600">Открыть в IndMart</a>' +
       '</div>';
+    if (d.urgency !== 'normal' || d.bulk_opportunity) {
+      sendNotification(d, title || '', price || 0);
+    }
     document.body.appendChild(w);
+  }
+
+  function sendNotification(data, title, price) {
+    // Отправляем уведомление только для срочных и оптовых
+    if (data.urgency === 'normal' && !data.bulk_opportunity) return;
+
+    // Проверяем не отправляли ли уже для этого URL
+    const url = location.href;
+    chrome.storage.local.get('notified_urls', (s) => {
+      const notified = s.notified_urls || {};
+      if (notified[url]) return;
+
+      let notifTitle = '';
+      let notifBody = '';
+
+      if (data.urgency === 'liquidation') {
+        notifTitle = '🔥 ЛИКВИДАЦИЯ — срочная продажа!';
+        notifBody = `${title} за ${price.toLocaleString('ru')} ₽ — ${data.comment}`;
+      } else if (data.urgency === 'urgent') {
+        notifTitle = '⚡ Срочная продажа';
+        notifBody = `${title} за ${price.toLocaleString('ru')} ₽ — торгуйтесь!`;
+      } else if (data.bulk_opportunity) {
+        notifTitle = '📦 Оптовый лот';
+        notifBody = `${title} — ${data.notification_reason || 'можно взять всё дешевле'}`;
+      }
+
+      if (!notifTitle) return;
+
+      chrome.runtime.sendMessage({
+        type: 'NOTIFY',
+        title: notifTitle,
+        body: notifBody,
+        url: url
+      });
+
+      // Помечаем URL как уже уведомлённый
+      notified[url] = Date.now();
+      chrome.storage.local.set({notified_urls: notified});
+    });
   }
   let lastUrl = '';
   setInterval(async () => {

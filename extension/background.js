@@ -4,6 +4,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     handleEval(message).then(sendResponse).catch(err => sendResponse({error: err.message}));
     return true; // держит канал открытым
   }
+
+  if (message.type === 'NOTIFY') {
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'icon48.png',
+      title: message.title,
+      message: message.body,
+      buttons: [{title: 'Открыть объявление'}],
+      requireInteraction: true
+    });
+    // Сохраняем URL для открытия при клике
+    chrome.storage.local.set({last_notification_url: message.url});
+    sendResponse({ok: true});
+    return true;
+  }
+});
+
+// Открываем объявление при клике на уведомление
+chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
+  chrome.storage.local.get('last_notification_url', (data) => {
+    if (data.last_notification_url) {
+      chrome.tabs.create({url: data.last_notification_url});
+    }
+  });
+});
+
+chrome.notifications.onClicked.addListener((notificationId) => {
+  chrome.storage.local.get('last_notification_url', (data) => {
+    if (data.last_notification_url) {
+      chrome.tabs.create({url: data.last_notification_url});
+    }
+  });
 });
 
 async function handleEval(message) {
