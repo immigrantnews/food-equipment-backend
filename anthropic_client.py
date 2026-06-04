@@ -107,6 +107,7 @@ AVITO_EVAL_SYSTEM = """Ты эксперт по рынку б/у пищевог�
 4. Ищи оптовые лоты: "несколько", "партия", "комплект", "линия", "цех", "весь ресторан"
 5. Учитывай регион — Москва/СПб дороже регионов на 20-30%
 6. Учитывай год выпуска — старше 10 лет дешевле на 30-50%
+7. Тип продавца: если company — это дилер/магазин, reseller_margin=0, verdict=new_item если новое. Если private — частное лицо, можно торговаться.
 
 КОРРЕКТИРОВКА ЦЕНЫ ПО СОСТОЯНИЮ:
 - excellent: +20% к рыночной цене
@@ -150,7 +151,7 @@ AVITO_EVAL_SYSTEM = """Ты эксперт по рынку б/у пищевог�
 - red = цена выше рынка более чем на 15%"""
 
 
-def evaluate_avito_listing(title: str, price: int, region: str, description: str, photos: list = []) -> dict:
+def evaluate_avito_listing(title: str, price: int, region: str, description: str, photos: list = [], seller_type: str = "unknown") -> dict:
     content = []
 
     # photos are now base64 JPEG strings (already compressed in the extension)
@@ -166,7 +167,8 @@ def evaluate_avito_listing(title: str, price: int, region: str, description: str
             }
         })
 
-    user_msg = f"Заголовок: {title}\nЦена: {price} ₽\nРегион: {region}\nОписание: {description[:300]}\n\nЕсли есть фото — определи модель и бренд по шильдику или внешнему виду оборудования."
+    seller_label = {"private": "частное лицо", "company": "компания/дилер"}.get(seller_type, "не определён")
+    user_msg = f"Заголовок: {title}\nЦена: {price} ₽\nРегион: {region}\nТип продавца: {seller_label}\nОписание: {description[:300]}\n\nЕсли есть фото — определи модель и бренд по шильдику или внешнему виду оборудования."
     content.append({"type": "text", "text": user_msg})
 
     resp = _client().messages.create(

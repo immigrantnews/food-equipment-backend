@@ -88,6 +88,7 @@ class AvitoEvalIn(BaseModel):
     region: str = ""
     description: str = ""
     photos: list[str] = []
+    seller_type: str = "unknown"  # private/company/unknown
 
 
 class AvitoEvalOut(BaseModel):

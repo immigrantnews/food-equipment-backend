@@ -268,6 +268,7 @@ def avito_eval(req: AvitoEvalIn):
             region=req.region,
             description=req.description,
             photos=req.photos,
+            seller_type=req.seller_type,
         )
         return AvitoEvalOut(**data, data_source="ai")
     except json.JSONDecodeError as e:
