@@ -302,7 +302,7 @@ def price_stats():
 
     result = {}
     for key, prices in groups.items():
-        if len(prices) >= 3:
+        if len(prices) >= 2:
             result[key] = {
                 "median": statistics.median(prices),
                 "count": len(prices),
