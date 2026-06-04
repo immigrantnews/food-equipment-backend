@@ -7,10 +7,12 @@ from urllib.parse import urlparse
 import httpx
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 import airtable_client as at
 import anthropic_client as ai
 from config import get_settings
+from db import save_subscriber, get_matching_subscribers, unsubscribe
 from schemas import (
     AvitoEvalIn,
     AvitoEvalOut,
@@ -270,6 +272,17 @@ def avito_eval(req: AvitoEvalIn):
             photos=req.photos,
             seller_type=req.seller_type,
         )
+        if data.get('urgency') in ('urgent', 'liquidation'):
+            try:
+                subs = get_matching_subscribers(
+                    req.region, data.get('reseller_margin', 0),
+                    True, req.seller_type == 'private'
+                )
+                if subs:
+                    logger.info(f"URGENT matched {len(subs)} subscribers: {req.title}")
+                    # TODO: send Telegram messages to matched subscribers
+            except Exception as e:
+                logger.warning(f"Subscriber check failed: {e}")
         return AvitoEvalOut(**data, data_source="ai")
     except json.JSONDecodeError as e:
         logger.exception("avito eval JSON parse failed")
@@ -311,6 +324,42 @@ def price_stats():
                 "max": max(prices)
             }
     return result
+
+
+# ---------- Telegram subscriber system ----------
+
+class SubscribeIn(BaseModel):
+    name: str
+    telegram_username: str
+    region: str = ""
+    categories: list[str] = []
+    user_type: str = "reseller"
+    filters: dict = {}
+
+
+@app.post("/subscribe", status_code=201)
+def subscribe_route(req: SubscribeIn):
+    # простая валидация telegram username
+    username = req.telegram_username.strip().lstrip('@')
+    if not re.match(r'^[A-Za-z0-9_]{4,32}$', username):
+        raise HTTPException(status_code=400, detail="Некорректный Telegram username")
+    try:
+        sub_id, token = save_subscriber(
+            req.name, username, req.region,
+            req.categories, req.user_type, req.filters
+        )
+        logger.info(f"New subscriber: @{username} type={req.user_type} region={req.region}")
+        return {"id": sub_id, "status": "subscribed", "unsubscribe_token": token}
+    except Exception as e:
+        logger.exception("subscribe failed")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/unsubscribe/{token}")
+def unsubscribe_route(token: str):
+    if unsubscribe(token):
+        return {"status": "unsubscribed"}
+    raise HTTPException(status_code=404, detail="Подписка не найдена")
 
 
 # ---------- URL fetch (for AI analysis of marketplace listings) ----------

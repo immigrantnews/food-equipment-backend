@@ -343,6 +343,21 @@
   }
   button.secondary:hover { border-color: var(--accent); color: var(--accent); }
 
+  .sub-types { display: flex; gap: 8px; margin: 14px 0; }
+  .sub-type {
+    flex: 1; padding: 10px; border: 2px solid var(--accent); border-radius: var(--radius);
+    background: var(--surface); color: var(--accent); font-weight: 600; font-size: 14px;
+    cursor: pointer; transition: .15s; font-family: inherit;
+  }
+  .sub-type.active { background: var(--accent); color: #fff; }
+  .sub-label { font-size: 13px; font-weight: 600; color: var(--muted); margin: 14px 0 8px; }
+  .sub-cats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .sub-cats label {
+    display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text); cursor: pointer;
+  }
+  .sub-cats input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); }
+  @media (max-width: 600px) { .sub-cats { grid-template-columns: 1fr; } }
+
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -708,6 +723,7 @@
         <span class="desc">Расчёт выкупа, маржи и потенциала перепродажи</span>
       </button>
     </div>
+    <button type="button" class="primary" data-go-screen="subscribe" style="width:100%;margin-top:14px">🔔 Подписаться на уведомления</button>
   </section>
 
   <!-- ========== Category screens ========== -->
@@ -812,6 +828,68 @@
         </span>
         <span class="card-arrow">→</span>
       </button>
+    </div>
+  </section>
+
+  <!-- ========== Subscribe screen ========== -->
+  <section class="category-screen" data-screen="subscribe" id="subscribe-screen" hidden>
+    <div class="card">
+      <h3>🔔 Первым узнавай о срочных продажах</h3>
+      <p class="sub">Бесплатные уведомления в Telegram когда появится выгодное оборудование по твоим критериям</p>
+
+      <div class="sub-types">
+        <button type="button" class="sub-type active" data-sub-type="reseller">💼 Я перекупщик</button>
+        <button type="button" class="sub-type" data-sub-type="buyer">🏭 Покупаю для бизнеса</button>
+      </div>
+
+      <form id="subscribe-form">
+        <div class="fields">
+          <input class="full" type="text" id="sub-name" placeholder="Имя" required>
+          <input class="full" type="text" id="sub-telegram" placeholder="Telegram username (например @ivan_resell)" required>
+          <select class="full" id="sub-region">
+            <option value="">Регион — выберите</option>
+            <option>Москва</option>
+            <option>Санкт-Петербург</option>
+            <option>Московская область</option>
+            <option>Краснодарский край</option>
+            <option>Свердловская область</option>
+            <option>Татарстан</option>
+            <option>Новосибирская область</option>
+            <option>Ростовская область</option>
+            <option>Другой</option>
+          </select>
+        </div>
+
+        <div class="sub-label">Категории оборудования</div>
+        <div class="sub-cats">
+          <label><input type="checkbox" value="Тестомесы"> Тестомесы</label>
+          <label><input type="checkbox" value="Печи хлебопекарные"> Печи хлебопекарные</label>
+          <label><input type="checkbox" value="Расстойные шкафы"> Расстойные шкафы</label>
+          <label><input type="checkbox" value="Пароконвектоматы"> Пароконвектоматы</label>
+          <label><input type="checkbox" value="Тестоделители"> Тестоделители</label>
+          <label><input type="checkbox" value="Холодильное"> Холодильное</label>
+          <label><input type="checkbox" value="Другое"> Другое</label>
+        </div>
+
+        <div id="sub-reseller-fields">
+          <div class="sub-label">Критерии перекупщика</div>
+          <div class="fields">
+            <input type="number" id="sub-min-margin" placeholder="Мин. маржа (₽)" min="0" step="1000">
+            <input type="number" id="sub-max-turnover" placeholder="Макс. оборот (дней)" min="1" max="365">
+          </div>
+          <div class="sub-cats">
+            <label><input type="checkbox" id="sub-private-only"> Только частные лица</label>
+            <label><input type="checkbox" id="sub-urgent-only"> Только срочные</label>
+          </div>
+        </div>
+
+        <button type="submit" class="primary" id="sub-submit" style="width:100%;margin-top:6px">Подписаться бесплатно 🔔</button>
+      </form>
+
+      <div class="success" id="subscribe-success" hidden>
+        ✅ Отлично! Найдите бота <b>@IndMartBot</b> в Telegram и нажмите Start чтобы получать уведомления
+      </div>
+      <p id="subscribe-error" style="color:#b91c1c;font-size:14px;margin:10px 0 0;text-align:center" hidden></p>
     </div>
   </section>
 
@@ -1345,7 +1423,7 @@
       return;
     }
 
-    if (target.startsWith("category-")) {
+    if (target.startsWith("category-") || target === "subscribe") {
       const el = document.querySelector(`section[data-screen="${target}"]`);
       if (el) el.hidden = false;
       backBtn.hidden = false;
@@ -1377,6 +1455,90 @@
     navigate(backBtn.dataset.target || "home");
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
+
+  // ---------- Hash routing (e.g. extension links to /#subscribe-screen) ----------
+  function handleHash() {
+    const h = window.location.hash.replace(/^#/, "");
+    if (h === "subscribe-screen" || h === "subscribe") {
+      navigate("subscribe");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }
+  window.addEventListener("hashchange", handleHash);
+  handleHash();
+
+  // ---------- Subscribe screen ----------
+  (function initSubscribe() {
+    const form = document.getElementById("subscribe-form");
+    if (!form) return;
+    let subType = "reseller";
+    const resellerFields = document.getElementById("sub-reseller-fields");
+    const successEl = document.getElementById("subscribe-success");
+    const errorEl = document.getElementById("subscribe-error");
+    const submitBtn = document.getElementById("sub-submit");
+
+    document.querySelectorAll(".sub-type").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".sub-type").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        subType = btn.dataset.subType;
+        resellerFields.hidden = subType !== "reseller";
+      });
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorEl.hidden = true;
+
+      const name = document.getElementById("sub-name").value.trim();
+      const telegram = document.getElementById("sub-telegram").value.trim();
+      if (!name || !telegram) {
+        errorEl.textContent = "Заполните имя и Telegram username";
+        errorEl.hidden = false;
+        return;
+      }
+
+      const categories = Array.from(
+        document.querySelectorAll(".sub-cats label input[type=checkbox]:checked")
+      ).map((c) => c.value).filter(Boolean);
+
+      const filters = subType === "reseller" ? {
+        minMargin: parseInt(document.getElementById("sub-min-margin").value) || 0,
+        maxTurnover: parseInt(document.getElementById("sub-max-turnover").value) || 60,
+        privateOnly: document.getElementById("sub-private-only").checked,
+        urgentOnly: document.getElementById("sub-urgent-only").checked,
+      } : {};
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Подписываем…";
+      try {
+        const res = await fetch(API_BASE + "/subscribe", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            name,
+            telegram_username: telegram,
+            region: document.getElementById("sub-region").value,
+            categories,
+            user_type: subType,
+            filters,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || "Ошибка " + res.status);
+        }
+        form.hidden = true;
+        successEl.hidden = false;
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.hidden = false;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Подписаться бесплатно 🔔";
+      }
+    });
+  })();
 
   // ---------- Global file-attach button delegate ----------
   document.addEventListener("click", (e) => {
