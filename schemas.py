@@ -96,6 +96,7 @@ class AvitoEvalOut(BaseModel):
     model: Optional[str] = None
     year: Optional[str] = None
     condition: str = "unknown"
+    condition_visual: str = "unknown"
     market_min: int
     market_max: int
     verdict: str
