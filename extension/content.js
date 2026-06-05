@@ -135,7 +135,7 @@
       }
     }
     if (getSite() === 'agroserver') {
-      const raw = getText(['.product-price','.price','[class*="price"]','.cost']);
+      const raw = getText(['.mprice','.price','[class*="price"]']);
       const num = parseInt(raw.replace(/\D/g, ''));
       if (num > 0) return num;
     }
@@ -144,7 +144,7 @@
   }
   function getRegion() {
     if (getSite() === 'agroserver') {
-      return getText(['.product-location','.region','[class*="location"]','[class*="region"]']);
+      return getText(['.bl.ico_location', '[class*="ico_location"]', '[class*="location"]']).slice(0, 100);
     }
     return getText(['[data-marker="item-address/name"]','[class*="address"]','[data-test="product-location"]','[class*="ProductLocation"]']);
   }
