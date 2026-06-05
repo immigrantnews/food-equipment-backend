@@ -42,7 +42,9 @@ load_dotenv("/root/food-equipment-backend/.env")  # robust to cwd / systemd
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("food-equipment-bot")
 
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+# Subscriber-alert bot runs under its own token (TELEGRAM_NOTIFY_TOKEN, bot
+# @IndMartAlertsBot); fall back to the legacy consultant token if not set.
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_NOTIFY_TOKEN") or os.environ.get("TELEGRAM_BOT_TOKEN")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 API_BASE = os.environ.get("API_BASE", "https://web-production-d399a.up.railway.app")
 ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")

@@ -285,7 +285,7 @@ def avito_eval(req: AvitoEvalIn):
                 if subs:
                     import threading
                     import httpx as _httpx
-                    bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+                    bot_token = os.environ.get('TELEGRAM_NOTIFY_TOKEN', '')
                     listing_url = getattr(req, 'listing_url', '')
 
                     def send_notifications():

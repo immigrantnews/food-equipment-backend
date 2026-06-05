@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     anthropic_model: str = "claude-sonnet-4-6"
 
     telegram_bot_token: str = ""
+    telegram_notify_token: str = ""
     telegram_chat_id: str = ""
 
     cors_origins: str = "*"
