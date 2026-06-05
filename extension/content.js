@@ -295,7 +295,7 @@
     w.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:2147483647;width:300px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.18);font-family:system-ui,sans-serif;font-size:14px;background:#fff;overflow:hidden' +
       (urgent ? ';border:3px solid #ef4444;animation:indmart-blink 1s infinite' : '');
     w.innerHTML =
-      '<div style="background:#1a1a2e;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><span><b>IndMart</b><span style="font-size:10px;background:rgba(255,255,255,0.2);padding:2px 6px;border-radius:4px;margin-left:6px">'+(userMode === 'buyer' ? '🏭 Покупатель' : '💼 Перекупщик')+'</span></span><span style="cursor:pointer" onclick="this.closest(\'#indmart-widget\').remove()">✕</span></div>' +
+      '<div style="background:#1a1a2e;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><span><b>IndMart</b><span style="font-size:10px;background:rgba(255,255,255,0.2);padding:2px 6px;border-radius:4px;margin-left:6px">'+(userMode === 'buyer' ? '🏭 Покупатель' : '💼 Перекупщик')+'</span></span><span class="indmart-close" style="cursor:pointer">✕</span></div>' +
       (sellerType === 'private' ? '<div style="background:#dcfce7;color:#166534;padding:8px 16px;text-align:center;font-weight:600">👤 Частное лицо — торгуйтесь!</div>' : '') +
       (sellerType === 'company' ? '<div style="background:#f1f5f9;color:#475569;padding:8px 16px;text-align:center;font-weight:600">🏢 Компания — цена фиксированная</div>' : '') +
       '<div style="background:'+v[0]+';color:#fff;padding:10px;text-align:center;font-weight:700">'+v[1]+'</div>' +
@@ -312,6 +312,13 @@
       sendNotification(d, title || '', price || 0);
     }
     document.body.appendChild(w);
+
+    const closeBtn = w.querySelector('.indmart-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        w.remove();
+      });
+    }
 
     checkFilters(d, sellerType || 'unknown').then(({matches, reason}) => {
       const widget = document.getElementById('indmart-widget');
