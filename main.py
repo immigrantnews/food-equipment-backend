@@ -598,11 +598,18 @@ async def payment_webhook(request: Request):
         logger.warning("payment webhook: bad JSON body")
         return PlainTextResponse("OK")
     try:
-        if not verify_webhook(data):
+        if data.get("Status") == "CONFIRMED":
+            logger.info("Processing CONFIRMED payment. Verifying signature...")
+        sig_valid = verify_webhook(data)
+        if data.get("Status") == "CONFIRMED":
+            logger.info(f"Signature valid: {sig_valid}")
+        if not sig_valid:
             logger.warning("payment webhook: invalid signature")
             return PlainTextResponse("OK")
         if data.get("Status") == "CONFIRMED":
             telegram_username = (data.get("DATA") or {}).get("telegram_username", "")
+            order_id = data.get("OrderId", "")
+            logger.info(f"telegram_username from DATA: '{telegram_username}', OrderId: '{order_id}'")
             if telegram_username:
                 with get_db_conn() as conn:
                     with conn.cursor() as cur:
@@ -614,8 +621,9 @@ async def payment_webhook(request: Request):
                             """,
                             (telegram_username,),
                         )
+                        updated_rows = cur.rowcount
                     conn.commit()
-                logger.info(f"Payment confirmed for @{telegram_username}")
+                logger.info(f"Payment confirmed for @{telegram_username} (rows updated: {updated_rows})")
                 bot_token = os.environ.get('TELEGRAM_NOTIFY_TOKEN', '')
                 if bot_token:
                     with get_db_conn() as conn:
