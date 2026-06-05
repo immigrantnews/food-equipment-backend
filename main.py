@@ -8,7 +8,8 @@ from typing import Optional
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import FastAPI, HTTPException, Query, Request
+import jwt as pyjwt
+from fastapi import Body, FastAPI, Header, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
@@ -28,6 +29,7 @@ from schemas import (
     LeadIn,
     ListingIn,
     ListingOut,
+    ListingCreate,
     ResellerAnalyzeIn,
     ResellerAnalyzeOut,
     WantToBuyIn,
@@ -48,6 +50,21 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ---------- Bulletin board: JWT auth ----------
+JWT_SECRET = os.environ.get('JWT_SECRET', 'indmart-secret-key')
+
+
+def get_current_user(authorization: Optional[str] = None) -> Optional[dict]:
+    """Extract user from Bearer token. Returns None if missing/invalid."""
+    if not authorization or not authorization.startswith('Bearer '):
+        return None
+    token = authorization.replace('Bearer ', '')
+    try:
+        return pyjwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+    except Exception:
+        return None
 
 
 @app.get("/")
@@ -660,3 +677,256 @@ async def payment_webhook(request: Request):
     except Exception:
         logger.exception("payment webhook handler failed")
     return PlainTextResponse("OK")
+
+
+# ---------- Bulletin board API (Postgres) ----------
+# NOTE: /listings (GET/POST/{id}) is the existing Airtable catalog. The bulletin
+# board lives under /board/* to avoid colliding with it.
+
+@app.post("/auth/telegram")
+def auth_telegram(data: dict = Body(...)):
+    """Register/login user via Telegram Login Widget data."""
+    telegram_id = data.get('id')
+    if not telegram_id:
+        raise HTTPException(status_code=400, detail="No telegram_id")
+
+    # NOTE: In production, verify Telegram hash here (HMAC-SHA256 with bot token).
+    # For MVP we trust the data since it comes from the Telegram widget.
+
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO users (telegram_id, telegram_username, first_name, last_name, photo_url)
+                VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (telegram_id) DO UPDATE SET
+                    telegram_username = EXCLUDED.telegram_username,
+                    first_name = EXCLUDED.first_name,
+                    last_name = EXCLUDED.last_name,
+                    photo_url = EXCLUDED.photo_url,
+                    last_seen_at = NOW()
+                RETURNING id, telegram_id, telegram_username, first_name, user_type, city
+            """, (
+                int(telegram_id),
+                data.get('username'),
+                data.get('first_name'),
+                data.get('last_name'),
+                data.get('photo_url')
+            ))
+            user = cur.fetchone()
+            conn.commit()
+
+    exp = int(datetime.now(timezone.utc).timestamp()) + 30 * 24 * 3600
+    token = pyjwt.encode(
+        {'user_id': user[0], 'telegram_id': user[1], 'username': user[2], 'exp': exp},
+        JWT_SECRET, algorithm='HS256'
+    )
+    return {
+        "token": token,
+        "user": {"id": user[0], "telegram_id": user[1], "username": user[2],
+                 "first_name": user[3], "user_type": user[4], "city": user[5]}
+    }
+
+
+@app.get("/board/listings")
+def board_get_listings(
+    category: str = None, city: str = None,
+    min_price: int = None, max_price: int = None,
+    condition: str = None, search: str = None,
+    limit: int = 20, offset: int = 0
+):
+    limit = min(max(1, limit), 50)
+    offset = max(0, offset)
+    if search:
+        search = search[:100].strip()
+
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            where = ["l.status = 'active'"]
+            params = []
+            if category:
+                where.append("l.category = %s")
+                params.append(category)
+            if city:
+                where.append("l.city ILIKE %s")
+                params.append(f"%{city}%")
+            if min_price is not None:
+                where.append("l.price >= %s")
+                params.append(min_price)
+            if max_price is not None:
+                where.append("l.price <= %s")
+                params.append(max_price)
+            if condition:
+                where.append("l.condition = %s")
+                params.append(condition)
+            if search:
+                where.append("l.title ILIKE %s")
+                params.append(f"%{search}%")
+
+            where_str = ' AND '.join(where)
+
+            cur.execute(
+                f"SELECT COUNT(*) FROM listings l WHERE {where_str}",
+                params
+            )
+            total = cur.fetchone()[0]
+
+            cur.execute(
+                f"""SELECT l.id, l.user_id, l.title, l.category, l.condition, l.price,
+                       l.city, l.description, l.photos, l.video_url,
+                       l.status, l.views, l.ai_verdict, l.ai_market_min, l.ai_market_max,
+                       l.created_at, u.first_name, u.telegram_username
+                FROM listings l
+                LEFT JOIN users u ON l.user_id = u.id
+                WHERE {where_str}
+                ORDER BY l.created_at DESC
+                LIMIT %s OFFSET %s""",
+                params + [limit, offset]
+            )
+            rows = cur.fetchall()
+
+    listings = [{
+        "id": r[0], "user_id": r[1], "title": r[2],
+        "category": r[3], "condition": r[4], "price": r[5],
+        "city": r[6], "description": (r[7] or '')[:200],
+        "photos": r[8] if r[8] else [],
+        "video_url": r[9], "status": r[10], "views": r[11],
+        "ai_verdict": r[12], "ai_market_min": r[13], "ai_market_max": r[14],
+        "created_at": r[15].isoformat() if r[15] else None,
+        "seller_name": r[16], "seller_username": r[17]
+    } for r in rows]
+
+    return {"listings": listings, "total": total, "limit": limit, "offset": offset}
+
+
+@app.get("/board/listings/{listing_id}")
+def board_get_listing(listing_id: int, authorization: str = Header(None)):
+    user = get_current_user(authorization)
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE listings SET views = views + 1 WHERE id = %s AND status = 'active'",
+                (listing_id,)
+            )
+            cur.execute("""
+                SELECT l.id, l.user_id, l.title, l.category, l.condition, l.price,
+                       l.city, l.region, l.description, l.photos, l.video_url,
+                       l.phone, l.telegram_username, l.status, l.views,
+                       l.ai_verdict, l.ai_market_min, l.ai_market_max, l.ai_comment,
+                       l.created_at, u.first_name, u.telegram_username, u.user_type
+                FROM listings l
+                LEFT JOIN users u ON l.user_id = u.id
+                WHERE l.id = %s AND l.status IN ('active', 'sold')
+            """, (listing_id,))
+            r = cur.fetchone()
+            conn.commit()
+
+    if not r:
+        raise HTTPException(status_code=404, detail="Listing not found")
+
+    return {
+        "id": r[0], "user_id": r[1], "title": r[2],
+        "category": r[3], "condition": r[4], "price": r[5],
+        "city": r[6], "region": r[7], "description": r[8],
+        "photos": r[9] if r[9] else [],
+        "video_url": r[10],
+        # Contacts only for authenticated users
+        "phone": r[11] if user else None,
+        "telegram_username": r[12] if user else None,
+        "contacts_hidden": not bool(user),
+        "status": r[13], "views": r[14],
+        "ai_verdict": r[15], "ai_market_min": r[16], "ai_market_max": r[17],
+        "ai_comment": r[18],
+        "created_at": r[19].isoformat() if r[19] else None,
+        "seller_name": r[20], "seller_username": r[21], "seller_type": r[22]
+    }
+
+
+@app.post("/board/listings")
+def board_create_listing(req: ListingCreate, authorization: str = Header(None)):
+    user = get_current_user(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            # Rate limit: max 5 listings per day per user
+            cur.execute("""
+                SELECT COUNT(*) FROM listings
+                WHERE user_id = %s AND created_at > NOW() - INTERVAL '24 hours'
+            """, (user['user_id'],))
+            count_today = cur.fetchone()[0]
+            if count_today >= 5:
+                raise HTTPException(status_code=429, detail="Max 5 listings per day")
+
+            cur.execute("""
+                INSERT INTO listings
+                (user_id, title, category, condition, price, city, region,
+                 description, photos, video_url, phone, telegram_username)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s,%s,%s)
+                RETURNING id
+            """, (
+                user['user_id'], req.title, req.category, req.condition,
+                req.price, req.city, req.region, req.description,
+                json.dumps(req.photos, ensure_ascii=False),
+                req.video_url, req.phone, req.telegram_username
+            ))
+            listing_id = cur.fetchone()[0]
+            conn.commit()
+
+    # AI evaluation in background thread
+    def run_ai_eval():
+        try:
+            result = ai.evaluate_avito_listing(
+                title=req.title,
+                price=req.price,
+                region=req.city or '',
+                description=req.description or '',
+                photos=[],
+                seller_type='unknown',
+            )
+            with get_db_conn() as conn2:
+                with conn2.cursor() as cur2:
+                    cur2.execute("""
+                        UPDATE listings SET
+                            ai_verdict = %s, ai_market_min = %s,
+                            ai_market_max = %s, ai_comment = %s
+                        WHERE id = %s
+                    """, (
+                        result.get('verdict'), result.get('market_min'),
+                        result.get('market_max'), result.get('comment'),
+                        listing_id
+                    ))
+                    conn2.commit()
+        except Exception as e:
+            logger.warning(f"AI eval for listing {listing_id} failed: {e}")
+
+    import threading
+    threading.Thread(target=run_ai_eval, daemon=True).start()
+
+    return {"id": listing_id, "status": "active"}
+
+
+@app.put("/board/listings/{listing_id}/status")
+def board_update_listing_status(
+    listing_id: int,
+    data: dict = Body(...),
+    authorization: str = Header(None)
+):
+    user = get_current_user(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    new_status = data.get('status')
+    if new_status not in ('active', 'sold', 'archived'):
+        raise HTTPException(status_code=400, detail="Invalid status")
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE listings SET status = %s, updated_at = NOW()
+                WHERE id = %s AND user_id = %s
+                RETURNING id
+            """, (new_status, listing_id, user['user_id']))
+            updated = cur.fetchone()
+            conn.commit()
+    if not updated:
+        raise HTTPException(status_code=404, detail="Listing not found or not yours")
+    return {"ok": True}

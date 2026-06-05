@@ -1,5 +1,5 @@
-from typing import Literal, Optional
-from pydantic import BaseModel, EmailStr, Field
+from typing import List, Literal, Optional
+from pydantic import BaseModel, EmailStr, Field, validator
 
 
 class LeadIn(BaseModel):
@@ -113,6 +113,44 @@ class AvitoEvalOut(BaseModel):
     comment: str
     data_source: str = "ai"
     error: Optional[str] = None
+
+
+class ListingCreate(BaseModel):
+    title: str
+    category: Optional[str] = None
+    condition: str = 'used'
+    price: int
+    city: Optional[str] = None
+    region: Optional[str] = None
+    description: Optional[str] = None
+    photos: List[str] = []
+    video_url: Optional[str] = None
+    phone: Optional[str] = None
+    telegram_username: Optional[str] = None
+
+    @validator('photos')
+    def max_photos(cls, v):
+        if len(v) > 10:
+            raise ValueError('Max 10 photos allowed')
+        return v
+
+    @validator('video_url')
+    def validate_video_url(cls, v):
+        if v and not any(d in v for d in ['youtube.com', 'youtu.be', 'rutube.ru']):
+            raise ValueError('Only YouTube and Rutube links allowed')
+        return v
+
+    @validator('price')
+    def price_positive(cls, v):
+        if v <= 0:
+            raise ValueError('Price must be positive')
+        return v
+
+    @validator('title')
+    def title_not_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Title required')
+        return v[:500]
 
 
 class FetchUrlIn(BaseModel):
