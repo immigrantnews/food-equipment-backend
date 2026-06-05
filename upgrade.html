@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IndMart — Срочные продажи пищевого оборудования</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+
+:root{
+  --bg-deep:#0A0E1A;
+  --bg-card:#111827;
+  --bg-elevated:#1C2333;
+  --gold:#C8A55A;
+  --gold-bright:#F0C060;
+  --text-primary:#F0F4FF;
+  --text-secondary:#8892AA;
+  --green:#22C55E;
+  --red:#EF4444;
+  --border:rgba(200,165,90,0.2);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+
+html{scroll-behavior:smooth}
+
+body{
+  background:var(--bg-deep);
+  color:var(--text-primary);
+  font-family:'IBM Plex Sans',sans-serif;
+  font-weight:400;
+  line-height:1.6;
+  overflow-x:hidden;
+}
+
+h1,h2,h3,.display{
+  font-family:'Bebas Neue',sans-serif;
+  font-weight:400;
+  letter-spacing:1px;
+  line-height:0.98;
+}
+
+::selection{background:var(--gold);color:var(--bg-deep)}
+
+.container{max-width:1200px;margin:0 auto;padding:0 24px}
+
+/* ===== HERO ===== */
+.hero{
+  position:relative;
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  overflow:hidden;
+  border-bottom:1px solid var(--border);
+}
+.hero-grid{
+  position:absolute;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(200,165,90,0.06) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(200,165,90,0.06) 1px,transparent 1px);
+  background-size:48px 48px;
+  animation:gridMove 30s linear infinite;
+  z-index:0;
+}
+@keyframes gridMove{
+  from{background-position:0 0,0 0}
+  to{background-position:48px 48px,48px 48px}
+}
+.hero-glow{
+  position:absolute;
+  top:-20%;left:-10%;
+  width:60%;height:80%;
+  background:radial-gradient(circle,rgba(200,165,90,0.12) 0%,transparent 70%);
+  filter:blur(40px);
+  z-index:0;
+  pointer-events:none;
+}
+.hero-dots{
+  position:absolute;
+  inset:0;
+  background-image:radial-gradient(rgba(200,165,90,0.25) 1px,transparent 1px);
+  background-size:80px 80px;
+  animation:dotsMove 40s linear infinite;
+  opacity:0.5;
+  z-index:0;
+}
+@keyframes dotsMove{
+  from{background-position:0 0}
+  to{background-position:80px 160px}
+}
+.hero .container{position:relative;z-index:2}
+.hero-inner{
+  display:grid;
+  grid-template-columns:1.15fr 0.85fr;
+  gap:48px;
+  align-items:center;
+  padding:120px 0 80px;
+}
+.eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-size:13px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  color:var(--gold);
+  border:1px solid var(--border);
+  background:rgba(200,165,90,0.05);
+  padding:8px 16px;
+  border-radius:100px;
+  margin-bottom:28px;
+}
+.eyebrow .pulse{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 0 0 rgba(34,197,94,0.6);
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(34,197,94,0.5)}
+  70%{box-shadow:0 0 0 10px rgba(34,197,94,0)}
+  100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}
+}
+.hero h1{
+  font-size:clamp(48px,7vw,92px);
+  margin-bottom:24px;
+  text-transform:uppercase;
+}
+.hero h1 .accent{
+  color:var(--gold-bright);
+  display:block;
+  background:linear-gradient(180deg,var(--gold-bright),var(--gold));
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.hero .subhead{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(28px,4vw,44px);
+  color:var(--gold);
+  letter-spacing:2px;
+  margin-bottom:24px;
+}
+.hero .body{
+  font-size:18px;
+  color:var(--text-secondary);
+  max-width:520px;
+  margin-bottom:40px;
+}
+.hero .body strong{color:var(--text-primary);font-weight:600}
+
+.cta-row{display:flex;gap:16px;flex-wrap:wrap}
+.btn{
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:16px;
+  font-weight:600;
+  padding:18px 32px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  transition:transform .2s ease,box-shadow .3s ease,background .3s ease;
+}
+.btn-gold{
+  background:linear-gradient(135deg,var(--gold-bright),var(--gold));
+  color:#1a1306;
+  box-shadow:0 8px 30px rgba(200,165,90,0.3);
+}
+.btn-gold:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 40px rgba(240,192,96,0.5);
+}
+.btn-outline{
+  background:transparent;
+  color:var(--text-primary);
+  border:1px solid var(--border);
+}
+.btn-outline:hover{
+  border-color:var(--gold);
+  background:rgba(200,165,90,0.06);
+  transform:translateY(-2px);
+}
+
+/* ===== PHONE MOCKUP ===== */
+.phone-wrap{
+  display:flex;
+  justify-content:center;
+  perspective:1200px;
+}
+.phone{
+  position:relative;
+  width:300px;
+  height:600px;
+  background:#05070d;
+  border-radius:40px;
+  border:1px solid var(--border);
+  box-shadow:0 30px 80px rgba(0,0,0,0.6),0 0 60px rgba(200,165,90,0.08);
+  padding:14px;
+  animation:float 6s ease-in-out infinite;
+}
+@keyframes float{
+  0%,100%{transform:translateY(0) rotateY(-6deg) rotateX(2deg)}
+  50%{transform:translateY(-18px) rotateY(-6deg) rotateX(2deg)}
+}
+.phone-notch{
+  position:absolute;
+  top:14px;left:50%;transform:translateX(-50%);
+  width:120px;height:24px;
+  background:#05070d;
+  border-radius:0 0 16px 16px;
+  z-index:3;
+}
+.phone-screen{
+  width:100%;height:100%;
+  background:#0e1621;
+  border-radius:28px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+.tg-header{
+  background:#17212b;
+  padding:38px 16px 12px;
+  display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.tg-avatar{
+  width:38px;height:38px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold-bright),var(--gold));
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;color:#1a1306;font-size:16px;
+}
+.tg-title{font-weight:600;font-size:15px}
+.tg-sub{font-size:12px;color:var(--text-secondary)}
+.tg-body{
+  flex:1;
+  padding:16px 12px;
+  display:flex;flex-direction:column;
+  gap:10px;
+  background:
+    radial-gradient(circle at 20% 20%,rgba(200,165,90,0.04),transparent 40%),
+    #0e1621;
+}
+.tg-msg{
+  background:#1c2733;
+  border-radius:14px 14px 14px 4px;
+  padding:14px;
+  max-width:92%;
+  font-size:13px;
+  line-height:1.5;
+  box-shadow:0 4px 12px rgba(0,0,0,0.3);
+  animation:msgIn .6s ease both;
+}
+.tg-msg .urgent{color:var(--gold-bright);font-weight:700;font-size:14px;display:block;margin-bottom:8px}
+.tg-msg .row{display:flex;gap:6px;margin:3px 0;color:#cdd6e8}
+.tg-msg .row b{color:var(--green);font-weight:600}
+.tg-link{
+  margin-top:10px;
+  display:block;
+  text-align:center;
+  background:linear-gradient(135deg,var(--gold-bright),var(--gold));
+  color:#1a1306;
+  font-weight:700;
+  padding:9px;
+  border-radius:8px;
+  font-size:12px;
+}
+.tg-time{font-size:10px;color:var(--text-secondary);text-align:right;margin-top:6px}
+@keyframes msgIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ===== TICKER ===== */
+.ticker{
+  background:linear-gradient(90deg,var(--gold),var(--gold-bright),var(--gold));
+  color:#1a1306;
+  padding:14px 0;
+  overflow:hidden;
+  white-space:nowrap;
+  border-top:1px solid rgba(0,0,0,0.2);
+  border-bottom:1px solid rgba(0,0,0,0.2);
+}
+.ticker-track{
+  display:inline-block;
+  animation:ticker 30s linear infinite;
+  font-weight:600;
+  font-size:15px;
+  letter-spacing:0.5px;
+}
+.ticker-track span{padding:0 4px}
+.ticker:hover .ticker-track{animation-play-state:paused}
+@keyframes ticker{
+  from{transform:translateX(0)}
+  to{transform:translateX(-50%)}
+}
+
+/* ===== SECTION BASE ===== */
+section{position:relative}
+.sec-pad{padding:100px 0}
+.sec-head{text-align:center;margin-bottom:64px}
+.sec-head .label{
+  color:var(--gold);
+  letter-spacing:3px;
+  text-transform:uppercase;
+  font-size:13px;
+  font-weight:600;
+  margin-bottom:16px;
+  display:block;
+}
+.sec-head h2{
+  font-size:clamp(38px,5vw,64px);
+  text-transform:uppercase;
+}
+.sec-head p{color:var(--text-secondary);max-width:560px;margin:16px auto 0;font-size:17px}
+
+/* ===== STATS ===== */
+.stats{background:var(--bg-deep)}
+.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:20px;
+}
+.stat-card{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:40px 28px;
+  text-align:center;
+  transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;
+}
+.stat-card:hover{
+  transform:translateY(-6px);
+  border-color:var(--gold);
+  box-shadow:0 20px 50px rgba(200,165,90,0.12);
+}
+.stat-num{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:64px;
+  color:var(--gold-bright);
+  line-height:1;
+  margin-bottom:12px;
+  background:linear-gradient(180deg,var(--gold-bright),var(--gold));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.stat-label{color:var(--text-secondary);font-size:15px}
+
+/* ===== HOW IT WORKS ===== */
+.how{background:linear-gradient(180deg,var(--bg-deep),var(--bg-card))}
+.steps{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:32px;
+  position:relative;
+}
+.steps::before{
+  content:"";
+  position:absolute;
+  top:48px;left:16%;right:16%;
+  border-top:2px dotted var(--border);
+  z-index:0;
+}
+.step{
+  position:relative;
+  z-index:1;
+  text-align:center;
+  padding:0 16px;
+}
+.step-icon{
+  width:96px;height:96px;
+  margin:0 auto 28px;
+  background:var(--bg-elevated);
+  border:1px solid var(--border);
+  border-radius:24px;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--gold-bright);
+  box-shadow:0 10px 30px rgba(0,0,0,0.4);
+  transition:transform .3s ease,box-shadow .3s ease;
+}
+.step:hover .step-icon{
+  transform:translateY(-6px);
+  box-shadow:0 16px 40px rgba(200,165,90,0.2);
+}
+.step-icon svg{width:44px;height:44px}
+.step-num{
+  display:inline-block;
+  font-family:'Bebas Neue',sans-serif;
+  color:var(--gold);
+  font-size:18px;
+  letter-spacing:2px;
+  margin-bottom:8px;
+}
+.step h3{font-size:26px;margin-bottom:10px;text-transform:uppercase}
+.step p{color:var(--text-secondary);font-size:15px}
+
+/* ===== TELEGRAM SHOWCASE ===== */
+.tg-show{background:var(--bg-card)}
+.tg-show-grid{
+  display:grid;
+  grid-template-columns:0.9fr 1.1fr;
+  gap:64px;
+  align-items:center;
+}
+.tg-card{
+  background:#0e1621;
+  border:1px solid var(--border);
+  border-radius:24px;
+  padding:24px;
+  max-width:420px;
+  box-shadow:0 30px 70px rgba(0,0,0,0.5),0 0 50px rgba(200,165,90,0.06);
+}
+.tg-card .tg-chat-head{
+  display:flex;align-items:center;gap:12px;
+  padding-bottom:16px;margin-bottom:16px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.tg-card .big-msg{
+  background:#1c2733;
+  border-radius:16px;
+  padding:20px;
+  font-size:15px;
+  line-height:1.7;
+}
+.tg-card .big-msg .urgent{
+  color:var(--gold-bright);font-weight:700;font-size:18px;
+  display:block;margin-bottom:14px;
+}
+.tg-card .big-msg .ln{display:flex;gap:8px;margin:6px 0;color:#cdd6e8}
+.tg-card .big-msg .ln b{color:var(--green)}
+.tg-show-text h2{font-size:clamp(34px,4vw,52px);text-transform:uppercase;margin-bottom:20px}
+.tg-show-text p{color:var(--text-secondary);font-size:18px;margin-bottom:16px}
+.tg-show-text .hl{
+  color:var(--gold);
+  border-left:3px solid var(--gold);
+  padding-left:16px;
+  font-size:17px;
+}
+
+/* ===== PRICING ===== */
+.pricing{background:linear-gradient(180deg,var(--bg-card),var(--bg-deep))}
+.price-card{
+  max-width:520px;
+  margin:0 auto;
+  background:var(--bg-elevated);
+  border:1px solid var(--gold);
+  border-radius:28px;
+  padding:56px 48px;
+  text-align:center;
+  position:relative;
+  box-shadow:0 0 0 1px rgba(200,165,90,0.1),0 0 60px rgba(200,165,90,0.18),0 30px 80px rgba(0,0,0,0.5);
+}
+.price-card::before{
+  content:"";
+  position:absolute;inset:-2px;
+  border-radius:30px;
+  background:linear-gradient(135deg,var(--gold-bright),transparent 40%,transparent 60%,var(--gold));
+  z-index:-1;
+  opacity:0.5;
+}
+.price-badge{
+  display:inline-block;
+  background:rgba(200,165,90,0.1);
+  color:var(--gold);
+  border:1px solid var(--border);
+  padding:6px 18px;
+  border-radius:100px;
+  font-size:13px;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  margin-bottom:24px;
+}
+.price-card h3{font-size:42px;text-transform:uppercase;margin-bottom:24px}
+.price-main{
+  display:flex;align-items:baseline;justify-content:center;gap:6px;
+  margin-bottom:8px;
+}
+.price-main .amt{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:88px;line-height:1;
+  color:var(--gold-bright);
+  background:linear-gradient(180deg,var(--gold-bright),var(--gold));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.price-main .per{color:var(--text-secondary);font-size:22px}
+.price-annual{color:var(--text-secondary);font-size:15px;margin-bottom:32px}
+.price-annual b{color:var(--gold)}
+.feat-list{text-align:left;margin:0 auto 36px;max-width:380px}
+.feat-list li{
+  list-style:none;
+  display:flex;align-items:flex-start;gap:12px;
+  padding:11px 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+  font-size:16px;
+}
+.feat-list li .check{
+  color:var(--gold-bright);
+  flex-shrink:0;
+  margin-top:2px;
+}
+.price-card .btn-gold{width:100%;justify-content:center;font-size:18px}
+
+/* ===== PAYMENT FORM ===== */
+.pay{background:var(--bg-deep)}
+.pay-card{
+  max-width:480px;margin:0 auto;
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:24px;
+  padding:48px 40px;
+  box-shadow:0 30px 70px rgba(0,0,0,0.4);
+}
+.field{margin-bottom:24px}
+.field label{
+  display:block;
+  font-size:14px;
+  color:var(--text-secondary);
+  margin-bottom:10px;
+  letter-spacing:0.5px;
+}
+.input-wrap{
+  display:flex;align-items:center;
+  background:var(--bg-elevated);
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+  transition:border-color .25s ease,box-shadow .25s ease;
+}
+.input-wrap:focus-within{
+  border-color:var(--gold);
+  box-shadow:0 0 0 3px rgba(200,165,90,0.12);
+}
+.input-wrap .prefix{
+  padding:0 0 0 18px;
+  color:var(--gold);
+  font-size:18px;
+  font-weight:600;
+}
+.input-wrap input{
+  flex:1;
+  background:transparent;
+  border:none;
+  outline:none;
+  padding:16px 18px 16px 8px;
+  color:var(--text-primary);
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:16px;
+}
+.input-wrap input::placeholder{color:var(--text-secondary)}
+
+.toggle{
+  display:flex;
+  background:var(--bg-elevated);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:5px;
+  position:relative;
+}
+.toggle-pill{
+  position:absolute;
+  top:5px;bottom:5px;
+  left:5px;
+  width:calc(50% - 5px);
+  background:linear-gradient(135deg,var(--gold-bright),var(--gold));
+  border-radius:8px;
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  z-index:0;
+}
+.toggle.year .toggle-pill{transform:translateX(100%)}
+.toggle button{
+  flex:1;
+  position:relative;
+  z-index:1;
+  background:transparent;
+  border:none;
+  cursor:pointer;
+  padding:14px;
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:15px;
+  font-weight:600;
+  color:var(--text-secondary);
+  transition:color .3s ease;
+}
+.toggle button.active{color:#1a1306}
+.toggle button small{display:block;font-size:12px;font-weight:400;opacity:0.8}
+
+.pay-card .btn-gold{width:100%;justify-content:center;font-size:18px;margin-top:8px}
+.pay-card .btn-gold:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+.secure-note{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  margin-top:20px;
+  color:var(--text-secondary);
+  font-size:13px;
+}
+.pay-error{
+  color:var(--red);
+  font-size:14px;
+  text-align:center;
+  margin-top:16px;
+  min-height:18px;
+}
+
+/* ===== FOOTER ===== */
+footer{
+  border-top:1px solid var(--border);
+  padding:48px 0;
+  text-align:center;
+  color:var(--text-secondary);
+  font-size:14px;
+}
+footer .logo{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:28px;
+  color:var(--gold);
+  letter-spacing:2px;
+  margin-bottom:12px;
+}
+
+/* ===== SCROLL ANIMATIONS ===== */
+.reveal{opacity:0;transform:translateY(40px);transition:opacity .8s ease,transform .8s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:900px){
+  .hero-inner{grid-template-columns:1fr;text-align:center;padding:100px 0 60px}
+  .hero .body{margin-left:auto;margin-right:auto}
+  .cta-row{justify-content:center}
+  .eyebrow{margin-left:auto;margin-right:auto}
+  .phone-wrap{margin-top:48px}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .steps{grid-template-columns:1fr;gap:48px}
+  .steps::before{display:none}
+  .tg-show-grid{grid-template-columns:1fr;gap:40px}
+  .tg-card{margin:0 auto}
+  .tg-show-text{text-align:center}
+  .tg-show-text .hl{border-left:none;border-top:3px solid var(--gold);padding:16px 0 0;text-align:center}
+}
+@media(max-width:520px){
+  .stats-grid{grid-template-columns:1fr}
+  .sec-pad{padding:70px 0}
+  .price-card,.pay-card{padding:40px 24px}
+  .hero h1{font-size:44px}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-dots"></div>
+  <div class="hero-glow"></div>
+  <div class="container">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <span class="eyebrow"><span class="pulse"></span>Рыночная разведка · IndMart</span>
+        <h1>Срочные продажи<br>пищевого<br><span class="accent">оборудования</span></h1>
+        <div class="subhead">Первым. Каждый раз.</div>
+        <p class="body">Подписчики IndMart получают уведомления о выгодных сделках на <strong>2–3 часа раньше</strong> всех. Одна сделка окупает подписку в <strong>10 раз</strong>.</p>
+        <div class="cta-row">
+          <a href="#pay" class="btn btn-gold">Подписаться за 2 990 ₽/мес</a>
+          <a href="#mockup" class="btn btn-outline">Смотреть примеры ↓</a>
+        </div>
+      </div>
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="tg-header">
+              <div class="tg-avatar">IM</div>
+              <div>
+                <div class="tg-title">IndMart Бот</div>
+                <div class="tg-sub">bot · онлайн</div>
+              </div>
+            </div>
+            <div class="tg-body">
+              <div class="tg-msg">
+                <span class="urgent">⚡ Срочная продажа!</span>
+                <div class="row">🍞 Комплект для пекарни</div>
+                <div class="row">💰 Цена: <b style="color:#fff">8 000 ₽</b></div>
+                <div class="row">📍 Регион: Москва</div>
+                <div class="row">💵 Маржа: <b>~90 000 ₽</b></div>
+                <div class="row">⏱ Оборот: 7–21 дней</div>
+                <a class="tg-link">🔗 Открыть объявление</a>
+                <div class="tg-time">10:24 ✓✓</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TICKER ===== -->
+<div class="ticker">
+  <div class="ticker-track">
+    <span>⚡ ТЕСТОМЕС APACH ATR 20 — 45 000 ₽ — МАРЖА 30 000 ₽ &nbsp;•&nbsp; 🔥 РОТАЦИОННАЯ ПЕЧЬ MONO — 180 000 ₽ — МАРЖА 55 000 ₽ &nbsp;•&nbsp; ⚡ ПАРОКОНВЕКТОМАТ RATIONAL — 320 000 ₽ — МАРЖА 90 000 ₽ &nbsp;•&nbsp;</span>
+    <span>⚡ ТЕСТОМЕС APACH ATR 20 — 45 000 ₽ — МАРЖА 30 000 ₽ &nbsp;•&nbsp; 🔥 РОТАЦИОННАЯ ПЕЧЬ MONO — 180 000 ₽ — МАРЖА 55 000 ₽ &nbsp;•&nbsp; ⚡ ПАРОКОНВЕКТОМАТ RATIONAL — 320 000 ₽ — МАРЖА 90 000 ₽ &nbsp;•&nbsp;</span>
+  </div>
+</div>
+
+<!-- ===== STATS ===== -->
+<section class="stats sec-pad">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="label">Цифры рынка</span>
+      <h2>Каждый месяц — десятки сделок</h2>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card reveal">
+        <div class="stat-num">47</div>
+        <div class="stat-label">срочных продаж за месяц</div>
+      </div>
+      <div class="stat-card reveal">
+        <div class="stat-num">~30 000 ₽</div>
+        <div class="stat-label">средняя маржа</div>
+      </div>
+      <div class="stat-card reveal">
+        <div class="stat-num">2–3 часа</div>
+        <div class="stat-label">преимущество перед остальными</div>
+      </div>
+      <div class="stat-card reveal">
+        <div class="stat-num">14 дней</div>
+        <div class="stat-label">средний срок оборота</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== HOW IT WORKS ===== -->
+<section class="how sec-pad">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="label">Как это работает</span>
+      <h2>Три шага до первой сделки</h2>
+    </div>
+    <div class="steps">
+      <div class="step reveal">
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.4 12a2.4 2.4 0 0 1 0-4.8h.6V5a2 2 0 0 0-2-2h-3.2v-.6a2.4 2.4 0 0 0-4.8 0V3H6a2 2 0 0 0-2 2v3.2h-.6a2.4 2.4 0 0 0 0 4.8H4V18a2 2 0 0 0 2 2h3.2v-.6a2.4 2.4 0 0 1 4.8 0v.6H18a2 2 0 0 0 2-2v-3.2h-.6Z"/></svg>
+        </div>
+        <span class="step-num">Шаг 01</span>
+        <h3>Расширение Chrome</h3>
+        <p>Устанавливаешь расширение IndMart в браузер за пару кликов.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/><circle cx="9" cy="6" r="2.4" fill="var(--bg-elevated)"/><circle cx="15" cy="12" r="2.4" fill="var(--bg-elevated)"/><circle cx="8" cy="18" r="2.4" fill="var(--bg-elevated)"/></svg>
+        </div>
+        <span class="step-num">Шаг 02</span>
+        <h3>Критерии в боте</h3>
+        <p>Настраиваешь фильтры: маржа, оборот, регион, тип оборудования.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        </div>
+        <span class="step-num">Шаг 03</span>
+        <h3>Уведомления первым</h3>
+        <p>Получаешь сделку в Telegram раньше остального рынка и забираешь маржу.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TELEGRAM SHOWCASE ===== -->
+<section class="tg-show sec-pad" id="mockup">
+  <div class="container">
+    <div class="tg-show-grid">
+      <div class="tg-card reveal">
+        <div class="tg-chat-head">
+          <div class="tg-avatar">IM</div>
+          <div>
+            <div class="tg-title">IndMart Бот</div>
+            <div class="tg-sub">уведомление · сейчас</div>
+          </div>
+        </div>
+        <div class="big-msg">
+          <span class="urgent">⚡ Срочная продажа!</span>
+          <div class="ln">🍞 Комплект оборудования для пекарни</div>
+          <div class="ln">💰 Цена: <span style="color:#fff;font-weight:600">8 000 ₽</span></div>
+          <div class="ln">📍 Регион: Москва</div>
+          <div class="ln">💵 Маржа: <b>~90 000 ₽</b></div>
+          <div class="ln">⏱ Оборот: 7–21 дней</div>
+          <a class="tg-link">🔗 Открыть объявление</a>
+        </div>
+      </div>
+      <div class="tg-show-text reveal">
+        <h2>Такие уведомления приходят подписчикам</h2>
+        <p>Полная карточка сделки: цена, регион, расчёт маржи и срок оборота — всё, чтобы принять решение за секунды.</p>
+        <p class="hl">Бесплатным пользователям — без ссылки на объявление. Подписчики получают прямую ссылку и забирают сделку первыми.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PRICING ===== -->
+<section class="pricing sec-pad">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="label">Тариф</span>
+      <h2>Всё включено</h2>
+    </div>
+    <div class="price-card reveal">
+      <span class="price-badge">Подписка</span>
+      <h3>IndMart Перекупщик</h3>
+      <div class="price-main">
+        <span class="amt">2 990 ₽</span>
+        <span class="per">/мес</span>
+      </div>
+      <div class="price-annual">или <b>1 990 ₽/мес</b> при оплате за год</div>
+      <ul class="feat-list">
+        <li><span class="check">✓</span> Все срочные продажи первым</li>
+        <li><span class="check">✓</span> Полные ссылки на объявления</li>
+        <li><span class="check">✓</span> Безлимитные оценки на Авито</li>
+        <li><span class="check">✓</span> Оценка по фото (определение модели)</li>
+        <li><span class="check">✓</span> Фильтры по марже, обороту, региону</li>
+        <li><span class="check">✓</span> Мини-метки в каталоге Авито</li>
+      </ul>
+      <a href="#pay" class="btn btn-gold">Оформить подписку</a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== PAYMENT FORM ===== -->
+<section class="pay sec-pad" id="pay">
+  <div class="container">
+    <div class="sec-head reveal">
+      <span class="label">Оплата</span>
+      <h2>Начни забирать сделки</h2>
+    </div>
+    <div class="pay-card reveal">
+      <div class="field">
+        <label for="username">Ваш Telegram username</label>
+        <div class="input-wrap">
+          <span class="prefix">@</span>
+          <input type="text" id="username" placeholder="username" autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+      <div class="field">
+        <label>Тариф</label>
+        <div class="toggle" id="toggle">
+          <div class="toggle-pill"></div>
+          <button type="button" class="active" data-plan="month" data-price="2990">Месяц<small>2 990 ₽</small></button>
+          <button type="button" data-plan="year" data-price="1990">Год<small>1 990 ₽/мес</small></button>
+        </div>
+      </div>
+      <button class="btn btn-gold" id="payBtn">Оплатить 2 990 ₽</button>
+      <div class="pay-error" id="payError"></div>
+      <div class="secure-note">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Безопасная оплата · данные защищены
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="logo">INDMART</div>
+    <div>Рыночная разведка по пищевому оборудованию · © 2026</div>
+  </div>
+</footer>
+
+<script>
+// ===== Plan toggle =====
+const toggle=document.getElementById('toggle');
+const planButtons=toggle.querySelectorAll('button');
+const payBtn=document.getElementById('payBtn');
+let currentPlan='month';
+let currentPrice=2990;
+
+planButtons.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    planButtons.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentPlan=btn.dataset.plan;
+    currentPrice=parseInt(btn.dataset.price,10);
+    toggle.classList.toggle('year',currentPlan==='year');
+    const total=currentPlan==='year'?currentPrice*12:currentPrice;
+    payBtn.textContent='Оплатить '+total.toLocaleString('ru-RU')+' ₽';
+  });
+});
+
+// ===== Payment submit =====
+const usernameInput=document.getElementById('username');
+const payError=document.getElementById('payError');
+
+usernameInput.addEventListener('input',()=>{ payError.textContent=''; });
+
+payBtn.addEventListener('click',async()=>{
+  let username=usernameInput.value.trim().replace(/^@+/,'');
+  payError.textContent='';
+  if(!username){
+    payError.textContent='Укажите ваш Telegram username';
+    usernameInput.focus();
+    return;
+  }
+  if(!/^[A-Za-z0-9_]{4,32}$/.test(username)){
+    payError.textContent='Username должен содержать 4–32 символа: буквы, цифры, _';
+    usernameInput.focus();
+    return;
+  }
+  const total=currentPlan==='year'?currentPrice*12:currentPrice;
+  payBtn.disabled=true;
+  const originalText=payBtn.textContent;
+  payBtn.textContent='Создаём счёт…';
+  try{
+    const res=await fetch('/api/create-payment',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({username:username,plan:currentPlan,amount:total})
+    });
+    if(!res.ok) throw new Error('bad status '+res.status);
+    const data=await res.json();
+    if(data&&(data.payment_url||data.url||data.confirmation_url)){
+      window.location.href=data.payment_url||data.url||data.confirmation_url;
+    }else{
+      throw new Error('no payment url');
+    }
+  }catch(err){
+    payError.textContent='Не удалось создать платёж. Попробуйте ещё раз.';
+    payBtn.disabled=false;
+    payBtn.textContent=originalText;
+  }
+});
+
+// ===== Scroll reveal =====
+const observer=new IntersectionObserver((entries)=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
+    }
+  });
+},{threshold:0.15,rootMargin:'0px 0px -50px 0px'});
+
+document.querySelectorAll('.reveal').forEach((el,i)=>{
+  el.style.transitionDelay=(i%4*0.08)+'s';
+  observer.observe(el);
+});
+</script>
+</body>
+</html>
