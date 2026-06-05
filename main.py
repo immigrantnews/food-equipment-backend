@@ -607,9 +607,12 @@ async def payment_webhook(request: Request):
             logger.warning("payment webhook: invalid signature")
             return PlainTextResponse("OK")
         if data.get("Status") == "CONFIRMED":
-            telegram_username = (data.get("DATA") or {}).get("telegram_username", "")
             order_id = data.get("OrderId", "")
-            logger.info(f"telegram_username from DATA: '{telegram_username}', OrderId: '{order_id}'")
+            telegram_username = (data.get("DATA") or {}).get("telegram_username", "")
+            if not telegram_username and "-" in order_id:
+                # DATA приходит пустым от Tinkoff — берём username из OrderId "username-hexcode"
+                telegram_username = order_id.rsplit("-", 1)[0]
+            logger.info(f"Resolved telegram_username: '{telegram_username}' (OrderId: '{order_id}')")
             if telegram_username:
                 with get_db_conn() as conn:
                     with conn.cursor() as cur:
