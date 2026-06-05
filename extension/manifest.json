@@ -4,9 +4,9 @@
   "version": "1.0.0",
   "description": "Бесплатная оценка пищевого оборудования прямо на Авито",
   "permissions": ["storage", "activeTab", "notifications"],
-  "host_permissions": ["https://www.avito.ru/*", "https://avito.ru/*", "https://youla.ru/*", "https://www.youla.ru/*"],
+  "host_permissions": ["https://www.avito.ru/*", "https://avito.ru/*", "https://youla.ru/*", "https://www.youla.ru/*", "https://agroserver.ru/*", "https://www.agroserver.ru/*"],
   "content_scripts": [{
-    "matches": ["https://www.avito.ru/*", "https://avito.ru/*", "https://youla.ru/*", "https://www.youla.ru/*"],
+    "matches": ["https://www.avito.ru/*", "https://avito.ru/*", "https://youla.ru/*", "https://www.youla.ru/*", "https://agroserver.ru/*", "https://www.agroserver.ru/*"],
     "js": ["content.js"],
     "css": ["styles.css"],
     "run_at": "document_idle"

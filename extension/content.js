@@ -94,12 +94,26 @@
     const host = location.hostname;
     if (host.includes('avito')) return 'avito';
     if (host.includes('youla')) return 'youla';
+    if (host.includes('agroserver')) return 'agroserver';
     return 'other';
   }
   function parseTitle() {
     if (getSite() === 'youla') {
       const h2 = document.querySelector('h2');
       if (h2?.textContent?.trim()) return h2.textContent.trim();
+    }
+    if (getSite() === 'agroserver') {
+      const agroSelectors = [
+        'h1.product-title',
+        'h1.title',
+        '.product-name h1',
+        '.card-title',
+        'h1'
+      ];
+      for (const sel of agroSelectors) {
+        const el = document.querySelector(sel);
+        if (el?.textContent?.trim()) return el.textContent.trim();
+      }
     }
     const selectors = [
       'h1[itemprop="name"]',
@@ -120,8 +134,25 @@
         if (num > 0) return num;
       }
     }
+    if (getSite() === 'agroserver') {
+      const raw = getText(['.product-price','.price','[class*="price"]','.cost']);
+      const num = parseInt(raw.replace(/\D/g, ''));
+      if (num > 0) return num;
+    }
     const raw = getText(['[itemprop="price"]','[data-marker="item-view/item-price"]','[class*="price-value"]','[class*="item-price"]','[data-test="product-price"]','[class*="ProductPrice"]']);
     return parseInt(raw.replace(/\D/g, '')) || 0;
+  }
+  function getRegion() {
+    if (getSite() === 'agroserver') {
+      return getText(['.product-location','.region','[class*="location"]','[class*="region"]']);
+    }
+    return getText(['[data-marker="item-address/name"]','[class*="address"]','[data-test="product-location"]','[class*="ProductLocation"]']);
+  }
+  function getDescription() {
+    if (getSite() === 'agroserver') {
+      return getText(['.product-description','.description','[class*="description"]','.product-text']).slice(0, 300);
+    }
+    return getText(['[data-marker="item-view/item-description"]','[itemprop="description"]','[data-test="product-description"]','[class*="ProductDescription"]']).slice(0, 300);
   }
   async function makeButton() {
     if (document.getElementById('indmart-btn') || document.getElementById('indmart-widget')) return;
@@ -134,7 +165,8 @@
       url.includes('selskoe_hozyaystvo') ||
       url.includes('promyshlennoe') ||
       url.includes('horeca') ||
-      url.includes('youla.ru');  // accept all youla pages, filter by keywords
+      url.includes('youla.ru') ||
+      url.includes('agroserver.ru');  // accept all youla/agroserver pages, filter by keywords
     if (!isEquipment) return;
 
     const title = parseTitle();
@@ -233,8 +265,8 @@
 
     if (btn) { btn.textContent = '⏳ Анализирую...'; btn.dataset.loading = '1'; }
 
-    const region = getText(['[data-marker="item-address/name"]','[class*="address"]','[data-test="product-location"]','[class*="ProductLocation"]']);
-    const description = getText(['[data-marker="item-view/item-description"]','[itemprop="description"]','[data-test="product-description"]','[class*="ProductDescription"]']).slice(0,300);
+    const region = getRegion();
+    const description = getDescription();
     const sellerType = getSellerType();
     const userMode = await new Promise(resolve =>
       chrome.storage.sync.get('userMode', ({userMode}) => resolve(userMode || 'reseller'))
