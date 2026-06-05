@@ -1,5 +1,5 @@
 (function () {
-  const KEYWORDS = ["тестомес","расстойк","тестораскаточ","делитель","миксер планетарн","хлебопекарн","пекарн","дежа","ротационн","подовая","конвекционн","просеиватель","слайсер","мясорубк","фритюрниц","пароконвектомат","холодильн витрин","шкаф расстойн","тестомесильн","взбивалк","куттер","вакуумн упаковщ","жарочн шкаф","печь","тестоделитель","округлитель","котел пищевой","картофелечистк","овощерезк","коптильн","льдогенератор","раскаточн","ламинатор теста","тестовалк","тестомешалк","тестоотсадочн","тестозакаточн","круассаномат","закаточн машин","отсадочн","формовочн","инфел","foodatlas","шфз","мфп","варочн котел","пищевар","плита промышл","дымогенератор","ледогенератор","витрин холодильн","лари морозильн","шкаф холодильн","холодильн камер"];
+  const KEYWORDS = ["тестомес","расстойк","тестораскаточ","делитель","миксер планетарн","хлебопекарн","пекарн","дежа","ротационн","подовая","конвекционн","просеиватель","слайсер","мясорубк","фритюрниц","пароконвектомат","холодильн витрин","шкаф расстойн","тестомесильн","взбивалк","куттер","вакуумн упаковщ","жарочн шкаф","печь","тестоделитель","округлитель","котел пищевой","картофелечистк","овощерезк","коптильн","льдогенератор","раскаточн","раскатк","ламинатор теста","тестовалк","тестомешалк","тестоотсадочн","тестозакаточн","круассаномат","закаточн машин","отсадочн","формовочн","инфел","foodatlas","шфз","мфп","варочн котел","пищевар","плита промышл","дымогенератор","ледогенератор","витрин холодильн","лари морозильн","шкаф холодильн","холодильн камер"];
 
   function hasKeywords(text) {
     const lower = text.toLowerCase();
@@ -95,6 +95,7 @@
     return parseInt(raw.replace(/\D/g, '')) || 0;
   }
   async function makeButton() {
+    if (userClosedWidget) return;
     if (document.getElementById('indmart-btn') || document.getElementById('indmart-widget')) return;
 
     const url = location.href;
@@ -142,13 +143,24 @@
     for (const sel of selectors) {
       const el = document.querySelector(sel);
       if (!el) continue;
-      const text = el.textContent.toLowerCase();
+      const raw = el.textContent;
+      const text = raw.toLowerCase();
       if (text.includes('компания') || text.includes('магазин') ||
           text.includes('официальный') || text.includes('дилер') ||
-          text.includes('ооо') || text.includes('ип ')) {
+          text.includes('ооо') || text.includes('ип ') ||
+          text.includes('центр') || text.includes('восстановлен') ||
+          /[A-ZА-Я]{3,}/.test(raw)) {
         return 'company';
       }
       return 'private';
+    }
+
+    // Метка "Компания" рядом с блоком информации о продавце
+    const sellerSection = document.querySelector('[data-marker="seller-info"]') ||
+                          document.querySelector('[class*="seller-info"]');
+    if (sellerSection) {
+      const sectionText = sellerSection.textContent.toLowerCase();
+      if (sectionText.includes('компания')) return 'company';
     }
 
     // Проверяем по наличию "Компания" на странице
@@ -317,6 +329,7 @@
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
         w.remove();
+        userClosedWidget = true;  // user closed manually — не переоткрывать
       });
     }
 
@@ -428,12 +441,14 @@
     });
   }
   let lastUrl = '';
+  let userClosedWidget = false;
   setInterval(async () => {
     // Загружаем статистику цен при первом запуске
     await loadPriceStats();
 
     if (location.href !== lastUrl) {
       lastUrl = location.href;
+      userClosedWidget = false;  // reset on navigation
       document.getElementById('indmart-btn')?.remove();
       document.getElementById('indmart-widget')?.remove();
     }
