@@ -157,6 +157,48 @@ def get_subscription(telegram_username: str):
         logger.exception("get_subscription failed")
         return None
 
+
+def save_subscriber_from_bot(telegram_username: str, chat_id: int, user_type: str, region: str, categories: list):
+    """Upsert a full subscription created via the bot onboarding flow.
+
+    `telegram_username` has no unique constraint, so we can't use ON CONFLICT.
+    Instead match an existing row by chat_id (a placeholder from a prior /start)
+    OR by username (created via the web form) and UPDATE it; otherwise INSERT a
+    new active row.
+    """
+    username = (telegram_username or "").lstrip("@").lower()
+    chat_id_str = str(chat_id)
+    with _db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE subscribers SET
+                    telegram_chat_id = %s,
+                    telegram_username = COALESCE(NULLIF(%s, ''), telegram_username),
+                    user_type = %s,
+                    region = %s,
+                    categories = %s,
+                    is_active = true
+                WHERE telegram_chat_id = %s
+                   OR (%s <> '' AND LOWER(telegram_username) = %s)
+                RETURNING id
+                """,
+                (chat_id_str, username, user_type, region, categories, chat_id_str, username, username),
+            )
+            if cur.fetchall():
+                conn.commit()
+                return
+            cur.execute(
+                """
+                INSERT INTO subscribers
+                    (name, telegram_username, telegram_chat_id, user_type, region, categories, is_active)
+                VALUES (%s, %s, %s, %s, %s, %s, true)
+                """,
+                (telegram_username or None, username or None, chat_id_str, user_type, region, categories),
+            )
+            conn.commit()
+
+
 # Mirrors VISION_PROMPT in ../index.html. Keep these aligned when editing either.
 VISION_PROMPT = (
     "\n\nКогда пользователь присылает фото оборудования, действуй по шагам:\n"
@@ -302,6 +344,12 @@ class LeadStates(StatesGroup):
     awaiting_city = State()
 
 
+class SubscribeForm(StatesGroup):
+    choosing_type = State()
+    choosing_region = State()
+    choosing_categories = State()
+
+
 bot = Bot(token=TELEGRAM_BOT_TOKEN, default=DefaultBotProperties(parse_mode=None))
 dp = Dispatcher(storage=MemoryStorage())
 
@@ -370,6 +418,21 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
     user_state.pop(message.from_user.id, None)
     await state.clear()
 
+    # Deep link from the extension/site: /start subscribe -> onboarding wizard.
+    parts = (message.text or "").split()
+    if len(parts) > 1 and parts[1] == "subscribe":
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="💼 Перекупщик", callback_data="type_reseller"),
+            InlineKeyboardButton(text="🏭 Покупатель", callback_data="type_buyer"),
+        ]])
+        await message.answer(
+            "🔔 Настроим уведомления за 3 шага!\n\n"
+            "Шаг 1 из 3 — Кто ты?",
+            reply_markup=keyboard,
+        )
+        await state.set_state(SubscribeForm.choosing_type)
+        return
+
     # IndMart: link this chat to the subscriber row so urgent alerts can be sent.
     linked = link_chat_id(message.from_user.username or "", message.chat.id)
     if linked and linked[2]:
@@ -424,6 +487,128 @@ async def cmd_stop(message: Message, state: FSMContext) -> None:
         "✅ Вы отписались от уведомлений IndMart.\n\n"
         "Чтобы подписаться снова — зайдите на indmart.ru/#subscribe-screen"
     )
+
+
+# ---------- IndMart subscribe onboarding (FSM wizard) ----------
+
+SUBSCRIBE_CATEGORIES = [
+    "Тестомесы", "Печи", "Расстойки",
+    "Пароконвектоматы", "Тестоделители", "Холодильное",
+]
+
+
+def _category_keyboard(selected: list) -> InlineKeyboardMarkup:
+    buttons = []
+    row = []
+    for c in SUBSCRIBE_CATEGORIES:
+        icon = "✅" if c in selected else "◻️"
+        row.append(InlineKeyboardButton(text=f"{icon} {c}", callback_data=f"cat_{c}"))
+        if len(row) == 2:
+            buttons.append(row)
+            row = []
+    if row:
+        buttons.append(row)
+    buttons.append([InlineKeyboardButton(text="✅ Всё оборудование", callback_data="cat_done_all")])
+    buttons.append([InlineKeyboardButton(text="➡️ Готово", callback_data="cat_done")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
+
+@dp.callback_query(F.data.startswith("type_"), SubscribeForm.choosing_type)
+async def process_type(callback: CallbackQuery, state: FSMContext) -> None:
+    user_type = "reseller" if callback.data == "type_reseller" else "buyer"
+    await state.update_data(user_type=user_type)
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Москва", callback_data="region_Москва"),
+         InlineKeyboardButton(text="Санкт-Петербург", callback_data="region_Санкт-Петербург")],
+        [InlineKeyboardButton(text="Новосибирск", callback_data="region_Новосибирск"),
+         InlineKeyboardButton(text="Екатеринбург", callback_data="region_Екатеринбург")],
+        [InlineKeyboardButton(text="Казань", callback_data="region_Казань"),
+         InlineKeyboardButton(text="Ростов-на-Дону", callback_data="region_Ростов-на-Дону")],
+        [InlineKeyboardButton(text="Краснодар", callback_data="region_Краснодар"),
+         InlineKeyboardButton(text="Все регионы", callback_data="region_")],
+    ])
+    await callback.message.edit_text(
+        "📍 Шаг 2 из 3 — В каком регионе ищешь оборудование?",
+        reply_markup=keyboard,
+    )
+    await state.set_state(SubscribeForm.choosing_region)
+    await callback.answer()
+
+
+@dp.callback_query(F.data.startswith("region_"), SubscribeForm.choosing_region)
+async def process_region(callback: CallbackQuery, state: FSMContext) -> None:
+    region = callback.data.replace("region_", "")
+    await state.update_data(region=region, selected_categories=[])
+
+    await callback.message.edit_text(
+        "🏭 Шаг 3 из 3 — Какое оборудование интересует?\n\n"
+        "Выбери одну или несколько категорий:",
+        reply_markup=_category_keyboard([]),
+    )
+    await state.set_state(SubscribeForm.choosing_categories)
+    await callback.answer()
+
+
+@dp.callback_query(F.data.startswith("cat_"), SubscribeForm.choosing_categories)
+async def process_category(callback: CallbackQuery, state: FSMContext) -> None:
+    data = await state.get_data()
+    selected = data.get("selected_categories", [])
+    cat = callback.data.replace("cat_", "")
+
+    if cat == "done_all":
+        await finish_subscription(callback, state, ["Всё оборудование"])
+        return
+
+    if cat == "done":
+        if not selected:
+            await callback.answer("Выбери хотя бы одну категорию!", show_alert=True)
+            return
+        await finish_subscription(callback, state, selected)
+        return
+
+    # Toggle category
+    if cat in selected:
+        selected.remove(cat)
+    else:
+        selected.append(cat)
+    await state.update_data(selected_categories=selected)
+
+    await callback.message.edit_reply_markup(reply_markup=_category_keyboard(selected))
+    await callback.answer()
+
+
+async def finish_subscription(callback: CallbackQuery, state: FSMContext, categories: list) -> None:
+    data = await state.get_data()
+    user = callback.from_user
+    username = (user.username or "").lower()
+
+    try:
+        save_subscriber_from_bot(
+            telegram_username=username,
+            chat_id=callback.message.chat.id,
+            user_type=data.get("user_type", "reseller"),
+            region=data.get("region", ""),
+            categories=categories,
+        )
+        region_text = data.get("region") or "все регионы"
+        await callback.message.edit_text(
+            "✅ Готово! Подписка настроена.\n\n"
+            f"👤 Тип: {'Перекупщик' if data.get('user_type') == 'reseller' else 'Покупатель'}\n"
+            f"📍 Регион: {region_text}\n"
+            f"🏭 Категории: {', '.join(categories)}\n\n"
+            "Буду присылать срочные продажи по вашим критериям!\n\n"
+            "Изменить настройки: /status\n"
+            "Отписаться: /stop"
+        )
+    except Exception:
+        logger.exception("finish_subscription failed")
+        await callback.message.edit_text(
+            "❌ Ошибка сохранения. Попробуйте ещё раз: /start subscribe"
+        )
+
+    await state.clear()
+    await callback.answer()
 
 
 @dp.message(Command("menu"))
