@@ -693,6 +693,21 @@
   <div class="wrap">
     <h1>ОборудованиеПро</h1>
     <p>Бесплатный AI-консультант для пищевых производств</p>
+    <div id="tg-login-header" style="margin-top:12px">
+      <div id="tg-login-widget" style="display:flex;justify-content:center">
+        <script async src="https://telegram.org/js/telegram-widget.js?22"
+          data-telegram-login="IndMartAlertsBot"
+          data-size="medium"
+          data-onauth="onIndexTelegramAuth(user)"
+          data-request-access="write"
+          data-radius="8"></script>
+      </div>
+      <div id="tg-user-box" style="display:none;justify-content:center;align-items:center;gap:10px;margin-top:6px;font-size:14px">
+        <span id="tg-user-name"></span>
+        <a href="/upgrade" style="color:#c8a55a;text-decoration:underline">Перейти к подписке →</a>
+        <button type="button" onclick="indexLogoutTelegram()" style="background:none;border:none;color:#9aa3b2;cursor:pointer;font-size:12px">Выйти</button>
+      </div>
+    </div>
   </div>
 </header>
 
@@ -1324,6 +1339,22 @@
   const MODEL = "claude-sonnet-4-20250514";
   const LEAD_MARKER = "%%SHOW_LEAD_FORM%%";
   const MAX_PHOTOS = 5;
+
+  // ---------- Telegram login (header) ----------
+  function onIndexTelegramAuth(user){
+    try{
+      document.getElementById('tg-login-widget').style.display='none';
+      const box=document.getElementById('tg-user-box');
+      box.style.display='flex';
+      document.getElementById('tg-user-name').textContent='✅ '+(user.username?'@'+user.username:user.first_name);
+    }catch(e){}
+  }
+  function indexLogoutTelegram(){
+    document.getElementById('tg-login-widget').style.display='flex';
+    document.getElementById('tg-user-box').style.display='none';
+  }
+  window.onIndexTelegramAuth = onIndexTelegramAuth;
+  window.indexLogoutTelegram = indexLogoutTelegram;
 
   const VISION_PROMPT =
     "\n\nКогда пользователь присылает фото оборудования, действуй по шагам:\n" +
