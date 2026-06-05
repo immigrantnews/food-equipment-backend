@@ -91,7 +91,7 @@
     return '';
   }
   function getPrice() {
-    const raw = getText(['[itemprop="price"]','[data-marker="item-view/item-price"]','[class*="price-value"]','[class*="item-price"]']);
+    const raw = getText(['[itemprop="price"]','[data-marker="item-view/item-price"]','[class*="price-value"]','[class*="item-price"]','[data-test="product-price"]','[class*="ProductPrice"]']);
     return parseInt(raw.replace(/\D/g, '')) || 0;
   }
   async function makeButton() {
@@ -104,10 +104,11 @@
       url.includes('tovary_dlya_biznesa') ||
       url.includes('selskoe_hozyaystvo') ||
       url.includes('promyshlennoe') ||
-      url.includes('horeca');
+      url.includes('horeca') ||
+      url.includes('youla.ru');  // accept all youla pages, filter by keywords
     if (!isEquipment) return;
 
-    const title = getText(['h1[itemprop="name"]','[data-marker="item-view/title"]','h1']);
+    const title = getText(['h1[itemprop="name"]','[data-marker="item-view/title"]','[class*="ProductHeader"] h1','[data-test="product-name"]','h1']);
     const price = getPrice();
     if (!title || !price) return;
     if (!hasKeywords(title)) return;
@@ -126,6 +127,14 @@
     document.body.appendChild(btn);
   }
   function getSellerType() {
+    // Youla: явный признак типа продавца
+    const youlaSeller = document.querySelector('[data-test="seller-type"]');
+    if (youlaSeller) {
+      const t = youlaSeller.textContent.toLowerCase();
+      if (t.includes('компания') || t.includes('магазин')) return 'company';
+      return 'private';
+    }
+
     // Проверка отображаемого имени продавца на бизнес-признаки
     // (выполняется до loop, иначе return 'private' внутри loop перехватит управление)
     const sellerNameEl = document.querySelector('[data-marker="seller-info/name"]') ||
@@ -195,20 +204,30 @@
 
     if (btn) { btn.textContent = '⏳ Анализирую...'; btn.dataset.loading = '1'; }
 
-    const region = getText(['[data-marker="item-address/name"]','[class*="address"]']);
-    const description = getText(['[data-marker="item-view/item-description"]','[itemprop="description"]']).slice(0,300);
+    const region = getText(['[data-marker="item-address/name"]','[class*="address"]','[data-test="product-location"]','[class*="ProductLocation"]']);
+    const description = getText(['[data-marker="item-view/item-description"]','[itemprop="description"]','[data-test="product-description"]','[class*="ProductDescription"]']).slice(0,300);
     const sellerType = getSellerType();
     const userMode = await new Promise(resolve =>
       chrome.storage.sync.get('userMode', ({userMode}) => resolve(userMode || 'reseller'))
     );
 
     // Берём фото больше 200px шириной (не миниатюры)
-    const allImgs = document.querySelectorAll('img');
-    const photoUrls = Array.from(allImgs)
-      .filter(el => el.src && el.src.includes('avito.st') && el.width > 200)
-      .slice(0, 3)
-      .map(el => el.src)
-      .filter(Boolean);
+    let photoUrls;
+    if (location.href.includes('youla.ru')) {
+      // У Youla другой CDN — фильтр avito.st не подходит, берём из галереи
+      const galleryImgs = document.querySelectorAll('[class*="PhotoGallery"] img, [data-test="gallery-image"]');
+      photoUrls = Array.from(galleryImgs)
+        .map(el => el.src || el.getAttribute('data-src') || '')
+        .filter(src => src.startsWith('http'))
+        .slice(0, 3);
+    } else {
+      const allImgs = document.querySelectorAll('img');
+      photoUrls = Array.from(allImgs)
+        .filter(el => el.src && el.src.includes('avito.st') && el.width > 200)
+        .slice(0, 3)
+        .map(el => el.src)
+        .filter(Boolean);
+    }
 
     const photos = [];
     for (const url of photoUrls) {
