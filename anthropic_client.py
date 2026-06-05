@@ -3,6 +3,7 @@ import logging
 from functools import lru_cache
 from typing import Optional
 
+import anthropic as _anthropic
 from anthropic import Anthropic
 
 from config import get_settings
@@ -184,12 +185,28 @@ def evaluate_avito_listing(title: str, price: int, region: str, description: str
     user_msg = f"Заголовок: {title}\nЦена: {price} ₽\nРегион: {region}\nТип продавца: {seller_label}\nОписание: {description[:300]}\n\nЕсли есть фото — определи модель и бренд по шильдику или внешнему виду оборудования."
     content.append({"type": "text", "text": user_msg})
 
-    resp = _client().messages.create(
-        model=get_settings().anthropic_model,
-        max_tokens=600,
-        system=AVITO_EVAL_SYSTEM,
-        messages=[{"role": "user", "content": content}],
-    )
+    try:
+        resp = _client().messages.create(
+            model=get_settings().anthropic_model,
+            max_tokens=600,
+            system=AVITO_EVAL_SYSTEM,
+            messages=[{"role": "user", "content": content}],
+        )
+    except (_anthropic.APITimeoutError, _anthropic.APIError) as e:
+        logger.warning(f"Claude API error: {e}")
+        return {
+            "verdict": "unknown",
+            "category": "Неизвестно",
+            "market_min": 0,
+            "market_max": 0,
+            "reseller_margin": 0,
+            "turnover_days": "неизвестно",
+            "demand": "неизвестно",
+            "condition_visual": "unknown",
+            "urgency": "normal",
+            "comment": "Сервис временно недоступен. Нажмите «Повторить» через несколько секунд.",
+            "error": "api_timeout",
+        }
     text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text").strip()
     if text.startswith("```"):
         text = text.strip("`")
