@@ -112,6 +112,7 @@ class AvitoEvalOut(BaseModel):
     notification_reason: Optional[str] = None
     comment: str
     data_source: str = "ai"
+    error: Optional[str] = None
 
 
 class FetchUrlIn(BaseModel):

@@ -448,7 +448,7 @@
       banners +
       '<div style="padding:14px 16px">' +
       '<div style="font-weight:600;margin-bottom:8px">'+name+'</div>' +
-      '<div style="color:#444;margin-bottom:4px">Рынок: <b>'+d.market_min.toLocaleString('ru')+' – '+d.market_max.toLocaleString('ru')+' ₽</b></div>' +
+      '<div style="color:#444;margin-bottom:4px">Рынок: <b>'+(d.market_min||0).toLocaleString('ru')+' – '+(d.market_max||0).toLocaleString('ru')+' ₽</b></div>' +
       '<div style="background:#f5f5f5;border-radius:8px;padding:10px;margin:10px 0;line-height:1.8">💰 Маржа: <b>'+d.reseller_margin.toLocaleString('ru')+' ₽</b><br>⏱ Оборот: <b>'+d.turnover_days+'</b><br>📊 Спрос: <b>'+demand+'</b>'+condLine+'</div>' +
       '<div style="font-style:italic;color:#666;font-size:13px;margin-bottom:12px">"'+d.comment+'"</div>' +
       '<a href="https://t.me/IndMartAlertsBot?start=subscribe" target="_blank" style="display:block;background:#1a1a2e;color:#fff;text-align:center;padding:11px;border-radius:8px;text-decoration:none;font-weight:600">🔔 Подписаться в Telegram</a>' +

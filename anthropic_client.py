@@ -1,4 +1,5 @@
 import json
+import logging
 from functools import lru_cache
 from typing import Optional
 
@@ -6,6 +7,8 @@ from anthropic import Anthropic
 
 from config import get_settings
 from schemas import ChatMessage, ResellerAnalyzeIn, ResellerAnalyzeOut
+
+logger = logging.getLogger("food-equipment")
 
 
 @lru_cache
@@ -193,7 +196,39 @@ def evaluate_avito_listing(title: str, price: int, region: str, description: str
         if text.startswith("json"):
             text = text[4:]
         text = text.strip()
-    result = json.loads(text)
+    if not text or not text.strip():
+        logger.warning(f"Claude returned empty response, text={repr(text)}")
+        return {
+            "verdict": "unknown",
+            "category": "Неизвестно",
+            "market_min": 0,
+            "market_max": 0,
+            "reseller_margin": 0,
+            "turnover_days": "неизвестно",
+            "demand": "неизвестно",
+            "condition_visual": "unknown",
+            "urgency": "normal",
+            "comment": "Не удалось получить оценку. Попробуйте ещё раз.",
+            "error": "empty_response",
+        }
+
+    try:
+        result = json.loads(text)
+    except json.JSONDecodeError as e:
+        logger.warning(f"JSON parse failed: {e}, text={repr(text[:200])}")
+        return {
+            "verdict": "unknown",
+            "category": "Неизвестно",
+            "market_min": 0,
+            "market_max": 0,
+            "reseller_margin": 0,
+            "turnover_days": "неизвестно",
+            "demand": "неизвестно",
+            "condition_visual": "unknown",
+            "urgency": "normal",
+            "comment": "Ошибка обработки ответа. Попробуйте ещё раз.",
+            "error": "json_parse_error",
+        }
 
     import datetime
     record = {
