@@ -53,6 +53,41 @@
   function addCatalogBadges() {
     if (!priceStats) return;
 
+    if (getSite() === 'agroserver') {
+      const titleLinks = document.querySelectorAll('a[href*="agroserver.ru/b/"][href*=".htm"]');
+      titleLinks.forEach(titleEl => {
+        if (titleEl.querySelector('.indmart-badge-mini')) return;
+        const title = titleEl.textContent.trim();
+        if (!hasKeywords(title)) return;
+
+        // Find price in the same ancestor block
+        let priceEl = null;
+        let parent = titleEl.parentElement;
+        for (let i = 0; i < 8; i++) {
+          if (!parent) break;
+          priceEl = parent.querySelector('.price, .mprice');
+          if (priceEl) break;
+          parent = parent.parentElement;
+        }
+        if (!priceEl) return;
+
+        const price = parseInt(priceEl.textContent.replace(/\D/g, ''));
+        if (!price) return;
+
+        const result = getVerdictFromStats(title, price);
+        if (!result) return;
+
+        const colors = {flash:'#8b5cf6', green:'#22c55e', yellow:'#f59e0b', red:'#ef4444'};
+        const badge = document.createElement('span');
+        badge.className = 'indmart-badge-mini';
+        badge.title = `IndMart: медиана ${result.median.toLocaleString('ru')} ₽`;
+        badge.style.cssText = `display:inline-block;background:${colors[result.verdict]};color:#fff;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;margin-left:6px;vertical-align:middle`;
+        badge.textContent = result.label + ' IndMart';
+        titleEl.appendChild(badge);
+      });
+      return;
+    }
+
     // Находим карточки в каталоге
     const items = document.querySelectorAll('[data-marker="item"]');
     items.forEach(item => {
@@ -551,8 +586,10 @@
     }
 
     // Добавляем метки в каталог
+    const isAgroserverCatalog = getSite() === 'agroserver' && !location.href.match(/\d+\.htm$/);
     const isCatalog = document.querySelector('[data-marker="catalog-serp"]') ||
-                      document.querySelector('[data-marker="search-results"]');
+                      document.querySelector('[data-marker="search-results"]') ||
+                      isAgroserverCatalog;
     if (isCatalog) {
       addCatalogBadges();
     } else {
