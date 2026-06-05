@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import re
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -344,6 +345,72 @@ def avito_eval(req: AvitoEvalIn):
                     logger.info(f"Started notification thread for {len(subs)} subscribers")
             except Exception as e:
                 logger.warning(f"Notification setup failed: {e}")
+
+        # Group notification - max once per 3 days
+        try:
+            group_chat_id = int(os.environ.get('TELEGRAM_GROUP_CHAT_ID', '0'))
+            bot_token = os.environ.get('TELEGRAM_NOTIFY_TOKEN', '')
+
+            if bot_token and group_chat_id and data.get('urgency') in ('urgent', 'liquidation'):
+                with get_db_conn() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute("""
+                            SELECT sent_at FROM group_notifications
+                            WHERE chat_id = %s
+                            ORDER BY sent_at DESC LIMIT 1
+                        """, (group_chat_id,))
+                        last = cur.fetchone()
+
+                        now = datetime.now(timezone.utc)
+                        can_post = not last or (now - last[0]) > timedelta(days=3)
+
+                        if can_post:
+                            urgency_emoji = "🔥" if data.get('urgency') == 'liquidation' else "⚡"
+                            listing_url = getattr(req, 'listing_url', '')
+                            group_msg = (
+                                f"{urgency_emoji} *Срочная продажа!*\n\n"
+                                f"*{data.get('category', req.title)}*\n"
+                                f"💰 Цена: {req.price:,} ₽\n"
+                                f"📍 Регион: {req.region or 'не указан'}\n"
+                                f"💵 Маржа: ~{data.get('reseller_margin', 0):,} ₽\n"
+                                f"⏱ Оборот: {data.get('turnover_days', '')}\n\n"
+                                f"🔗 Ссылка только подписчикам\n"
+                                f"👉 [Подписаться](https://indmart.ru/#subscribe-screen)"
+                            )
+
+                            def send_group():
+                                try:
+                                    import httpx as _httpx
+                                    resp = _httpx.post(
+                                        f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                                        json={
+                                            "chat_id": group_chat_id,
+                                            "text": group_msg,
+                                            "parse_mode": "Markdown",
+                                            "disable_web_page_preview": True
+                                        },
+                                        timeout=10
+                                    )
+                                    if resp.status_code == 200:
+                                        # Save ONLY after successful send
+                                        with get_db_conn() as conn2:
+                                            with conn2.cursor() as cur2:
+                                                cur2.execute("""
+                                                    INSERT INTO group_notifications
+                                                    (chat_id, listing_url, listing_title)
+                                                    VALUES (%s, %s, %s)
+                                                """, (group_chat_id, listing_url, req.title))
+                                                conn2.commit()
+                                        logger.info(f"Group notification sent to {group_chat_id}")
+                                    else:
+                                        logger.warning(f"Group notification failed: {resp.status_code} {resp.text}")
+                                except Exception as e:
+                                    logger.warning(f"Group send failed: {e}")
+
+                            import threading as _threading
+                            _threading.Thread(target=send_group, daemon=True).start()
+        except Exception as e:
+            logger.warning(f"Group notification setup failed: {e}")
         return AvitoEvalOut(**data, data_source="ai")
     except json.JSONDecodeError as e:
         logger.exception("avito eval JSON parse failed")

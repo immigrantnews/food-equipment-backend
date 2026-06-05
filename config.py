@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     telegram_bot_token: str = ""
     telegram_notify_token: str = ""
     telegram_chat_id: str = ""
+    telegram_group_chat_id: int = 0
 
     cors_origins: str = "*"
 
