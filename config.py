@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     tinkoff_terminal_key: str = ""
     tinkoff_secret_key: str = ""
 
+    gemini_api_key: str = ""
+
     cors_origins: str = "*"
 
     @property

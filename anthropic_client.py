@@ -8,6 +8,7 @@ from anthropic import Anthropic
 
 from config import get_settings
 from schemas import ChatMessage, ResellerAnalyzeIn, ResellerAnalyzeOut
+from gemini_client import evaluate_with_gemini
 
 logger = logging.getLogger("food-equipment")
 
@@ -193,20 +194,24 @@ def evaluate_avito_listing(title: str, price: int, region: str, description: str
             messages=[{"role": "user", "content": content}],
         )
     except (_anthropic.APITimeoutError, _anthropic.APIError) as e:
-        logger.warning(f"Claude API error: {e}")
-        return {
-            "verdict": "unknown",
-            "category": "Неизвестно",
-            "market_min": 0,
-            "market_max": 0,
-            "reseller_margin": 0,
-            "turnover_days": "неизвестно",
-            "demand": "неизвестно",
-            "condition_visual": "unknown",
-            "urgency": "normal",
-            "comment": "Сервис временно недоступен. Нажмите «Повторить» через несколько секунд.",
-            "error": "api_timeout",
-        }
+        logger.warning(f"Claude API error, trying Gemini fallback: {e}")
+        try:
+            return evaluate_with_gemini(title, price, region, description)
+        except Exception as gemini_err:
+            logger.warning(f"Gemini fallback also failed: {gemini_err}")
+            return {
+                "verdict": "unknown",
+                "category": "Неизвестно",
+                "market_min": 0,
+                "market_max": 0,
+                "reseller_margin": 0,
+                "turnover_days": "нет данных",
+                "demand": "нет данных",
+                "condition_visual": "unknown",
+                "urgency": "normal",
+                "comment": "Сервис временно недоступен. Попробуйте ещё раз.",
+                "error": "api_timeout",
+            }
     text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text").strip()
     if text.startswith("```"):
         text = text.strip("`")
@@ -232,20 +237,24 @@ def evaluate_avito_listing(title: str, price: int, region: str, description: str
     try:
         result = json.loads(text)
     except json.JSONDecodeError as e:
-        logger.warning(f"JSON parse failed: {e}, text={repr(text[:200])}")
-        return {
-            "verdict": "unknown",
-            "category": "Неизвестно",
-            "market_min": 0,
-            "market_max": 0,
-            "reseller_margin": 0,
-            "turnover_days": "неизвестно",
-            "demand": "неизвестно",
-            "condition_visual": "unknown",
-            "urgency": "normal",
-            "comment": "Ошибка обработки ответа. Попробуйте ещё раз.",
-            "error": "json_parse_error",
-        }
+        logger.warning(f"JSON parse failed, trying Gemini: {e}")
+        try:
+            return evaluate_with_gemini(title, price, region, description)
+        except Exception as gemini_err:
+            logger.warning(f"Gemini fallback also failed: {gemini_err}")
+            return {
+                "verdict": "unknown",
+                "category": "Неизвестно",
+                "market_min": 0,
+                "market_max": 0,
+                "reseller_margin": 0,
+                "turnover_days": "нет данных",
+                "demand": "нет данных",
+                "condition_visual": "unknown",
+                "urgency": "normal",
+                "comment": "Ошибка обработки. Попробуйте ещё раз.",
+                "error": "json_parse_error",
+            }
 
     import datetime
     record = {
