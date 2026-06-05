@@ -342,11 +342,13 @@
         body: JSON.stringify({title, price, region, description, photos, seller_type: sellerType, user_mode: userMode, listing_url: location.href})
       });
       const d = await resp.json();
-      d._price = price;
-      d._title = title;
-      d._sellerType = sellerType;
-      d._userMode = userMode;
-      saveToCache(location.href, d);
+      if (!d.error) {
+        d._price = price;
+        d._title = title;
+        d._sellerType = sellerType;
+        d._userMode = userMode;
+        saveToCache(location.href, d);
+      }
       showWidget(d, price, title, sellerType, userMode);
     } catch (e) {
       if (btn) { btn.textContent = '❌ Ошибка'; btn.dataset.loading = '0'; }
@@ -405,6 +407,32 @@
   }
 
   function showWidget(d, price, title, sellerType, userMode) {
+    if (d.error) {
+      // сбрасываем кнопку в исходное состояние, иначе loading==='1' заблокирует «Повторить»
+      const lbtn = document.getElementById('indmart-btn');
+      if (lbtn) { lbtn.dataset.loading = '0'; lbtn.textContent = '📊 IndMart: оценить'; }
+      document.getElementById('indmart-widget')?.remove();
+      const w = document.createElement('div');
+      w.id = 'indmart-widget';
+      w.style.cssText = 'position:fixed;top:80px;right:24px;z-index:2147483647;width:320px;background:#1a1a2e;border:1px solid #ef4444;border-radius:12px;padding:16px;font-family:sans-serif;color:#fff;box-shadow:0 8px 32px rgba(0,0,0,0.4)';
+      w.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <span style="font-weight:700;font-size:14px">IndMart</span>
+          <span class="indmart-close" style="cursor:pointer;font-size:18px;color:#8892AA">✕</span>
+        </div>
+        <div style="color:#ef4444;font-size:13px;margin-bottom:8px">⚠️ Не удалось получить оценку</div>
+        <div style="color:#8892AA;font-size:12px">${d.comment || 'Попробуйте ещё раз через несколько секунд'}</div>
+        <button id="indmart-retry" style="margin-top:12px;width:100%;padding:8px;background:#C8A55A;color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:13px">🔄 Повторить</button>
+      `;
+      document.body.appendChild(w);
+      w.querySelector('.indmart-close').addEventListener('click', () => w.remove());
+      w.querySelector('#indmart-retry').addEventListener('click', () => {
+        w.remove();
+        const btn = document.getElementById('indmart-btn');
+        if (btn) btn.click();
+      });
+      return;
+    }
     document.getElementById('indmart-btn')?.remove();
     document.getElementById('indmart-widget')?.remove();
     if (!document.getElementById('indmart-style')) {
