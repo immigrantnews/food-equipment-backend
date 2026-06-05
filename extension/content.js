@@ -1,5 +1,5 @@
 (function () {
-  const KEYWORDS = ["тестомес","расстойк","тестораскаточ","делитель","миксер планетарн","хлебопекарн","пекарн","дежа","ротационн","подовая","конвекционн","просеиватель","слайсер","мясорубк","фритюрниц","пароконвектомат","холодильн витрин","шкаф расстойн","тестомесильн","взбивалк","куттер","вакуумн упаковщ","жарочн шкаф","печь","тестоделитель","округлитель","котел пищевой","картофелечистк","овощерезк","коптильн","льдогенератор","раскаточн","раскатк","ламинатор теста","тестовалк","тестомешалк","тестоотсадочн","тестозакаточн","круассаномат","закаточн машин","отсадочн","формовочн","инфел","foodatlas","шфз","мфп","варочн котел","пищевар","плита промышл","дымогенератор","ледогенератор","витрин холодильн","лари морозильн","шкаф холодильн","холодильн камер","мешалка","лаваш","хлеб","eksi","ehtd","производство хлеб","хлебопроизводств","тестомесительн","спиральн мешалк","планетарн мешалк","миксер спиральн"];
+  const KEYWORDS = ["тестомес","расстойк","тестораскаточ","делитель","миксер планетарн","хлебопекарн","пекарн","дежа","ротационн","подовая","конвекционн","просеиватель","слайсер","мясорубк","фритюрниц","пароконвектомат","холодильн витрин","шкаф расстойн","тестомесильн","взбивалк","куттер","вакуумн упаковщ","жарочн шкаф","печь","тестоделитель","округлитель","котел пищевой","картофелечистк","овощерезк","коптильн","льдогенератор","раскаточн","раскатк","ламинатор теста","тестовалк","тестомешалк","тестоотсадочн","тестозакаточн","круассаномат","закаточн машин","отсадочн","формовочн","инфел","foodatlas","шфз","мфп","варочн котел","пищевар","плита промышл","дымогенератор","ледогенератор","витрин холодильн","лари морозильн","шкаф холодильн","холодильн камер","мешалка","лаваш","хлеб","eksi","ehtd","производство хлеб","хлебопроизводств","тестомесительн","спиральн мешалк","планетарн мешалк","миксер спиральн","sinmag","кондитерск","миксер","viking","производствен оборудован","кондитерское оборудован","цех","линия производств","упаковочн","фасовочн","конвейер","дозатор","маркиратор"];
 
   function hasKeywords(text) {
     const lower = text.toLowerCase();
@@ -223,6 +223,26 @@
     document.body.appendChild(btn);
   }
   function getSellerType() {
+    // Счётчик отзывов продавца (не меняет тип, используется в showWidget).
+    // Сбрасываем каждый раз, иначе значение «протекает» на другие объявления.
+    window._indmartReviewCount = 0;
+    const reviewSelectors = [
+      '[data-marker="seller-info/scores-count"]',
+      '[data-marker="review-count"]',
+      '[class*="score-count"]',
+      '[class*="reviews-count"]'
+    ];
+    for (const sel of reviewSelectors) {
+      const el = document.querySelector(sel);
+      if (el) {
+        const count = parseInt(el.textContent.replace(/\D/g,''));
+        if (count >= 20) {
+          window._indmartReviewCount = count;
+        }
+        break;
+      }
+    }
+
     // Youla: явный признак типа продавца
     const youlaSeller = document.querySelector('[data-test="seller-type"]');
     if (youlaSeller) {
@@ -464,6 +484,9 @@
     if (d.notification_reason)
       banners += '<div style="background:#fef3c7;color:#92400e;padding:10px 16px;font-weight:600;border-left:4px solid #f59e0b">'+d.notification_reason+'</div>';
 
+    const reviewWarning = (window._indmartReviewCount >= 20) ?
+      '<div style="background:#f59e0b22;border:1px solid #f59e0b;border-radius:6px;padding:6px 10px;font-size:11px;color:#f59e0b;margin:0 16px 8px">⚠️ У продавца '+window._indmartReviewCount+' отзывов — возможно перекупщик. Проверьте профиль.</div>' : '';
+
     const w = document.createElement('div');
     w.id = 'indmart-widget';
     w.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:2147483647;width:300px;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.18);font-family:system-ui,sans-serif;font-size:14px;background:#fff;overflow:hidden' +
@@ -472,6 +495,7 @@
       '<div style="background:#1a1a2e;color:#fff;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><span><b>IndMart</b><span style="font-size:10px;background:rgba(255,255,255,0.2);padding:2px 6px;border-radius:4px;margin-left:6px">'+(userMode === 'buyer' ? '🏭 Покупатель' : '💼 Перекупщик')+'</span></span><span class="indmart-close" style="cursor:pointer">✕</span></div>' +
       (sellerType === 'private' ? '<div style="background:#dcfce7;color:#166534;padding:8px 16px;text-align:center;font-weight:600">👤 Частное лицо — торгуйтесь!</div>' : '') +
       (sellerType === 'company' ? '<div style="background:#f1f5f9;color:#475569;padding:8px 16px;text-align:center;font-weight:600">🏢 Компания — цена фиксированная</div>' : '') +
+      reviewWarning +
       '<div style="background:'+v[0]+';color:#fff;padding:10px;text-align:center;font-weight:700">'+v[1]+'</div>' +
       banners +
       '<div style="padding:14px 16px">' +
