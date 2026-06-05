@@ -443,8 +443,8 @@
     }
     const verdicts = {flash:['#8b5cf6','⚡ СРОЧНО БЕРИТЕ'],green:['#22c55e','🟢 ХОРОШАЯ ЦЕНА'],yellow:['#f59e0b','🟡 В РЫНКЕ'],red:['#ef4444','🔴 ЗАВЫШЕНО'],new_item:['#64748b','🏭 НОВОЕ ОТ ДИЛЕРА']};
     const v = verdicts[d.verdict] || verdicts.yellow;
-    const name = [d.category, d.brand, d.model].filter(Boolean).join(' ');
-    const demand = {high:'высокий',medium:'средний',low:'низкий'}[d.demand] || d.demand;
+    const name = [(d.category || ''), d.brand, d.model].filter(Boolean).join(' ');
+    const demand = {high:'высокий',medium:'средний',low:'низкий'}[d.demand] || (d.demand || 'нет данных');
     const urgent = d.urgency === 'urgent' || d.urgency === 'liquidation';
     const condLabels = {
       poor: '⚠️ Состояние: плохое — учтите расходы на ремонт',
@@ -452,7 +452,7 @@
       good: '✅ Состояние: хорошее',
       excellent: '✅ Состояние: отличное'
     };
-    const condLine = condLabels[d.condition_visual] ? '<br>'+condLabels[d.condition_visual] : '';
+    const condLine = condLabels[d.condition_visual || 'unknown'] ? '<br>'+condLabels[d.condition_visual || 'unknown'] : '';
 
     let banners = '';
     if (urgent)
@@ -477,8 +477,8 @@
       '<div style="padding:14px 16px">' +
       '<div style="font-weight:600;margin-bottom:8px">'+name+'</div>' +
       '<div style="color:#444;margin-bottom:4px">Рынок: <b>'+(d.market_min||0).toLocaleString('ru')+' – '+(d.market_max||0).toLocaleString('ru')+' ₽</b></div>' +
-      '<div style="background:#f5f5f5;border-radius:8px;padding:10px;margin:10px 0;line-height:1.8">💰 Маржа: <b>'+(d.reseller_margin||0).toLocaleString('ru')+' ₽</b><br>⏱ Оборот: <b>'+d.turnover_days+'</b><br>📊 Спрос: <b>'+demand+'</b>'+condLine+'</div>' +
-      '<div style="font-style:italic;color:#666;font-size:13px;margin-bottom:12px">"'+d.comment+'"</div>' +
+      '<div style="background:#f5f5f5;border-radius:8px;padding:10px;margin:10px 0;line-height:1.8">💰 Маржа: <b>'+(d.reseller_margin||0).toLocaleString('ru')+' ₽</b><br>⏱ Оборот: <b>'+(d.turnover_days || 'нет данных')+'</b><br>📊 Спрос: <b>'+demand+'</b>'+condLine+'</div>' +
+      '<div style="font-style:italic;color:#666;font-size:13px;margin-bottom:12px">"'+(d.comment || '')+'"</div>' +
       '<a href="https://t.me/IndMartAlertsBot?start=subscribe" target="_blank" style="display:block;background:#1a1a2e;color:#fff;text-align:center;padding:11px;border-radius:8px;text-decoration:none;font-weight:600">🔔 Подписаться в Telegram</a>' +
       '<a href="https://indmart.ru" target="_blank" style="display:block;color:#888;text-align:center;padding:8px 0 0;text-decoration:none;font-size:12px">Открыть IndMart</a>' +
       '</div>';
@@ -544,7 +544,7 @@
         if (filters.maxTurnover > 0) {
           const maxDays = parseTurnoverMax(data.turnover_days);
           if (maxDays > filters.maxTurnover) {
-            issues.push(`оборот ${data.turnover_days} > ${filters.maxTurnover} дней`);
+            issues.push(`оборот ${data.turnover_days || 'нет данных'} > ${filters.maxTurnover} дней`);
           }
         }
 
