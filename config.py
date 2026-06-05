@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     telegram_chat_id: str = ""
     telegram_group_chat_id: int = 0
 
+    tinkoff_terminal_key: str = ""
+    tinkoff_secret_key: str = ""
+
     cors_origins: str = "*"
 
     @property

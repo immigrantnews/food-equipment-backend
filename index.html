@@ -724,6 +724,7 @@
       </button>
     </div>
     <button type="button" class="primary" data-go-screen="subscribe" style="width:100%;margin-top:14px">🔔 Подписаться на уведомления</button>
+    <button type="button" class="primary" data-go-screen="upgrade" style="width:100%;margin-top:10px;background:#1a1a2e">🔓 Разблокировать ссылки</button>
   </section>
 
   <!-- ========== Category screens ========== -->
@@ -890,6 +891,34 @@
         ✅ Готово! Теперь напишите боту <a href="https://t.me/IndMartAlertsBot" target="_blank">@IndMartAlertsBot</a> команду /start — и будете получать уведомления первым!
       </div>
       <p id="subscribe-error" style="color:#b91c1c;font-size:14px;margin:10px 0 0;text-align:center" hidden></p>
+    </div>
+  </section>
+
+  <section class="category-screen" data-screen="upgrade" id="upgrade-screen" hidden>
+    <div class="card">
+      <h3>💼 IndMart Перекупщик</h3>
+      <p class="sub">Первым узнавай о выгодных сделках</p>
+
+      <div class="sub-cats" style="margin-top:6px">
+        <label style="pointer-events:none">✅ Полные ссылки на срочные объявления</label>
+        <label style="pointer-events:none">✅ Уведомления раньше всех</label>
+        <label style="pointer-events:none">✅ Безлимитные оценки</label>
+        <label style="pointer-events:none">✅ Оценка по фото (определение модели)</label>
+        <label style="pointer-events:none">✅ Фильтры по марже и обороту</label>
+      </div>
+
+      <div style="text-align:center;margin:18px 0 6px">
+        <div style="font-size:32px;font-weight:800;color:#1a1a2e">2 990 ₽<span style="font-size:16px;font-weight:600;color:#888">/мес</span></div>
+        <div style="font-size:13px;color:#888;margin-top:4px">или 1 990 ₽/мес при оплате за год</div>
+      </div>
+
+      <form id="upgrade-form">
+        <div class="fields">
+          <input class="full" type="text" id="upg-telegram" placeholder="@username" required>
+        </div>
+        <button type="submit" class="primary" id="upg-submit" style="width:100%;margin-top:6px">Оплатить 2 990 ₽</button>
+      </form>
+      <p id="upgrade-error" style="color:#b91c1c;font-size:14px;margin:10px 0 0;text-align:center" hidden></p>
     </div>
   </section>
 
@@ -1423,7 +1452,7 @@
       return;
     }
 
-    if (target.startsWith("category-") || target === "subscribe") {
+    if (target.startsWith("category-") || target === "subscribe" || target === "upgrade") {
       const el = document.querySelector(`section[data-screen="${target}"]`);
       if (el) el.hidden = false;
       backBtn.hidden = false;
@@ -1462,10 +1491,50 @@
     if (h === "subscribe-screen" || h === "subscribe") {
       navigate("subscribe");
       window.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (h === "upgrade-screen" || h === "upgrade") {
+      navigate("upgrade");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }
   window.addEventListener("hashchange", handleHash);
   handleHash();
+
+  // ---------- Upgrade / payment screen ----------
+  (function initUpgrade() {
+    const form = document.getElementById("upgrade-form");
+    if (!form) return;
+    const input = document.getElementById("upg-telegram");
+    const submitBtn = document.getElementById("upg-submit");
+    const errorEl = document.getElementById("upgrade-error");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorEl.hidden = true;
+      const username = (input.value || "").trim();
+      if (!username) { input.focus(); return; }
+      const original = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Создаём платёж…";
+      try {
+        const res = await fetch(API_BASE + "/create-payment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ telegram_username: username, plan: "reseller" }),
+        });
+        const data = await res.json();
+        if (res.ok && data.payment_url) {
+          window.location.href = data.payment_url;
+          return;
+        }
+        throw new Error(data.detail || "Не удалось создать платёж");
+      } catch (err) {
+        errorEl.textContent = "Ошибка: " + err.message + ". Попробуйте позже.";
+        errorEl.hidden = false;
+        submitBtn.disabled = false;
+        submitBtn.textContent = original;
+      }
+    });
+  })();
 
   // ---------- Subscribe screen ----------
   (function initSubscribe() {

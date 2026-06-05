@@ -36,7 +36,9 @@ def get_matching_subscribers(region, margin, is_urgent, is_private, category='')
         with get_conn() as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute("""
-                    SELECT id, name, telegram_username, telegram_chat_id FROM subscribers
+                    SELECT id, name, telegram_username, telegram_chat_id,
+                           COALESCE(is_paid, false) AS is_paid
+                    FROM subscribers
                     WHERE is_active = true AND user_type = 'reseller'
                     AND (region IS NULL OR region = '' OR %s ILIKE '%%' || region || '%%')
                     AND (min_margin = 0 OR min_margin <= %s)

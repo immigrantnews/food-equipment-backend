@@ -2,19 +2,22 @@ import json
 import logging
 import os
 import re
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from urllib.parse import urlparse
 
 import httpx
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 
 import airtable_client as at
 import anthropic_client as ai
 from config import get_settings
 from db import save_subscriber, get_matching_subscribers, unsubscribe, get_conn as get_db_conn
+from payments import create_payment, verify_webhook
 from schemas import (
     AvitoEvalIn,
     AvitoEvalOut,
@@ -324,8 +327,11 @@ def avito_eval(req: AvitoEvalIn):
                                 f"👤 {'Частное лицо' if req.seller_type == 'private' else 'Компания'}\n\n"
                                 f"_{data.get('comment', '')}_\n\n"
                             )
-                            if listing_url:
-                                msg += f"🔗 [Открыть объявление]({listing_url})"
+                            if sub.get('is_paid'):
+                                link_text = f"🔗 [Открыть объявление]({listing_url})" if listing_url else ""
+                            else:
+                                link_text = "🔒 Ссылка скрыта\n👉 [Открыть за 2 990 ₽/мес](https://indmart.ru/#upgrade-screen)"
+                            msg += link_text
                             try:
                                 _httpx.post(
                                     f"https://api.telegram.org/bot{bot_token}/sendMessage",
@@ -545,3 +551,91 @@ def fetch_url(req: FetchUrlIn):
         logger.exception("fetch-url failed")
         raise HTTPException(status_code=502, detail=f"Fetch failed: {e}")
     return FetchUrlOut(text=_strip_html_to_text(res.text)[:_FETCH_TEXT_LIMIT])
+
+
+# ---------- Tinkoff payments ----------
+
+_PLANS = {
+    "reseller": {"amount": 2990, "description": "IndMart Перекупщик — подписка на 1 месяц"},
+    "pro": {"amount": 5990, "description": "IndMart Про — подписка на 1 месяц"},
+}
+
+
+class CreatePaymentIn(BaseModel):
+    telegram_username: str
+    plan: str = "reseller"  # reseller / pro
+
+
+@app.post("/create-payment")
+def create_payment_route(req: CreatePaymentIn):
+    try:
+        username = req.telegram_username.lstrip("@").strip()
+        if not username:
+            raise HTTPException(status_code=400, detail="telegram_username required")
+        plan = _PLANS.get(req.plan, _PLANS["reseller"])
+        order_id = f"{username}-{uuid.uuid4().hex[:8]}"
+        result = create_payment(
+            amount_rub=plan["amount"],
+            order_id=order_id,
+            telegram_username=username,
+            description=plan["description"],
+        )
+        return {"payment_url": result["url"], "order_id": order_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("create payment failed")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/payment-webhook")
+async def payment_webhook(request: Request):
+    # Tinkoff ожидает в ответ ровно "OK" (text/plain), иначе шлёт повторные уведомления.
+    try:
+        data = await request.json()
+    except Exception:
+        logger.warning("payment webhook: bad JSON body")
+        return PlainTextResponse("OK")
+    try:
+        if not verify_webhook(data):
+            logger.warning("payment webhook: invalid signature")
+            return PlainTextResponse("OK")
+        if data.get("Status") == "CONFIRMED":
+            telegram_username = (data.get("DATA") or {}).get("telegram_username", "")
+            if telegram_username:
+                with get_db_conn() as conn:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            """
+                            UPDATE subscribers
+                            SET is_paid = true, paid_at = NOW()
+                            WHERE LOWER(telegram_username) = LOWER(%s)
+                            """,
+                            (telegram_username,),
+                        )
+                    conn.commit()
+                logger.info(f"Payment confirmed for @{telegram_username}")
+                bot_token = os.environ.get('TELEGRAM_NOTIFY_TOKEN', '')
+                if bot_token:
+                    with get_db_conn() as conn:
+                        with conn.cursor() as cur:
+                            cur.execute(
+                                "SELECT telegram_chat_id FROM subscribers WHERE LOWER(telegram_username) = LOWER(%s)",
+                                (telegram_username,),
+                            )
+                            row = cur.fetchone()
+                    if row and row[0]:
+                        try:
+                            httpx.post(
+                                f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                                json={
+                                    "chat_id": row[0],
+                                    "text": "✅ Оплата прошла успешно!\n\nТеперь вы получаете полные ссылки на все срочные объявления.\n\nДобро пожаловать в IndMart Перекупщик! 🎉",
+                                },
+                                timeout=5,
+                            )
+                        except Exception as e:
+                            logger.warning(f"Telegram notify after payment failed: {e}")
+    except Exception:
+        logger.exception("payment webhook handler failed")
+    return PlainTextResponse("OK")
