@@ -95,16 +95,9 @@
     return parseInt(raw.replace(/\D/g, '')) || 0;
   }
   async function makeButton() {
-    if (userClosedWidget) return;
     if (document.getElementById('indmart-btn') || document.getElementById('indmart-widget')) return;
 
     const url = location.href;
-    // Кеш — если уже оценивали, показываем виджет без кнопки и запроса
-    const cached = await loadFromCache(url);
-    if (cached) {
-      showWidget(cached, cached._price || 0, cached._title || '', cached._sellerType || 'unknown', cached._userMode || 'reseller');
-      return;
-    }
     const isEquipment =
       url.includes('oborudovanie') ||
       url.includes('pishchevoe') ||
@@ -174,6 +167,14 @@
   async function evaluate(title, price) {
     const btn = document.getElementById('indmart-btn');
     if (btn && btn.dataset.loading === '1') return;
+
+    // Сначала кеш — показываем результат без запроса к API
+    const cachedResult = await loadFromCache(location.href);
+    if (cachedResult) {
+      showWidget(cachedResult, cachedResult._price || price, cachedResult._title || title, cachedResult._sellerType || 'unknown', cachedResult._userMode || 'reseller');
+      return;
+    }
+
     if (btn) { btn.textContent = '⏳ Анализирую...'; btn.dataset.loading = '1'; }
 
     const region = getText(['[data-marker="item-address/name"]','[class*="address"]']);
@@ -329,7 +330,7 @@
     if (closeBtn) {
       closeBtn.addEventListener('click', () => {
         w.remove();
-        userClosedWidget = true;  // user closed manually — не переоткрывать
+        // кнопку не трогаем — setInterval вернёт её, клик покажет результат из кеша
       });
     }
 
@@ -441,14 +442,12 @@
     });
   }
   let lastUrl = '';
-  let userClosedWidget = false;
   setInterval(async () => {
     // Загружаем статистику цен при первом запуске
     await loadPriceStats();
 
     if (location.href !== lastUrl) {
       lastUrl = location.href;
-      userClosedWidget = false;  // reset on navigation
       document.getElementById('indmart-btn')?.remove();
       document.getElementById('indmart-widget')?.remove();
     }
