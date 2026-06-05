@@ -593,6 +593,7 @@ async def payment_webhook(request: Request):
     # Tinkoff ожидает в ответ ровно "OK" (text/plain), иначе шлёт повторные уведомления.
     try:
         data = await request.json()
+        logger.info(f"Webhook received: status={data.get('Status')} order={data.get('OrderId')} token_present={bool(data.get('Token'))}")
     except Exception:
         logger.warning("payment webhook: bad JSON body")
         return PlainTextResponse("OK")
