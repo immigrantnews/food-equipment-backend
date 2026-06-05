@@ -219,20 +219,24 @@ def evaluate_avito_listing(title: str, price: int, region: str, description: str
             text = text[4:]
         text = text.strip()
     if not text or not text.strip():
-        logger.warning(f"Claude returned empty response, text={repr(text)}")
-        return {
-            "verdict": "unknown",
-            "category": "Неизвестно",
-            "market_min": 0,
-            "market_max": 0,
-            "reseller_margin": 0,
-            "turnover_days": "неизвестно",
-            "demand": "неизвестно",
-            "condition_visual": "unknown",
-            "urgency": "normal",
-            "comment": "Не удалось получить оценку. Попробуйте ещё раз.",
-            "error": "empty_response",
-        }
+        logger.warning("Claude returned empty response, trying Gemini fallback")
+        try:
+            return evaluate_with_gemini(title, price, region, description)
+        except Exception as gemini_err:
+            logger.warning(f"Gemini fallback also failed: {gemini_err}")
+            return {
+                "verdict": "unknown",
+                "category": "Неизвестно",
+                "market_min": 0,
+                "market_max": 0,
+                "reseller_margin": 0,
+                "turnover_days": "нет данных",
+                "demand": "нет данных",
+                "condition_visual": "unknown",
+                "urgency": "normal",
+                "comment": "Сервис временно недоступен. Попробуйте ещё раз.",
+                "error": "empty_response",
+            }
 
     try:
         result = json.loads(text)
