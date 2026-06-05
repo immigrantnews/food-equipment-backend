@@ -327,11 +327,19 @@ def avito_eval(req: AvitoEvalIn):
                                 f"👤 {'Частное лицо' if req.seller_type == 'private' else 'Компания'}\n\n"
                                 f"_{data.get('comment', '')}_\n\n"
                             )
-                            if sub.get('is_paid'):
-                                link_text = f"🔗 [Открыть объявление]({listing_url})" if listing_url else ""
+                            if listing_url:
+                                if sub.get('is_paid'):
+                                    link_text = f"🔗 [Открыть объявление]({listing_url})"
+                                else:
+                                    link_text = (
+                                        f"🔒 Ссылка скрыта\n\n"
+                                        f"Подписчики IndMart получают такие уведомления первыми\n"
+                                        f"👉 [Получить доступ — 2 990 ₽/мес](https://indmart.ru/upgrade)"
+                                    )
                             else:
-                                link_text = "🔒 Ссылка скрыта\n👉 [Открыть за 2 990 ₽/мес](https://indmart.ru/#upgrade-screen)"
-                            msg += link_text
+                                link_text = f"👉 [IndMart Перекупщик](https://indmart.ru/upgrade)"
+
+                            msg += f"\n\n{link_text}"
                             try:
                                 _httpx.post(
                                     f"https://api.telegram.org/bot{bot_token}/sendMessage",
@@ -380,8 +388,9 @@ def avito_eval(req: AvitoEvalIn):
                                 f"📍 Регион: {req.region or 'не указан'}\n"
                                 f"💵 Маржа: ~{data.get('reseller_margin', 0):,} ₽\n"
                                 f"⏱ Оборот: {data.get('turnover_days', '')}\n\n"
-                                f"🔗 Ссылка только подписчикам\n"
-                                f"👉 [Подписаться](https://indmart.ru/#subscribe-screen)"
+                                f"🔒 Ссылка только подписчикам\n"
+                                f"📊 Подписчики получают все срочные продажи первыми\n"
+                                f"👉 [Получить доступ — 2 990 ₽/мес](https://indmart.ru/upgrade)"
                             )
 
                             def send_group():
