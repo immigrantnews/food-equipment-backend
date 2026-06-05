@@ -80,7 +80,7 @@
         const colors = {flash:'#8b5cf6', green:'#22c55e', yellow:'#f59e0b', red:'#ef4444'};
         const badge = document.createElement('span');
         badge.className = 'indmart-badge-mini';
-        badge.title = `IndMart: медиана ${result.median.toLocaleString('ru')} ₽`;
+        badge.title = `IndMart: медиана ${(result.median||0).toLocaleString('ru')} ₽`;
         badge.style.cssText = `display:inline-block;background:${colors[result.verdict]};color:#fff;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;margin-left:6px;vertical-align:middle`;
         badge.textContent = result.label + ' IndMart';
         titleEl.appendChild(badge);
@@ -109,7 +109,7 @@
       const colors = {flash:'#8b5cf6', green:'#22c55e', yellow:'#f59e0b', red:'#ef4444'};
       const badge = document.createElement('span');
       badge.className = 'indmart-badge-mini';
-      badge.title = `IndMart: медиана ${result.median.toLocaleString('ru')} ₽`;
+      badge.title = `IndMart: медиана ${(result.median||0).toLocaleString('ru')} ₽`;
       badge.style.cssText = `display:inline-block;background:${colors[result.verdict]};color:#fff;border-radius:4px;padding:2px 6px;font-size:11px;font-weight:700;margin-left:6px;vertical-align:middle`;
       badge.textContent = result.label + ' IndMart';
 
@@ -477,7 +477,7 @@
       '<div style="padding:14px 16px">' +
       '<div style="font-weight:600;margin-bottom:8px">'+name+'</div>' +
       '<div style="color:#444;margin-bottom:4px">Рынок: <b>'+(d.market_min||0).toLocaleString('ru')+' – '+(d.market_max||0).toLocaleString('ru')+' ₽</b></div>' +
-      '<div style="background:#f5f5f5;border-radius:8px;padding:10px;margin:10px 0;line-height:1.8">💰 Маржа: <b>'+d.reseller_margin.toLocaleString('ru')+' ₽</b><br>⏱ Оборот: <b>'+d.turnover_days+'</b><br>📊 Спрос: <b>'+demand+'</b>'+condLine+'</div>' +
+      '<div style="background:#f5f5f5;border-radius:8px;padding:10px;margin:10px 0;line-height:1.8">💰 Маржа: <b>'+(d.reseller_margin||0).toLocaleString('ru')+' ₽</b><br>⏱ Оборот: <b>'+d.turnover_days+'</b><br>📊 Спрос: <b>'+demand+'</b>'+condLine+'</div>' +
       '<div style="font-style:italic;color:#666;font-size:13px;margin-bottom:12px">"'+d.comment+'"</div>' +
       '<a href="https://t.me/IndMartAlertsBot?start=subscribe" target="_blank" style="display:block;background:#1a1a2e;color:#fff;text-align:center;padding:11px;border-radius:8px;text-decoration:none;font-weight:600">🔔 Подписаться в Telegram</a>' +
       '<a href="https://indmart.ru" target="_blank" style="display:block;color:#888;text-align:center;padding:8px 0 0;text-decoration:none;font-size:12px">Открыть IndMart</a>' +
@@ -538,7 +538,7 @@
         const issues = [];
 
         if (filters.minMargin > 0 && data.reseller_margin < filters.minMargin) {
-          issues.push(`маржа ${data.reseller_margin.toLocaleString('ru')} ₽ < минимума ${filters.minMargin.toLocaleString('ru')} ₽`);
+          issues.push(`маржа ${(data.reseller_margin||0).toLocaleString('ru')} ₽ < минимума ${(filters.minMargin||0).toLocaleString('ru')} ₽`);
         }
 
         if (filters.maxTurnover > 0) {
@@ -579,10 +579,10 @@
 
       if (data.urgency === 'liquidation') {
         notifTitle = '🔥 ЛИКВИДАЦИЯ — срочная продажа!';
-        notifBody = `${title} за ${price.toLocaleString('ru')} ₽ — ${data.comment}`;
+        notifBody = `${title} за ${(price||0).toLocaleString('ru')} ₽ — ${data.comment}`;
       } else if (data.urgency === 'urgent') {
         notifTitle = '⚡ Срочная продажа';
-        notifBody = `${title} за ${price.toLocaleString('ru')} ₽ — торгуйтесь!`;
+        notifBody = `${title} за ${(price||0).toLocaleString('ru')} ₽ — торгуйтесь!`;
       } else if (data.bulk_opportunity) {
         notifTitle = '📦 Оптовый лот';
         notifBody = `${title} — ${data.notification_reason || 'можно взять всё дешевле'}`;
