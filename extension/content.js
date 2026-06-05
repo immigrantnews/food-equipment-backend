@@ -1,5 +1,14 @@
 (function () {
-  const KEYWORDS = ["тестомес","расстойк","тестораскаточ","делитель","миксер планетарн","хлебопекарн","пекарн","дежа","ротационн","подовая","конвекционн","просеиватель","слайсер","мясорубк","фритюрниц","пароконвектомат","холодильн витрин","шкаф расстойн","тестомесильн","взбивалк","куттер","вакуумн упаковщ","жарочн шкаф","печь","тестоделитель","округлитель","котел пищевой","картофелечистк","овощерезк","коптильн","льдогенератор"];
+  const KEYWORDS = ["тестомес","расстойк","тестораскаточ","делитель","миксер планетарн","хлебопекарн","пекарн","дежа","ротационн","подовая","конвекционн","просеиватель","слайсер","мясорубк","фритюрниц","пароконвектомат","холодильн витрин","шкаф расстойн","тестомесильн","взбивалк","куттер","вакуумн упаковщ","жарочн шкаф","печь","тестоделитель","округлитель","котел пищевой","картофелечистк","овощерезк","коптильн","льдогенератор","раскаточн","ламинатор теста","тестовалк","тестомешалк","тестоотсадочн","тестозакаточн","круассаномат","закаточн машин","отсадочн","формовочн","инфел","foodatlas","шфз","мфп","варочн котел","пищевар","плита промышл","дымогенератор","ледогенератор","витрин холодильн","лари морозильн","шкаф холодильн","холодильн камер"];
+
+  function hasKeywords(text) {
+    const lower = text.toLowerCase();
+    return KEYWORDS.some(kw =>
+      kw.length <= 4
+        ? new RegExp('(^|[\\s,.:;!?\\-\\/\\\\(\\)])' + kw + '($|[\\s,.:;!?\\-\\/\\\\(\\)])').test(lower)
+        : lower.includes(kw)
+    );
+  }
 
   // Кеш статистики цен
   let priceStats = null;
@@ -57,7 +66,7 @@
       const title = titleEl.textContent.trim();
       const price = parseInt((priceEl.getAttribute('content') || priceEl.textContent).replace(/\D/g,''));
 
-      if (!price || !KEYWORDS.some(k => title.toLowerCase().includes(k))) return;
+      if (!price || !hasKeywords(title)) return;
 
       const result = getVerdictFromStats(title, price);
       if (!result) return;
@@ -89,6 +98,12 @@
     if (document.getElementById('indmart-btn') || document.getElementById('indmart-widget')) return;
 
     const url = location.href;
+    // Кеш — если уже оценивали, показываем виджет без кнопки и запроса
+    const cached = await loadFromCache(url);
+    if (cached) {
+      showWidget(cached, cached._price || 0, cached._title || '', cached._sellerType || 'unknown', cached._userMode || 'reseller');
+      return;
+    }
     const isEquipment =
       url.includes('oborudovanie') ||
       url.includes('pishchevoe') ||
@@ -101,7 +116,7 @@
     const title = getText(['h1[itemprop="name"]','[data-marker="item-view/title"]','h1']);
     const price = getPrice();
     if (!title || !price) return;
-    if (!KEYWORDS.some(k => title.toLowerCase().includes(k))) return;
+    if (!hasKeywords(title)) return;
 
     // Проверяем режим — в режиме покупателя кнопку не показываем пока не готово
     const userMode = await new Promise(resolve =>
@@ -181,6 +196,11 @@
         body: JSON.stringify({title, price, region, description, photos, seller_type: sellerType, user_mode: userMode, listing_url: location.href})
       });
       const d = await resp.json();
+      d._price = price;
+      d._title = title;
+      d._sellerType = sellerType;
+      d._userMode = userMode;
+      saveToCache(location.href, d);
       showWidget(d, price, title, sellerType, userMode);
     } catch (e) {
       if (btn) { btn.textContent = '❌ Ошибка'; btn.dataset.loading = '0'; }
@@ -209,6 +229,35 @@
       img.src = url;
     });
   }
+
+  // Персистентный кеш оценок в chrome.storage.local (24 часа, до 50 записей)
+  async function saveToCache(url, data) {
+    try {
+      const cache = await new Promise(resolve =>
+        chrome.storage.local.get('eval_cache', d => resolve(d.eval_cache || {}))
+      );
+      cache[url] = {data, ts: Date.now()};
+      const keys = Object.keys(cache);
+      if (keys.length > 50) {
+        const oldest = keys.sort((a,b) => cache[a].ts - cache[b].ts)[0];
+        delete cache[oldest];
+      }
+      chrome.storage.local.set({eval_cache: cache});
+    } catch(e) {}
+  }
+
+  async function loadFromCache(url) {
+    try {
+      const cache = await new Promise(resolve =>
+        chrome.storage.local.get('eval_cache', d => resolve(d.eval_cache || {}))
+      );
+      const entry = cache[url];
+      if (!entry) return null;
+      if (Date.now() - entry.ts > 24 * 60 * 60 * 1000) return null;
+      return entry.data;
+    } catch(e) { return null; }
+  }
+
   function showWidget(d, price, title, sellerType, userMode) {
     document.getElementById('indmart-btn')?.remove();
     document.getElementById('indmart-widget')?.remove();
