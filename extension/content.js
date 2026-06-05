@@ -90,7 +90,36 @@
     }
     return '';
   }
+  function getSite() {
+    const host = location.hostname;
+    if (host.includes('avito')) return 'avito';
+    if (host.includes('youla')) return 'youla';
+    return 'other';
+  }
+  function parseTitle() {
+    if (getSite() === 'youla') {
+      const h2 = document.querySelector('h2');
+      if (h2?.textContent?.trim()) return h2.textContent.trim();
+    }
+    const selectors = [
+      'h1[itemprop="name"]',
+      '[data-marker="item-view/title"]',
+      'h1'
+    ];
+    for (const sel of selectors) {
+      const el = document.querySelector(sel);
+      if (el?.textContent?.trim()) return el.textContent.trim();
+    }
+    return '';
+  }
   function getPrice() {
+    if (getSite() === 'youla') {
+      const h3 = document.querySelector('h3');
+      if (h3) {
+        const num = parseInt(h3.textContent.replace(/\D/g, ''));
+        if (num > 0) return num;
+      }
+    }
     const raw = getText(['[itemprop="price"]','[data-marker="item-view/item-price"]','[class*="price-value"]','[class*="item-price"]','[data-test="product-price"]','[class*="ProductPrice"]']);
     return parseInt(raw.replace(/\D/g, '')) || 0;
   }
@@ -108,7 +137,7 @@
       url.includes('youla.ru');  // accept all youla pages, filter by keywords
     if (!isEquipment) return;
 
-    const title = getText(['h1[itemprop="name"]','[data-marker="item-view/title"]','[class*="ProductHeader"] h1','[data-test="product-name"]','h1']);
+    const title = parseTitle();
     const price = getPrice();
     if (!title || !price) return;
     if (!hasKeywords(title)) return;
