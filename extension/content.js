@@ -126,6 +126,24 @@
     document.body.appendChild(btn);
   }
   function getSellerType() {
+    // Проверка отображаемого имени продавца на бизнес-признаки
+    // (выполняется до loop, иначе return 'private' внутри loop перехватит управление)
+    const sellerNameEl = document.querySelector('[data-marker="seller-info/name"]') ||
+                         document.querySelector('[class*="seller-name"]') ||
+                         document.querySelector('[class*="style-seller-info"] a');
+    if (sellerNameEl) {
+      const sellerName = sellerNameEl.textContent.toLowerCase();
+      const businessNameKeywords = [
+        'центр', 'сервис', 'торг', 'маркет', 'снаб', 'техник',
+        'оборудован', 'групп', 'холдинг', 'предприяти', 'завод',
+        'производств', 'поставк', 'опт', 'магазин', 'склад',
+        'восстановлен', 'ремонт', 'обслуживан'
+      ];
+      if (businessNameKeywords.some(kw => sellerName.includes(kw))) {
+        return 'company';
+      }
+    }
+
     const selectors = [
       '[data-marker="seller-info/name"]',
       '[data-marker="item-view/item-seller"]',
