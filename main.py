@@ -66,7 +66,19 @@ def get_current_user(authorization: Optional[str] = None) -> Optional[dict]:
         return None
     token = authorization.replace('Bearer ', '')
     try:
-        return pyjwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        user = pyjwt.decode(token, JWT_SECRET, algorithms=['HS256'])
+        if user.get('user_type') not in ('paid', 'pro'):
+            conn = get_db_conn()
+            try:
+                with conn.cursor() as cur:
+                    cur.execute("SELECT trial_expires_at FROM users WHERE id=%s", (user.get('user_id'),))
+                    row = cur.fetchone()
+                    if row and row[0] and row[0] > datetime.utcnow():
+                        user['user_type'] = 'pro'
+                        user['on_trial'] = True
+            finally:
+                conn.close()
+        return user
     except Exception:
         return None
 
@@ -593,8 +605,8 @@ def auth_telegram(data: dict = Body(...)):
     with get_db_conn() as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                INSERT INTO users (telegram_id, telegram_username, first_name, last_name, photo_url)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO users (telegram_id, telegram_username, first_name, last_name, photo_url, trial_expires_at)
+                VALUES (%s, %s, %s, %s, %s, NOW() + INTERVAL '7 days')
                 ON CONFLICT (telegram_id) DO UPDATE SET
                     telegram_username = EXCLUDED.telegram_username,
                     first_name = EXCLUDED.first_name,
@@ -1803,7 +1815,7 @@ async def email_verify(data: dict = Body(...)):
             user = cur.fetchone()
             if not user:
                 cur.execute(
-                    "INSERT INTO users (email, email_verified, user_type) VALUES (%s, TRUE, 'free') RETURNING id, email, user_type",
+                    "INSERT INTO users (email, email_verified, user_type, trial_expires_at) VALUES (%s, TRUE, 'free', NOW() + INTERVAL '7 days') RETURNING id, email, user_type",
                     (email,))
                 user = cur.fetchone()
             else:
@@ -1820,7 +1832,7 @@ async def email_verify(data: dict = Body(...)):
 @app.post("/ai/improve-listing")
 async def improve_listing(data: dict = Body(...), authorization: Optional[str] = Header(None)):
     user = get_current_user(authorization)
-    if not user or user.get('user_type') != 'paid':
+    if not user or user.get('user_type') not in ('paid', 'pro'):
         raise HTTPException(403, "Требуется платная подписка")
     title = data.get('title', '')
     description = data.get('description', '')
@@ -1840,3 +1852,83 @@ async def improve_listing(data: dict = Body(...), authorization: Optional[str] =
 Верни только текст описания."""
     text, _ = ai.chat([{"role": "user", "content": prompt}], max_tokens=400)
     return {"improved": text}
+
+# ---------- SEO ----------
+from fastapi.responses import HTMLResponse, Response
+
+@app.get("/sitemap.xml")
+def sitemap():
+    conn = get_db_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, title, created_at FROM listings WHERE status='active' ORDER BY created_at DESC LIMIT 1000")
+            rows = cur.fetchall()
+    finally:
+        conn.close()
+    urls = ['  <url><loc>https://indmart.ru/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>',
+            '  <url><loc>https://indmart.ru/listings</loc><changefreq>hourly</changefreq><priority>0.9</priority></url>',
+            '  <url><loc>https://indmart.ru/upgrade</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>']
+    for row in rows:
+        lid, title, created = row
+        slug = title.lower().replace(' ', '-')[:50] if title else str(lid)
+        urls.append(f'  <url><loc>https://indmart.ru/listings/{lid}-{slug}</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>')
+    xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/0.9">\n' + '\n'.join(urls) + '\n</urlset>'
+    return Response(content=xml, media_type="application/xml")
+
+@app.get("/listings/{listing_id}", response_class=HTMLResponse)
+def listing_ssr(listing_id: str, request: Request):
+    ua = request.headers.get('user-agent', '').lower()
+    is_bot = any(b in ua for b in ['googlebot','yandexbot','bingbot','twitterbot','facebookexternalhit','telegrambot','vkshare','slackbot'])
+    lid = listing_id.split('-')[0]
+    if not lid.isdigit():
+        return HTMLResponse(status_code=404, content='Not found')
+    if not is_bot:
+        return HTMLResponse(content=f'<script>window.location="/listings#{listing_id}"</script>')
+    conn = get_db_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, title, description, price, city, photos, status FROM listings WHERE id=%s AND status='active'", (int(lid),))
+            row = cur.fetchone()
+    finally:
+        conn.close()
+    if not row:
+        return HTMLResponse(status_code=404, content='Not found')
+    lid, title, desc, price, city, photos, status = row
+    photo = (photos[0] if photos else '')
+    price_fmt = f"{int(price):,}".replace(',', ' ') if price else ''
+    desc_short = (desc or '')[:160]
+    html = f"""<!doctype html><html lang="ru"><head>
+<meta charset="utf-8">
+<title>{title} — {price_fmt} ₽ | IndMart</title>
+<meta name="description" content="Купить {title} за {price_fmt} ₽ в {city or 'России'}. {desc_short}">
+<meta property="og:title" content="{title} — {price_fmt} ₽">
+<meta property="og:description" content="{desc_short}">
+<meta property="og:image" content="{photo}">
+<meta property="og:url" content="https://indmart.ru/listings/{lid}">
+<meta property="og:type" content="product">
+<link rel="canonical" href="https://indmart.ru/listings/{lid}">
+<script type="application/ld+json">{{
+  "@context":"https://schema.org",
+  "@type":"Product",
+  "name":"{title}",
+  "description":"{desc_short}",
+  "image":"{photo}",
+  "offers":{{"@type":"Offer","price":"{price}","priceCurrency":"RUB","availability":"https://schema.org/InStock","url":"https://indmart.ru/listings/{lid}"}}
+}}</script>
+<script type="application/ld+json">{{
+  "@context":"https://schema.org",
+  "@type":"BreadcrumbList",
+  "itemListElement":[
+    {{"@type":"ListItem","position":1,"name":"Главная","item":"https://indmart.ru"}},
+    {{"@type":"ListItem","position":2,"name":"Объявления","item":"https://indmart.ru/listings"}},
+    {{"@type":"ListItem","position":3,"name":"{title}"}}
+  ]
+}}</script>
+</head><body>
+<h1>{title}</h1>
+<p>Цена: {price_fmt} ₽</p>
+<p>Город: {city or ''}</p>
+<p>{desc or ''}</p>
+<a href="https://indmart.ru/listings">← Все объявления</a>
+</body></html>"""
+    return HTMLResponse(content=html)
