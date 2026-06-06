@@ -1740,3 +1740,79 @@ def get_market_listings(
         } for r in rows],
         "total": total
     }
+
+
+
+
+
+# ---------- Email auth ----------
+import random
+import aiosmtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+@app.post("/auth/email/send-code")
+async def email_send_code(data: dict = Body(...)):
+    email = data.get("email", "").lower().strip()
+    if not email or "@" not in email:
+        raise HTTPException(400, "Неверный email")
+    conn = get_db_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) FROM email_codes WHERE email=%s AND created_at > NOW() - INTERVAL '15 minutes'",
+                (email,))
+            count = cur.fetchone()[0]
+            if count >= 3:
+                raise HTTPException(429, "Слишком много попыток. Подождите 15 минут.")
+            cur.execute("UPDATE email_codes SET used=TRUE WHERE email=%s AND used=FALSE", (email,))
+            code = "".join(random.choices("0123456789", k=6))
+            cur.execute(
+                "INSERT INTO email_codes (email, code, expires_at) VALUES (%s, %s, NOW() + INTERVAL '15 minutes')",
+                (email, code))
+            conn.commit()
+    finally:
+        conn.close()
+    smtp_user = os.environ.get("SMTP_USER")
+    smtp_password = os.environ.get("SMTP_PASSWORD")
+    html = "<div style='font-family:Arial;max-width:480px;margin:0 auto'><div style='background:#1B3A6B;padding:24px;text-align:center'><h1 style='color:white;margin:0'>IndMart</h1></div><div style='padding:32px;text-align:center'><p>Ваш код для входа:</p><h2 style='font-size:40px;letter-spacing:12px;color:#1B3A6B'>" + code + "</h2><p style='color:#666'>Код действителен 15 минут</p></div></div>"
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = code + " — код для входа в IndMart"
+    msg["From"] = "IndMart <" + smtp_user + ">"
+    msg["To"] = email
+    msg.attach(MIMEText(html, "html", "utf-8"))
+    await aiosmtplib.send(msg, hostname="smtp.yandex.ru", port=465, use_tls=True,
+                          username=smtp_user, password=smtp_password)
+    return {"success": True}
+
+@app.post("/auth/email/verify")
+async def email_verify(data: dict = Body(...)):
+    email = data.get("email", "").lower().strip()
+    code = data.get("code", "").strip()
+    conn = get_db_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT id FROM email_codes WHERE email=%s AND code=%s AND used=FALSE AND expires_at > NOW() ORDER BY created_at DESC LIMIT 1",
+                (email, code))
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(400, "Неверный или устаревший код")
+            cur.execute("UPDATE email_codes SET used=TRUE WHERE id=%s", (row[0],))
+            cur.execute("SELECT id, email, user_type FROM users WHERE email=%s", (email,))
+            user = cur.fetchone()
+            if not user:
+                cur.execute(
+                    "INSERT INTO users (email, email_verified, user_type) VALUES (%s, TRUE, 'free') RETURNING id, email, user_type",
+                    (email,))
+                user = cur.fetchone()
+            else:
+                cur.execute("UPDATE users SET email_verified=TRUE WHERE email=%s", (email,))
+            conn.commit()
+    finally:
+        conn.close()
+    exp = datetime.now(timezone.utc) + timedelta(days=30)
+    token = pyjwt.encode(
+        {"user_id": user[0], "email": user[1], "user_type": user[2], "exp": exp},
+        JWT_SECRET, algorithm="HS256")
+    return {"token": token, "user": {"id": user[0], "email": user[1], "user_type": user[2]}}
