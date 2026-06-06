@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Allow: /listings
+Allow: /upgrade
+Disallow: /admin
+Disallow: /api/
+Sitemap: https://indmart.ru/sitemap.xml

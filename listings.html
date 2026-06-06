@@ -1644,7 +1644,7 @@ router();
 function aiImproveDescription() {
   const token = localStorage.getItem('indmart_token');
   const user = JSON.parse(localStorage.getItem('indmart_user') || '{}');
-  if (!token || user.user_type !== 'paid') {
+  if (!token) {
     const modal = document.createElement('div');
     modal.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;';
     modal.innerHTML = '<div style="background:white;border-radius:16px;padding:36px;max-width:400px;margin:16px;text-align:center;"><div style="font-size:48px;margin-bottom:16px;">✨</div><h2 style="font-family:Montserrat,sans-serif;color:#1B3A6B;font-size:20px;margin:0 0 12px;">Функция для подписчиков</h2><p style="color:#666;font-size:14px;line-height:1.6;margin-bottom:24px;">AI улучшает текст объявления так, чтобы оборудование продалось быстрее. Доступно на тарифе <strong>Платный</strong>.</p><a href="/upgrade" style="display:block;padding:14px;background:#FF6B35;color:white;border-radius:10px;font-weight:700;text-decoration:none;margin-bottom:10px;">Подключить за 2 990 ₽/мес</a><button onclick="this.closest('div').parentElement.remove()" style="background:none;border:none;color:#aaa;cursor:pointer;font-size:14px;">Закрыть</button></div>';
@@ -1672,6 +1672,8 @@ function aiImproveDescription() {
       document.getElementById('n-description').value = data.improved;
       status.textContent = '✅ Текст улучшен';
       setTimeout(() => { status.style.display = 'none'; }, 3000);
+    } else if (data.detail && data.detail.includes('подписк')) {
+      status.innerHTML = '⚠️ <a href="/upgrade" style="color:#FF6B35;font-weight:700;">Подключите тариф</a> чтобы использовать эту функцию';
     }
   })
   .catch(() => { status.textContent = '❌ Ошибка. Попробуйте ещё раз.'; })
