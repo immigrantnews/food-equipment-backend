@@ -5,7 +5,7 @@ import re
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 
 import httpx
 import jwt as pyjwt
@@ -54,6 +54,10 @@ ADMIN_TELEGRAM_IDS = [
     int(x.strip()) for x in os.environ.get('ADMIN_TELEGRAM_IDS', '').split(',') if x.strip()
 ]
 DAILY_AI_SEARCH_LIMIT = 30
+AI_DIALOG_MAX_QUESTIONS = 2  # ask at most N clarifying questions before returning results
+
+AI_VALID_CATEGORIES = ('Тестомесы', 'Печи', 'Расстойки', 'Пароконвектоматы',
+                       'Холодильное', 'Упаковочное', 'Коптильное', 'Прочее')
 
 
 def get_current_user(authorization: Optional[str] = None) -> Optional[dict]:
@@ -1367,4 +1371,252 @@ def get_ai_search_usage(authorization: str = Header(None)):
         "used_today": used_today,
         "daily_limit": DAILY_AI_SEARCH_LIMIT,
         "remaining": max(0, DAILY_AI_SEARCH_LIMIT - used_today)
+    }
+
+
+# ---------- Conversational AI dialog search ----------
+
+def _validate_search_params(raw: dict) -> dict:
+    """Validate/whitelist Claude-extracted search params (defensive)."""
+    params = {"keywords": [], "category": None, "city": None,
+              "max_price": None, "min_price": None, "condition": None,
+              "search_query": None}
+    if isinstance(raw.get('keywords'), list):
+        params['keywords'] = [str(k)[:50] for k in raw['keywords'][:5] if k]
+    if raw.get('category') in AI_VALID_CATEGORIES:
+        params['category'] = raw['category']
+    if raw.get('city') and isinstance(raw['city'], str):
+        params['city'] = str(raw['city'])[:100]
+    if raw.get('max_price') and str(raw['max_price']).isdigit():
+        params['max_price'] = int(raw['max_price'])
+    if raw.get('min_price') and str(raw['min_price']).isdigit():
+        params['min_price'] = int(raw['min_price'])
+    if raw.get('condition') in ('used', 'new', 'parts'):
+        params['condition'] = raw['condition']
+    if raw.get('search_query') and isinstance(raw['search_query'], str):
+        params['search_query'] = str(raw['search_query'])[:100]
+    return params
+
+
+def _search_listings(params: dict) -> list:
+    """Run the active-listings search for validated params. Returns dict rows."""
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            where = ["l.status = 'active'"]
+            sql_params = []
+            if params['keywords']:
+                kw = []
+                for k in params['keywords']:
+                    kw.append("(l.title ILIKE %s OR l.description ILIKE %s)")
+                    sql_params.extend([f"%{k}%", f"%{k}%"])
+                where.append("(" + " OR ".join(kw) + ")")
+            if params.get('category'):
+                where.append("l.category = %s")
+                sql_params.append(params['category'])
+            if params.get('city'):
+                where.append("l.city ILIKE %s")
+                sql_params.append(f"%{params['city']}%")
+            if params.get('max_price'):
+                where.append("l.price <= %s")
+                sql_params.append(params['max_price'])
+            if params.get('min_price'):
+                where.append("l.price >= %s")
+                sql_params.append(params['min_price'])
+            if params.get('condition'):
+                where.append("l.condition = %s")
+                sql_params.append(params['condition'])
+            cur.execute(f"""
+                SELECT l.id, l.title, l.price, l.city, l.condition,
+                       l.photos, l.status, l.views, l.ai_verdict,
+                       l.ai_market_min, l.ai_market_max,
+                       l.created_at, u.first_name, u.telegram_username
+                FROM listings l
+                LEFT JOIN users u ON l.user_id = u.id
+                WHERE {' AND '.join(where)}
+                ORDER BY l.created_at DESC
+                LIMIT 20
+            """, sql_params)
+            return [{
+                "id": r[0], "title": r[1], "price": r[2], "city": r[3],
+                "condition": r[4], "photos": r[5] if r[5] else [],
+                "status": r[6], "views": r[7], "ai_verdict": r[8],
+                "ai_market_min": r[9], "ai_market_max": r[10],
+                "created_at": r[11].isoformat() if r[11] else None,
+                "seller_name": r[12], "seller_username": r[13]
+            } for r in cur.fetchall()]
+
+
+def _keyword_fallback(text: str) -> list:
+    return [w for w in (text or '').split()[:5] if len(w) >= 3]
+
+
+def _build_external_links(params: dict) -> list:
+    # fix #6: never build links from an empty query
+    search_q = (params.get('search_query') or ' '.join(params['keywords'])).strip()
+    if not search_q:
+        return []
+    return [{"name": "Avito", "url": f"https://www.avito.ru/all?q={quote(search_q)}"}]
+
+
+@app.post("/search/ai/dialog")
+async def ai_search_dialog(data: dict = Body(...), authorization: str = Header(None)):
+    user = get_current_user(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    query = (data.get('query') or '').strip()[:500]
+    history = data.get('history')
+    if not isinstance(history, list):
+        history = []
+    # Keep only well-formed turns, cap to last 8 to bound prompt size
+    history = [h for h in history
+               if isinstance(h, dict) and h.get('role') in ('user', 'assistant')
+               and isinstance(h.get('content'), str)][-8:]
+
+    # fix #5: compute step server-side from history; ignore any client step
+    step = len(history) + (1 if query else 0)
+    if step < 1:
+        raise HTTPException(status_code=400, detail="Query required")
+    if not history and len(query) < 3:
+        raise HTTPException(status_code=400, detail="Query too short (min 3 chars)")
+
+    # paid subscription
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT telegram_username FROM users WHERE id = %s", (user['user_id'],))
+            user_row = cur.fetchone()
+            if not user_row:
+                raise HTTPException(status_code=404, detail="User not found")
+            telegram_username = user_row[0] or ''
+    if not check_paid_subscription(user['user_id'], telegram_username):
+        raise HTTPException(status_code=403, detail="AI search requires paid subscription")
+
+    # daily limit (counted on results turns)
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT COUNT(*) FROM ai_search_usage
+                WHERE user_id = %s AND created_at > NOW() - INTERVAL '24 hours'
+            """, (user['user_id'],))
+            used_today = cur.fetchone()[0]
+    if used_today >= DAILY_AI_SEARCH_LIMIT:
+        raise HTTPException(status_code=429, detail=f"Daily limit reached ({DAILY_AI_SEARCH_LIMIT}/day)")
+
+    must_results = step > AI_DIALOG_MAX_QUESTIONS
+    convo = "\n".join(f"{h['role']}: {h['content']}" for h in history)
+    convo += f"\nuser: {query}" if query else ""
+    all_user_text = " ".join([h['content'] for h in history if h['role'] == 'user'] + ([query] if query else []))
+
+    decision = None
+    try:
+        import anthropic as _anthropic
+        import json as _json
+        client = _anthropic.Anthropic(api_key=os.environ.get('ANTHROPIC_API_KEY', ''), timeout=12.0)
+        instruction = (
+            "Ты — ассистент поиска б/у пищевого оборудования на доске IndMart. "
+            f"Это шаг {step} из максимум {AI_DIALOG_MAX_QUESTIONS} уточняющих вопросов. "
+            + ("Ты ДОЛЖЕН вернуть type=results. " if must_results else
+               "Если данных мало — задай ОДИН короткий уточняющий вопрос с 2-4 вариантами. Если данных достаточно — верни results. ")
+            + "Категории: " + "|".join(AI_VALID_CATEGORIES) + ". "
+            + "Верни ТОЛЬКО JSON без markdown, одной из форм:\n"
+            '{"type":"question","question":"...","options":["...","..."]}\n'
+            '{"type":"results","params":{"keywords":["..."],"category":null,"city":null,'
+            '"min_price":null,"max_price":null,"condition":"used|new|null","search_query":"короткая строка"}}\n'
+            "Диалог:\n" + convo
+        )
+        resp = client.messages.create(
+            model=os.environ.get('ANTHROPIC_MODEL', 'claude-sonnet-4-6'),
+            max_tokens=400,
+            messages=[{"role": "user", "content": instruction}],
+        )
+        text = resp.content[0].text.strip().strip('`').strip()
+        if text.startswith('json'):
+            text = text[4:].strip()
+        decision = _json.loads(text)
+    except Exception as e:
+        logger.warning(f"AI dialog decision failed: {e}, using results fallback")
+        decision = None
+
+    # Decide: question vs results (server enforces max questions — fix #5 semantics)
+    if (not must_results and isinstance(decision, dict)
+            and decision.get('type') == 'question' and decision.get('question')):
+        opts = decision.get('options')
+        options = [str(o)[:80] for o in opts[:4]] if isinstance(opts, list) else []
+        return {"type": "question", "question": str(decision['question'])[:300],
+                "options": options, "step": step}
+
+    # Results path
+    if isinstance(decision, dict) and decision.get('type') == 'results' and isinstance(decision.get('params'), dict):
+        params = _validate_search_params(decision['params'])
+    else:
+        params = _validate_search_params({})
+    if not params['keywords']:
+        params['keywords'] = _keyword_fallback(all_user_text)
+
+    external_links = _build_external_links(params)
+    results = _search_listings(params)
+
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO ai_search_usage (user_id, query, results_count) VALUES (%s, %s, %s)",
+                (user['user_id'], (all_user_text or query)[:500], len(results))
+            )
+            conn.commit()
+
+    return {
+        "type": "results",
+        "results": results,
+        "total": len(results),
+        "external_links": external_links,
+        "remaining_today": max(0, DAILY_AI_SEARCH_LIMIT - used_today - 1),
+        "daily_limit": DAILY_AI_SEARCH_LIMIT,
+        "params": params,
+        "step": step,
+    }
+
+
+@app.get("/admin/search/analytics")
+def admin_search_analytics(authorization: str = Header(None)):
+    check_admin(authorization)
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT COUNT(*),
+                       COUNT(DISTINCT user_id),
+                       COUNT(*) FILTER (WHERE created_at > NOW() - INTERVAL '7 days'),
+                       COALESCE(AVG(results_count), 0)
+                FROM ai_search_usage
+            """)
+            total, users, week, avg_results = cur.fetchone()
+
+            cur.execute("""
+                SELECT query, COUNT(*) AS c, COALESCE(AVG(results_count), 0)
+                FROM ai_search_usage
+                WHERE query IS NOT NULL AND query <> ''
+                GROUP BY query
+                ORDER BY c DESC
+                LIMIT 20
+            """)
+            top_queries = [{"query": r[0], "count": r[1], "avg_results": round(float(r[2]), 1)}
+                           for r in cur.fetchall()]
+
+            cur.execute("""
+                SELECT a.query, a.results_count, a.created_at, u.telegram_username
+                FROM ai_search_usage a
+                LEFT JOIN users u ON a.user_id = u.id
+                ORDER BY a.created_at DESC
+                LIMIT 20
+            """)
+            recent = [{"query": r[0], "results_count": r[1],
+                       "created_at": r[2].isoformat() if r[2] else None,
+                       "username": r[3]} for r in cur.fetchall()]
+
+    return {
+        "total_searches": total or 0,
+        "unique_users": users or 0,
+        "searches_week": week or 0,
+        "avg_results": round(float(avg_results or 0), 1),
+        "top_queries": top_queries,
+        "recent": recent,
     }

@@ -194,6 +194,26 @@ select.ctl{appearance:none;cursor:pointer;
 /* Hide structured filters in AI mode (AI extracts them itself) */
 .filters.ai-mode .f-field:not(.f-search):not(.f-action){display:none}
 
+/* AI dialog box */
+.ai-dialog{
+  background:var(--bg-card);border:1px solid #C7D6F0;border-radius:14px;
+  padding:18px;margin-bottom:18px;box-shadow:var(--shadow);
+}
+.ai-dialog-status{color:var(--primary);font-weight:600;font-size:15px}
+.ai-dialog-q{color:var(--text-primary);font-weight:600;font-size:16px;margin-bottom:14px;line-height:1.45}
+.ai-options{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.ai-option-btn{
+  font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;
+  padding:9px 16px;border-radius:100px;border:1px solid var(--border);
+  background:var(--bg-elevated);color:var(--primary);transition:all .18s ease;
+}
+.ai-option-btn:hover{border-color:var(--primary-light);background:#E3ECFB;transform:translateY(-1px)}
+.ai-answer-row{display:flex;gap:8px}
+.ai-answer-row .ctl{flex:1}
+.ai-info-bar .ai-links{margin-left:auto}
+.ai-info-bar .ai-links a{color:var(--accent);font-weight:600}
+.ai-info-bar .ai-links a:hover{text-decoration:underline}
+
 /* ===== LISTING GRID ===== */
 .grid{
   display:grid;
@@ -627,6 +647,8 @@ let catalogState = { filters:{}, offset:0, total:0, loading:false };
 let searchMode = 'normal';
 let aiSearchInProgress = false;
 let aiUpgradeBannerShown = false;
+let aiSearchTimeout = null;     // safety: reset stuck in-progress flag
+let aiDialogHistory = [];       // conversational turns [{role, content}]
 
 function renderCatalog(){
   const f = catalogState.filters;
@@ -708,9 +730,9 @@ function skeletonCards(n){
 }
 
 function applyFilters(){
-  // In AI mode, route the search box through the AI search flow instead.
+  // In AI mode, route the search box through the conversational AI dialog.
   if(searchMode === 'ai'){
-    performAISearch(document.getElementById('f-search').value.trim());
+    startAIDialog(document.getElementById('f-search').value.trim());
     return;
   }
   const num = id => {
@@ -799,75 +821,168 @@ function updateAIBadge(remaining, limit){
   badge.textContent = `AI-поиск: осталось ${remaining}/${limit||30}`;
 }
 
-async function performAISearch(query){
-  query = (query || '').trim();
-  if(query.length < 3){ showToast('Введите запрос (минимум 3 символа)', 'warning'); return; }
+// Ensure a single dialog box exists, inserted before the grid (fix #2 null-safety)
+function ensureDialogBox(){
+  let box = document.getElementById('ai-dialog-box');
+  if(box) return box;
+  const grid = document.getElementById('grid');
+  if(!grid) return null;
+  const container = grid.parentNode;
+  if(!container) return null;
+  box = document.createElement('div');
+  box.id = 'ai-dialog-box';
+  box.className = 'ai-dialog';
+  container.insertBefore(box, grid);
+  return box;
+}
+function removeDialogBox(){
+  const box = document.getElementById('ai-dialog-box');
+  if(box) box.remove();
+}
+
+// fix #9: minimum query length + auth check before starting a dialog
+function startAIDialog(query){
+  if(!query || query.trim().length < 3){
+    showToast('Введите минимум 3 символа для AI поиска', 'warning');
+    return;
+  }
+  if(!getToken()){
+    showToast('Войдите через Telegram для AI-поиска', 'warning');
+    setSearchMode('normal');
+    return;
+  }
+  aiDialogHistory = [];
+  removeDialogBox();
+  callAIDialog(query.trim());
+}
+
+async function callAIDialog(userMessage){
+  // fix #2: null safety on grid + its container
+  const grid = document.getElementById('grid');
+  if(!grid){ aiSearchInProgress = false; return; }
+  const container = grid.parentNode;
+  if(!container){ aiSearchInProgress = false; return; }
   if(aiSearchInProgress) return;
   aiSearchInProgress = true;
 
-  const btn = document.getElementById('searchBtn');
-  const grid = document.getElementById('grid');
-  const moreRow = document.getElementById('loadMoreRow');
-  const infoBar = document.getElementById('aiInfoBar');
-  if(btn){ btn.disabled = true; btn.textContent = 'Ищу…'; }
-  if(moreRow) moreRow.innerHTML = '';
-  if(grid) grid.innerHTML = skeletonCards(6);
-  if(infoBar) infoBar.innerHTML = `<div class="ai-info-bar"><span class="tag">🤖 AI ищет…</span><span class="muted">«${esc(query)}»</span></div>`;
+  // fix #3: reset the in-progress flag if a call gets stuck
+  if(aiSearchTimeout) clearTimeout(aiSearchTimeout);
+  aiSearchTimeout = setTimeout(() => { aiSearchInProgress = false; }, 30000);
 
+  const btn = document.getElementById('searchBtn');
+  if(btn){ btn.disabled = true; btn.textContent = 'Ищу…'; }
+  const box = ensureDialogBox();
+  if(box) box.innerHTML = `<div class="ai-dialog-status">🤖 AI думает…</div>`;
+
+  const priorHistory = aiDialogHistory.slice(); // snapshot before this turn
   try{
-    const res = await fetch(API + '/search/ai', {
+    const res = await fetch(API + '/search/ai/dialog', {
       method: 'POST',
       headers: Object.assign({'Content-Type':'application/json'}, authHeaders()),
-      body: JSON.stringify({ query })
+      body: JSON.stringify({ query: userMessage, history: priorHistory })
     });
 
     if(res.status === 401){
-      if(infoBar) infoBar.innerHTML = '';
       showToast('Войдите через Telegram для AI-поиска', 'warning');
-      setSearchMode('normal');
-      return;
+      setSearchMode('normal'); removeDialogBox(); return;
     }
     if(res.status === 403){
-      if(grid) grid.innerHTML = '';
-      showAIUpgradePrompt();
-      showToast('AI-поиск доступен по подписке', 'warning');
-      return;
+      removeDialogBox(); showAIUpgradePrompt();
+      showToast('AI-поиск доступен по подписке', 'warning'); return;
     }
     if(res.status === 429){
       let msg = 'Дневной лимит AI-поиска исчерпан';
       try{ const d = await res.json(); if(d.detail) msg = d.detail; }catch(e){}
-      if(infoBar) infoBar.innerHTML = '';
-      showToast(msg, 'warning');
-      setSearchMode('normal');
-      return;
+      showToast(msg, 'warning'); setSearchMode('normal'); removeDialogBox(); return;
     }
     if(!res.ok){
-      if(infoBar) infoBar.innerHTML = '';
       showToast('Ошибка AI-поиска. Попробуйте ещё раз.', 'error');
-      return;
+      removeDialogBox(); return;
     }
 
     const data = await res.json();
-    const results = data.results || [];
-    updateAIBadge(data.remaining_today, data.daily_limit);
-    if(infoBar) infoBar.innerHTML =
-      `<div class="ai-info-bar"><span class="tag">🤖 AI-поиск</span>
-        <span>Найдено: ${data.total}</span>
-        <span class="muted">• осталось сегодня ${data.remaining_today}/${data.daily_limit}</span></div>`;
-    if(results.length === 0){
-      if(grid) grid.innerHTML = `<div class="state" style="grid-column:1/-1">
-        <div class="big">Ничего не найдено</div>
-        <div>Попробуйте переформулировать запрос.</div></div>`;
-    }else if(grid){
-      grid.innerHTML = results.map(cardHTML).join('');
+    aiDialogHistory.push({ role:'user', content:userMessage });
+
+    // fix #10: handle unknown response type explicitly
+    if(data.type === 'question'){
+      aiDialogHistory.push({ role:'assistant', content: data.question || '' });
+      renderDialogQuestion(data);
+    }else if(data.type === 'results'){
+      renderAIResults(data);
+    }else{
+      showToast('Неожиданный ответ от AI', 'error');
+      removeDialogBox();
     }
   }catch(e){
-    if(infoBar) infoBar.innerHTML = '';
     showToast('Ошибка соединения. Попробуйте ещё раз.', 'error');
+    removeDialogBox();
   }finally{
+    if(aiSearchTimeout){ clearTimeout(aiSearchTimeout); aiSearchTimeout = null; }
     aiSearchInProgress = false;
     const b = document.getElementById('searchBtn');
     if(b){ b.disabled = false; b.textContent = 'Найти'; }
+  }
+}
+
+function renderDialogQuestion(data){
+  const box = ensureDialogBox();
+  if(!box) return;
+  const opts = Array.isArray(data.options) ? data.options : [];
+  // fix #4: data attributes, not inline onclick
+  box.innerHTML = `
+    <div class="ai-dialog-q">🤖 ${esc(data.question || 'Уточните запрос')}</div>
+    ${opts.length ? `<div class="ai-options">
+      ${opts.map(o => `<button class="ai-option-btn" data-option="${esc(o)}">${esc(o)}</button>`).join('')}
+    </div>` : ''}
+    <div class="ai-answer-row">
+      <input id="ai-custom-answer" class="ctl" placeholder="Или впишите свой ответ…">
+      <button id="ai-answer-send" class="btn btn-gold">Ответить</button>
+    </div>`;
+  // fix #4: attach listeners after rendering
+  box.querySelectorAll('.ai-option-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById('ai-custom-answer');
+      if(input) input.value = btn.dataset.option;
+      submitAIAnswer();
+    });
+  });
+  const send = document.getElementById('ai-answer-send');
+  if(send) send.addEventListener('click', submitAIAnswer);
+  const ca = document.getElementById('ai-custom-answer');
+  if(ca){ ca.addEventListener('keydown', e => { if(e.key === 'Enter') submitAIAnswer(); }); ca.focus(); }
+}
+
+function submitAIAnswer(){
+  const input = document.getElementById('ai-custom-answer');
+  const val = input ? input.value.trim() : '';
+  if(!val){ showToast('Введите ответ или выберите вариант', 'warning'); return; }
+  callAIDialog(val);
+}
+
+function renderAIResults(data){
+  removeDialogBox();
+  const grid = document.getElementById('grid');
+  const moreRow = document.getElementById('loadMoreRow');
+  const infoBar = document.getElementById('aiInfoBar');
+  if(moreRow) moreRow.innerHTML = '';
+  updateAIBadge(data.remaining_today, data.daily_limit);
+
+  const results = data.results || [];
+  const links = Array.isArray(data.external_links) ? data.external_links : [];
+  if(infoBar) infoBar.innerHTML = `
+    <div class="ai-info-bar">
+      <span class="tag">🤖 AI-поиск</span>
+      <span>Найдено: ${data.total || 0}</span>
+      <span class="muted">• осталось сегодня ${data.remaining_today}/${data.daily_limit}</span>
+      ${links.length ? `<span class="ai-links">Ещё: ${links.map(l => `<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.name)}</a>`).join(' · ')}</span>` : ''}
+    </div>`;
+  // fix #7: render via the existing string→innerHTML pattern (cardHTML returns a string)
+  if(results.length === 0){
+    if(grid) grid.innerHTML = `<div class="state" style="grid-column:1/-1">
+      <div class="big">На доске ничего не найдено</div>
+      <div>${links.length ? 'Посмотрите на внешних площадках выше.' : 'Попробуйте переформулировать запрос.'}</div></div>`;
+  }else if(grid){
+    grid.innerHTML = results.map(cardHTML).join('');
   }
 }
 

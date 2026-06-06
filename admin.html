@@ -266,6 +266,7 @@ tr.sub-inactive{background:#F9FAFB;color:var(--text-secondary)}
       <div class="tab active" data-tab="listings" onclick="switchTab('listings')">Объявления</div>
       <div class="tab" data-tab="users" onclick="switchTab('users')">Пользователи</div>
       <div class="tab" data-tab="subscribers" onclick="switchTab('subscribers')">Подписчики</div>
+      <div class="tab" data-tab="analytics" onclick="switchTab('analytics')">AI-поиск</div>
     </div>
 
     <!-- LISTINGS TAB -->
@@ -349,6 +350,29 @@ tr.sub-inactive{background:#F9FAFB;color:var(--text-secondary)}
         </div>
       </div>
       <div class="pagination" id="subscribersPagination"></div>
+    </div>
+
+    <!-- AI SEARCH ANALYTICS TAB -->
+    <div id="tab-analytics" class="hidden">
+      <div class="stats-grid" id="analyticsStats" style="margin-top:0"></div>
+      <h3 style="margin:8px 0 14px;font-size:18px">Топ запросов</h3>
+      <div class="table-wrap" style="margin-bottom:28px">
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Запрос</th><th>Кол-во</th><th>Ср. результатов</th></tr></thead>
+            <tbody id="topQueriesBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <h3 style="margin:8px 0 14px;font-size:18px">Последние запросы</h3>
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Запрос</th><th>Результатов</th><th>Пользователь</th><th>Дата</th></tr></thead>
+            <tbody id="recentSearchesBody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -577,8 +601,10 @@ function switchTab(tab){
   document.getElementById('tab-listings').classList.toggle('hidden', tab!=='listings');
   document.getElementById('tab-users').classList.toggle('hidden', tab!=='users');
   document.getElementById('tab-subscribers').classList.toggle('hidden', tab!=='subscribers');
+  document.getElementById('tab-analytics').classList.toggle('hidden', tab!=='analytics');
   if(tab==='users') loadUsers();
   if(tab==='subscribers') loadSubscribers();
+  if(tab==='analytics') loadAnalytics();
 }
 
 // ============================================================
@@ -973,6 +999,56 @@ async function exportCSV(){
     URL.revokeObjectURL(url);
     toast('Файл выгружен','success');
   }catch(e){ if(!String(e.message).startsWith('auth_')) toast('Ошибка соединения','error'); }
+}
+
+// ============================================================
+// AI SEARCH ANALYTICS
+// ============================================================
+async function loadAnalytics(){
+  const statsBox = document.getElementById('analyticsStats');
+  const topBody = document.getElementById('topQueriesBody');
+  const recentBody = document.getElementById('recentSearchesBody');
+  statsBox.innerHTML = '';
+  topBody.innerHTML = `<tr><td colspan="3" class="muted">Загрузка…</td></tr>`;
+  recentBody.innerHTML = `<tr><td colspan="4" class="muted">Загрузка…</td></tr>`;
+  try{
+    const res = await adminFetch('/admin/search/analytics');  // fix #8: authed fetch
+    if(!res.ok) throw new Error('analytics '+res.status);
+    renderAnalytics(await res.json());
+  }catch(e){
+    if(!String(e.message).startsWith('auth_')){
+      topBody.innerHTML = `<tr><td colspan="3" class="muted">Ошибка загрузки</td></tr>`;
+      recentBody.innerHTML = `<tr><td colspan="4" class="muted">Ошибка загрузки</td></tr>`;
+    }
+  }
+}
+
+function renderAnalytics(d){
+  const cards = [
+    { icon:'🔎', num:(d.total_searches||0).toLocaleString('ru-RU'), label:'Всего AI-поисков' },
+    { icon:'📅', num:(d.searches_week||0).toLocaleString('ru-RU'), label:'За 7 дней' },
+    { icon:'👤', num:d.unique_users||0, label:'Уникальных пользователей' },
+    { icon:'📊', num:d.avg_results||0, label:'Ср. результатов на поиск' },
+  ];
+  document.getElementById('analyticsStats').innerHTML = cards.map(c=>`
+    <div class="stat-card">
+      <div class="stat-icon">${c.icon}</div>
+      <div><div class="stat-num">${c.num}</div><div class="stat-label">${esc(c.label)}</div></div>
+    </div>`).join('');
+
+  const top = d.top_queries||[];
+  document.getElementById('topQueriesBody').innerHTML = top.length
+    ? top.map(q=>`<tr><td class="td-title">${esc(q.query)}</td><td>${q.count}</td><td>${q.avg_results}</td></tr>`).join('')
+    : `<tr><td colspan="3" class="muted">Пока нет запросов</td></tr>`;
+
+  const recent = d.recent||[];
+  document.getElementById('recentSearchesBody').innerHTML = recent.length
+    ? recent.map(r=>`<tr>
+        <td class="td-title">${esc(r.query)}</td>
+        <td>${r.results_count}</td>
+        <td>${r.username?'@'+esc(r.username):'—'}</td>
+        <td>${fmtDate(r.created_at)}</td></tr>`).join('')
+    : `<tr><td colspan="4" class="muted">Пока нет запросов</td></tr>`;
 }
 
 // ============================================================
