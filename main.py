@@ -1816,3 +1816,27 @@ async def email_verify(data: dict = Body(...)):
         {"user_id": user[0], "email": user[1], "user_type": user[2], "exp": exp},
         JWT_SECRET, algorithm="HS256")
     return {"token": token, "user": {"id": user[0], "email": user[1], "user_type": user[2]}}
+
+@app.post("/ai/improve-listing")
+async def improve_listing(data: dict = Body(...), authorization: Optional[str] = Header(None)):
+    user = get_current_user(authorization)
+    if not user or user.get('user_type') != 'paid':
+        raise HTTPException(403, "Требуется платная подписка")
+    title = data.get('title', '')
+    description = data.get('description', '')
+    prompt = f"""Ты помогаешь продать б/у пищевое оборудование на доске объявлений IndMart.
+Покупатели — профессионалы: перекупщики и владельцы производств.
+
+Название: {title}
+Описание продавца: {description}
+
+Правила:
+- Используй ТОЛЬКО информацию от продавца, ничего не придумывай
+- Структура: состояние и год → ключевые характеристики → причина продажи → условия
+- Деловой тон, без воды
+- Максимум 4 предложения
+- Если продавец указал срочность — подчеркни
+
+Верни только текст описания."""
+    text, _ = ai.chat([{"role": "user", "content": prompt}], max_tokens=400)
+    return {"improved": text}

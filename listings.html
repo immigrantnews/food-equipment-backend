@@ -1433,6 +1433,11 @@ function renderNew(){
         <div class="field">
           <label>Описание</label>
           <textarea id="n-description" class="ctl" placeholder="Состояние, год, наработка, причина продажи, комплектация…"></textarea>
+          <button type="button" id="aiImproveBtn" onclick="aiImproveDescription()" style="margin-top:8px;display:flex;align-items:center;gap:8px;padding:8px 16px;background:linear-gradient(135deg,#1B3A6B,#254d8f);color:white;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">
+            ✨ Улучшить текст с AI
+            <span style="background:#FF6B35;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700;">PRO</span>
+          </button>
+          <div id="aiImproveStatus" style="display:none;margin-top:8px;padding:10px;background:#f0f4ff;border:1px solid #c7d7f5;border-radius:8px;font-size:13px;color:#1B3A6B;"></div>
         </div>
 
         <div class="field">
@@ -1635,5 +1640,42 @@ async function submitListing(){
 updateHeader();
 router();
 </script>
+
+function aiImproveDescription() {
+  const token = localStorage.getItem('indmart_token');
+  const user = JSON.parse(localStorage.getItem('indmart_user') || '{}');
+  if (!token || user.user_type !== 'paid') {
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;';
+    modal.innerHTML = '<div style="background:white;border-radius:16px;padding:36px;max-width:400px;margin:16px;text-align:center;"><div style="font-size:48px;margin-bottom:16px;">✨</div><h2 style="font-family:Montserrat,sans-serif;color:#1B3A6B;font-size:20px;margin:0 0 12px;">Функция для подписчиков</h2><p style="color:#666;font-size:14px;line-height:1.6;margin-bottom:24px;">AI улучшает текст объявления так, чтобы оборудование продалось быстрее. Доступно на тарифе <strong>Платный</strong>.</p><a href="/upgrade" style="display:block;padding:14px;background:#FF6B35;color:white;border-radius:10px;font-weight:700;text-decoration:none;margin-bottom:10px;">Подключить за 2 990 ₽/мес</a><button onclick="this.closest('div').parentElement.remove()" style="background:none;border:none;color:#aaa;cursor:pointer;font-size:14px;">Закрыть</button></div>';
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if(e.target===modal) modal.remove(); });
+    return;
+  }
+  const title = document.getElementById('n-title')?.value || '';
+  const description = document.getElementById('n-description')?.value || '';
+  if (!title && !description) { alert('Сначала заполните название и описание'); return; }
+  const btn = document.getElementById('aiImproveBtn');
+  const status = document.getElementById('aiImproveStatus');
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Улучшаем...';
+  status.style.display = 'block';
+  status.textContent = 'AI улучшает текст...';
+  fetch('/api/ai/improve-listing', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','Authorization':'Bearer '+token},
+    body: JSON.stringify({title, description})
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.improved) {
+      document.getElementById('n-description').value = data.improved;
+      status.textContent = '✅ Текст улучшен';
+      setTimeout(() => { status.style.display = 'none'; }, 3000);
+    }
+  })
+  .catch(() => { status.textContent = '❌ Ошибка. Попробуйте ещё раз.'; })
+  .finally(() => { btn.disabled=false; btn.innerHTML='✨ Улучшить текст с AI <span style="background:#FF6B35;border-radius:4px;padding:2px 6px;font-size:10px;font-weight:700;">PRO</span>'; });
+}
 </body>
 </html>
