@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IndMart — Доска объявлений · пищевое оборудование</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
+
+:root{
+  --bg-deep:#0A0E1A;
+  --bg-card:#111827;
+  --bg-elevated:#1C2333;
+  --gold:#C8A55A;
+  --gold-bright:#F0C060;
+  --text-primary:#F0F4FF;
+  --text-secondary:#8892AA;
+  --green:#22C55E;
+  --yellow:#EAB308;
+  --red:#EF4444;
+  --border:rgba(200,165,90,0.2);
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg-deep);
+  color:var(--text-primary);
+  font-family:'IBM Plex Sans',sans-serif;
+  font-weight:400;
+  line-height:1.6;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+h1,h2,h3,.display{
+  font-family:'Bebas Neue',sans-serif;
+  font-weight:400;
+  letter-spacing:1px;
+  line-height:0.98;
+}
+::selection{background:var(--gold);color:var(--bg-deep)}
+a{color:inherit;text-decoration:none}
+
+/* atmospheric background */
+body::before{
+  content:"";
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(200,165,90,0.045) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(200,165,90,0.045) 1px,transparent 1px);
+  background-size:48px 48px;
+  z-index:0;pointer-events:none;
+}
+body::after{
+  content:"";
+  position:fixed;top:-25%;left:-15%;
+  width:60%;height:70%;
+  background:radial-gradient(circle,rgba(200,165,90,0.10) 0%,transparent 70%);
+  filter:blur(50px);z-index:0;pointer-events:none;
+}
+
+.container{max-width:1200px;margin:0 auto;padding:0 24px;position:relative;z-index:2}
+
+/* ===== TOP BAR ===== */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  background:rgba(10,14,26,0.85);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+}
+.topbar-inner{
+  display:flex;align-items:center;gap:20px;
+  padding:16px 0;
+}
+.brand{display:flex;align-items:center;gap:14px}
+.brand .logo{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:30px;color:var(--gold);letter-spacing:2px;line-height:1;
+}
+.brand .tag{
+  font-size:11px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--text-secondary);
+  border-left:1px solid var(--border);padding-left:14px;
+}
+.topbar .spacer{flex:1}
+.topbar .actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}
+.user-chip{
+  display:flex;align-items:center;gap:10px;
+  background:rgba(200,165,90,0.08);
+  border:1px solid var(--border);
+  border-radius:100px;padding:6px 8px 6px 14px;
+  font-size:14px;color:var(--text-primary);
+}
+.user-chip .av{
+  width:28px;height:28px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold-bright),var(--gold));
+  display:flex;align-items:center;justify-content:center;
+  color:#1a1306;font-weight:700;font-size:13px;
+}
+.user-chip button{
+  background:none;border:none;color:var(--text-secondary);
+  cursor:pointer;font-size:12px;font-family:inherit;
+}
+.user-chip button:hover{color:var(--red)}
+
+/* ===== BUTTONS ===== */
+.btn{
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:15px;font-weight:600;
+  padding:13px 24px;border-radius:10px;border:none;cursor:pointer;
+  display:inline-flex;align-items:center;gap:9px;
+  transition:transform .2s ease,box-shadow .3s ease,background .3s ease,border-color .3s ease;
+  white-space:nowrap;
+}
+.btn-gold{
+  background:linear-gradient(135deg,var(--gold-bright),var(--gold));
+  color:#1a1306;box-shadow:0 8px 30px rgba(200,165,90,0.28);
+}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(240,192,96,0.45)}
+.btn-gold:disabled{opacity:0.55;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-outline{background:transparent;color:var(--text-primary);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--gold);background:rgba(200,165,90,0.06);transform:translateY(-2px)}
+.btn-sm{padding:9px 16px;font-size:13px}
+.btn-block{width:100%;justify-content:center}
+
+/* ===== PAGE HEAD ===== */
+.page-head{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  gap:24px;flex-wrap:wrap;
+  padding:48px 0 28px;
+}
+.page-head h1{
+  font-size:clamp(40px,6vw,72px);text-transform:uppercase;
+}
+.page-head .accent{
+  background:linear-gradient(180deg,var(--gold-bright),var(--gold));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.page-head .sub{color:var(--text-secondary);font-size:15px;margin-top:6px}
+
+/* ===== FILTERS ===== */
+.filters{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:20px;
+  margin-bottom:32px;
+  display:grid;
+  grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;
+  gap:12px;align-items:end;
+}
+.f-field{display:flex;flex-direction:column;gap:7px;min-width:0}
+.f-field label{font-size:12px;letter-spacing:0.5px;color:var(--text-secondary);text-transform:uppercase}
+.ctl{
+  background:var(--bg-elevated);
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:12px 14px;
+  color:var(--text-primary);
+  font-family:'IBM Plex Sans',sans-serif;font-size:15px;
+  outline:none;width:100%;
+  transition:border-color .2s ease,box-shadow .2s ease;
+}
+.ctl:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,165,90,0.12)}
+select.ctl{appearance:none;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23C8A55A' d='M6 8 0 0h12z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;padding-right:34px;
+}
+.ctl::placeholder{color:var(--text-secondary)}
+.price-pair{display:flex;gap:8px}
+
+/* ===== LISTING GRID ===== */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:24px;
+}
+.card{
+  background:var(--bg-card);
+  border:1px solid var(--border);
+  border-radius:16px;overflow:hidden;
+  display:flex;flex-direction:column;
+  cursor:pointer;
+  transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;
+}
+.card:hover{transform:translateY(-6px);border-color:var(--gold);box-shadow:0 20px 50px rgba(0,0,0,0.45),0 0 40px rgba(200,165,90,0.1)}
+.card-photo{
+  position:relative;aspect-ratio:4/3;overflow:hidden;
+  background:var(--bg-elevated);
+  display:flex;align-items:center;justify-content:center;
+}
+.card-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.card-photo .ph-icon{font-size:48px;opacity:0.3}
+.card-verdict{
+  position:absolute;top:10px;left:10px;
+  display:inline-flex;align-items:center;gap:6px;
+  padding:5px 10px;border-radius:100px;
+  font-size:12px;font-weight:600;
+  background:rgba(10,14,26,0.78);backdrop-filter:blur(6px);
+  border:1px solid var(--border);
+}
+.card-body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:10px;flex:1}
+.card-title{font-size:16px;font-weight:600;line-height:1.35;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-price{
+  font-family:'Bebas Neue',sans-serif;font-size:32px;line-height:1;
+  color:var(--gold-bright);
+  background:linear-gradient(180deg,var(--gold-bright),var(--gold));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.card-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:auto}
+.badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:12px;font-weight:500;
+  padding:4px 10px;border-radius:100px;
+  border:1px solid var(--border);color:var(--text-secondary);
+  background:rgba(255,255,255,0.02);
+}
+.badge.city{color:var(--text-primary)}
+.card-time{font-size:12px;color:var(--text-secondary);margin-top:2px}
+
+.v-green{color:var(--green)}
+.v-yellow{color:var(--yellow)}
+.v-red{color:var(--red)}
+
+/* states */
+.state{text-align:center;padding:80px 20px;color:var(--text-secondary)}
+.state .big{font-family:'Bebas Neue',sans-serif;font-size:40px;color:var(--text-primary);margin-bottom:10px;letter-spacing:1px}
+.center-row{display:flex;justify-content:center;margin:40px 0 80px}
+.skeleton{
+  background:var(--bg-card);border:1px solid var(--border);border-radius:16px;
+  aspect-ratio:1/1.25;
+  background-image:linear-gradient(100deg,transparent 30%,rgba(200,165,90,0.06) 50%,transparent 70%);
+  background-size:200% 100%;animation:shimmer 1.4s linear infinite;
+}
+@keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+
+/* ===== SINGLE LISTING ===== */
+.back-link{
+  display:inline-flex;align-items:center;gap:8px;
+  color:var(--text-secondary);font-size:14px;margin:32px 0 18px;
+  transition:color .2s ease;
+}
+.back-link:hover{color:var(--gold)}
+.detail{
+  display:grid;grid-template-columns:1.15fr 0.85fr;gap:40px;
+  padding-bottom:60px;
+}
+.gallery-main{
+  width:100%;aspect-ratio:4/3;border-radius:18px;overflow:hidden;
+  background:var(--bg-elevated);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;cursor:zoom-in;
+}
+.gallery-main img{width:100%;height:100%;object-fit:cover}
+.gallery-main .ph-icon{font-size:72px;opacity:0.3;cursor:default}
+.thumbs{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.thumb{
+  width:72px;height:72px;border-radius:10px;overflow:hidden;cursor:pointer;
+  border:2px solid transparent;background:var(--bg-elevated);
+  transition:border-color .2s ease;
+}
+.thumb.active{border-color:var(--gold)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.video-embed{margin-top:18px;border-radius:14px;overflow:hidden;border:1px solid var(--border);aspect-ratio:16/9}
+.video-embed iframe{width:100%;height:100%;border:0;display:block}
+
+.detail-side h1{font-size:clamp(28px,3.5vw,40px);text-transform:uppercase;margin-bottom:14px}
+.detail-price{
+  font-family:'Bebas Neue',sans-serif;font-size:56px;line-height:1;margin-bottom:16px;
+  background:linear-gradient(180deg,var(--gold-bright),var(--gold));
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.detail-meta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px}
+.block{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:16px;padding:22px;margin-bottom:18px;
+}
+.block h3{font-size:22px;text-transform:uppercase;margin-bottom:14px;color:var(--text-primary)}
+.block .desc{color:#cdd6e8;white-space:pre-wrap;line-height:1.7}
+.ai-block{border-color:rgba(200,165,90,0.4);box-shadow:0 0 40px rgba(200,165,90,0.06)}
+.ai-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ai-verdict-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:15px;font-weight:600;padding:8px 16px;border-radius:100px;
+  border:1px solid var(--border);background:rgba(255,255,255,0.02);
+}
+.ai-range{font-size:15px;color:var(--text-secondary);margin-bottom:10px}
+.ai-range b{color:var(--gold);font-weight:600}
+.ai-comment{color:#cdd6e8;line-height:1.65}
+.contact-row{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:16px}
+.contact-row .ico{color:var(--gold);width:22px;text-align:center}
+.contact-row a{color:var(--gold);font-weight:600}
+.locked{text-align:center;padding:8px 0}
+.locked p{color:var(--text-secondary);margin-bottom:16px}
+.report-link{
+  display:inline-block;margin:8px 0 40px;
+  color:var(--text-secondary);font-size:13px;border-bottom:1px dotted var(--border);
+}
+.report-link:hover{color:var(--red);border-color:var(--red)}
+
+/* ===== CREATE FORM ===== */
+.form-wrap{max-width:680px;margin:0 auto;padding-bottom:80px}
+.form-card{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:24px;padding:40px;
+  box-shadow:0 30px 70px rgba(0,0,0,0.4);
+}
+.field{margin-bottom:22px}
+.field label{display:block;font-size:14px;color:var(--text-secondary);margin-bottom:9px;letter-spacing:0.4px}
+.field label .req{color:var(--gold)}
+textarea.ctl{resize:vertical;min-height:120px;line-height:1.6}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+.dropzone{
+  border:2px dashed var(--border);border-radius:14px;
+  padding:32px;text-align:center;cursor:pointer;
+  color:var(--text-secondary);
+  transition:border-color .2s ease,background .2s ease;
+}
+.dropzone:hover,.dropzone.drag{border-color:var(--gold);background:rgba(200,165,90,0.05);color:var(--text-primary)}
+.dropzone .dz-icon{font-size:34px;display:block;margin-bottom:10px}
+.dropzone small{display:block;margin-top:6px;font-size:12px}
+.previews{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.preview{position:relative;width:84px;height:84px;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+.preview img{width:100%;height:100%;object-fit:cover}
+.preview button{
+  position:absolute;top:3px;right:3px;
+  width:22px;height:22px;border-radius:50%;border:none;cursor:pointer;
+  background:rgba(10,14,26,0.85);color:#fff;font-size:13px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+}
+.preview button:hover{background:var(--red)}
+
+.seg{display:flex;gap:8px}
+.seg button{
+  flex:1;padding:12px;border-radius:10px;cursor:pointer;
+  background:var(--bg-elevated);border:1px solid var(--border);
+  color:var(--text-secondary);font-family:inherit;font-size:14px;font-weight:600;
+  transition:all .2s ease;
+}
+.seg button.active{
+  background:linear-gradient(135deg,var(--gold-bright),var(--gold));
+  color:#1a1306;border-color:transparent;
+}
+.form-error{color:var(--red);font-size:14px;margin:14px 0;min-height:18px;text-align:center}
+.hint{font-size:12px;color:var(--text-secondary);margin-top:6px}
+
+/* ===== LIGHTBOX ===== */
+.lightbox{
+  position:fixed;inset:0;z-index:100;
+  background:rgba(5,7,13,0.94);
+  display:none;align-items:center;justify-content:center;
+  padding:40px;cursor:zoom-out;
+}
+.lightbox.open{display:flex}
+.lightbox img{max-width:92vw;max-height:88vh;border-radius:10px;box-shadow:0 30px 80px rgba(0,0,0,0.7)}
+.lightbox .close{position:absolute;top:24px;right:30px;font-size:34px;color:#fff;cursor:pointer;line-height:1}
+
+footer{
+  border-top:1px solid var(--border);
+  padding:36px 0;text-align:center;color:var(--text-secondary);font-size:13px;
+  position:relative;z-index:2;
+}
+footer .logo{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold);letter-spacing:2px;margin-bottom:8px}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:980px){
+  .filters{grid-template-columns:1fr 1fr;}
+  .filters .f-search{grid-column:1/-1}
+  .detail{grid-template-columns:1fr;gap:28px}
+}
+@media(max-width:760px){
+  .grid{grid-template-columns:1fr}
+  .page-head{padding:32px 0 22px}
+  .form-card{padding:28px 20px}
+  .form-row{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  .filters{grid-template-columns:1fr}
+  .brand .tag{display:none}
+  .topbar-inner{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== TOP BAR ===== -->
+<header class="topbar">
+  <div class="container topbar-inner">
+    <a href="#catalog" class="brand">
+      <span class="logo">INDMART</span>
+      <span class="tag">Доска объявлений</span>
+    </a>
+    <div class="spacer"></div>
+    <div class="actions">
+      <a href="#new" class="btn btn-gold btn-sm">＋ Разместить объявление</a>
+      <div id="authSlot"></div>
+    </div>
+  </div>
+</header>
+
+<main id="app" class="container"></main>
+
+<footer>
+  <div class="container">
+    <div class="logo">INDMART</div>
+    <div>Доска объявлений · пищевое оборудование · © 2026</div>
+  </div>
+</footer>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <span class="close">✕</span>
+  <img id="lightboxImg" src="" alt="">
+</div>
+
+<script>
+// ============================================================
+// CONFIG & CONSTANTS
+// ============================================================
+const API = '/api';
+const TG_BOT = 'IndMartAlertsBot';
+const LIMIT = 12;
+
+const CATEGORIES = ['Тестомесы','Печи','Расстойки','Пароконвектоматы','Холодильное','Упаковочное','Прочее'];
+
+const CONDITIONS = [
+  {value:'used',  label:'Б/у'},
+  {value:'new',   label:'Новое'},
+  {value:'parts', label:'На запчасти'},
+];
+const COND_LABEL = Object.fromEntries(CONDITIONS.map(c=>[c.value,c.label]));
+
+const VERDICT = {
+  green:    {emoji:'🟢', label:'Выгодно',  cls:'v-green'},
+  flash:    {emoji:'🟢', label:'Огонь',    cls:'v-green'},
+  yellow:   {emoji:'🟡', label:'Рыночная', cls:'v-yellow'},
+  new_item: {emoji:'🟡', label:'Новое',    cls:'v-yellow'},
+  red:      {emoji:'🔴', label:'Дорого',   cls:'v-red'},
+};
+
+// ============================================================
+// HELPERS
+// ============================================================
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g,c=>(
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+  ));
+}
+function fmtPrice(p){
+  const n = Number(p);
+  return (isNaN(n)?p:n.toLocaleString('ru-RU')) + ' ₽';
+}
+function plural(n, one, few, many){
+  const m10=n%10, m100=n%100;
+  if(m10===1 && m100!==11) return one;
+  if(m10>=2 && m10<=4 && (m100<10 || m100>=20)) return few;
+  return many;
+}
+function relDate(iso){
+  if(!iso) return '';
+  const then = new Date(iso), now = new Date();
+  let s = Math.floor((now - then)/1000);
+  if(s < 0) s = 0;
+  if(s < 60) return 'только что';
+  const m = Math.floor(s/60);
+  if(m < 60) return m+' '+plural(m,'минуту','минуты','минут')+' назад';
+  const h = Math.floor(m/60);
+  if(h < 24) return h+' '+plural(h,'час','часа','часов')+' назад';
+  const d = Math.floor(h/24);
+  if(d < 30) return d+' '+plural(d,'день','дня','дней')+' назад';
+  return then.toLocaleDateString('ru-RU');
+}
+function verdictBadge(v){
+  const info = VERDICT[v];
+  if(!info) return '';
+  return `<span class="${info.cls}">${info.emoji} ${esc(info.label)}</span>`;
+}
+// Convert a YouTube / Rutube URL into an embeddable src, or '' if unsupported.
+function videoEmbedSrc(url){
+  if(!url) return '';
+  let m;
+  if((m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([\w-]{6,})/))){
+    return 'https://www.youtube.com/embed/' + m[1];
+  }
+  if((m = url.match(/rutube\.ru\/(?:video|play\/embed)\/([\w-]+)/))){
+    return 'https://rutube.ru/play/embed/' + m[1];
+  }
+  return '';
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+function getToken(){ return localStorage.getItem('indmart_token'); }
+function getUser(){
+  try{ return JSON.parse(localStorage.getItem('indmart_user') || 'null'); }
+  catch(e){ return null; }
+}
+function setAuth(token, user){
+  localStorage.setItem('indmart_token', token);
+  localStorage.setItem('indmart_user', JSON.stringify(user));
+}
+function clearAuth(){
+  localStorage.removeItem('indmart_token');
+  localStorage.removeItem('indmart_user');
+}
+function authHeaders(){
+  const t = getToken();
+  return t ? {'Authorization':'Bearer '+t} : {};
+}
+
+// Telegram Login Widget — injected dynamically into a container.
+function renderTgWidget(container, size){
+  if(!container) return;
+  container.innerHTML = '';
+  const s = document.createElement('script');
+  s.async = true;
+  s.src = 'https://telegram.org/js/telegram-widget.js?22';
+  s.setAttribute('data-telegram-login', TG_BOT);
+  s.setAttribute('data-size', size || 'medium');
+  s.setAttribute('data-onauth', 'onTelegramAuth(user)');
+  s.setAttribute('data-request-access', 'write');
+  s.setAttribute('data-radius', '8');
+  container.appendChild(s);
+}
+
+// Called by the Telegram widget after successful login (global).
+async function onTelegramAuth(user){
+  try{
+    const res = await fetch(API + '/auth/telegram', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(user)
+    });
+    if(!res.ok) throw new Error('auth failed '+res.status);
+    const data = await res.json();
+    setAuth(data.token, data.user);
+    updateHeader();
+    router(); // re-render current view with auth applied
+  }catch(e){
+    alert('Не удалось войти через Telegram. Попробуйте ещё раз.');
+  }
+}
+function logout(){
+  clearAuth();
+  updateHeader();
+  router();
+}
+
+function updateHeader(){
+  const slot = document.getElementById('authSlot');
+  const user = getUser();
+  if(user){
+    const name = user.username ? '@'+user.username : (user.first_name || 'Профиль');
+    const initial = (user.first_name || user.username || 'U').charAt(0).toUpperCase();
+    slot.innerHTML =
+      `<div class="user-chip">
+         <span class="av">${esc(initial)}</span>
+         <span>${esc(name)}</span>
+         <button onclick="logout()">Выйти</button>
+       </div>`;
+  }else{
+    slot.innerHTML = '<div id="tgHeaderWidget"></div>';
+    renderTgWidget(document.getElementById('tgHeaderWidget'), 'medium');
+  }
+}
+
+// ============================================================
+// ROUTER
+// ============================================================
+function router(){
+  const hash = location.hash || '#catalog';
+  window.scrollTo(0,0);
+  if(hash.startsWith('#listing/')){
+    renderListing(hash.split('/')[1]);
+  }else if(hash === '#new'){
+    renderNew();
+  }else{
+    renderCatalog();
+  }
+}
+window.addEventListener('hashchange', router);
+
+// ============================================================
+// CATALOG VIEW (#catalog)
+// ============================================================
+let catalogState = { filters:{}, offset:0, total:0, loading:false };
+
+function renderCatalog(){
+  const f = catalogState.filters;
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="page-head">
+      <div>
+        <h1>Доска <span class="accent">объявлений</span></h1>
+        <div class="sub">Пищевое оборудование от продавцов и перекупщиков</div>
+      </div>
+      <a href="#new" class="btn btn-gold">＋ Разместить объявление</a>
+    </div>
+
+    <div class="filters">
+      <div class="f-field f-search">
+        <label>Поиск</label>
+        <input id="f-search" class="ctl" placeholder="Название оборудования…" value="${esc(f.search||'')}">
+      </div>
+      <div class="f-field">
+        <label>Категория</label>
+        <select id="f-category" class="ctl">
+          <option value="">Все</option>
+          ${CATEGORIES.map(c=>`<option value="${esc(c)}" ${f.category===c?'selected':''}>${esc(c)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="f-field">
+        <label>Город</label>
+        <input id="f-city" class="ctl" placeholder="Город" value="${esc(f.city||'')}">
+      </div>
+      <div class="f-field">
+        <label>Цена, ₽</label>
+        <div class="price-pair">
+          <input id="f-min" class="ctl" type="number" min="0" placeholder="от" value="${esc(f.min_price||'')}">
+          <input id="f-max" class="ctl" type="number" min="0" placeholder="до" value="${esc(f.max_price||'')}">
+        </div>
+      </div>
+      <div class="f-field">
+        <label>Состояние</label>
+        <select id="f-condition" class="ctl">
+          <option value="">Любое</option>
+          ${CONDITIONS.map(c=>`<option value="${c.value}" ${f.condition===c.value?'selected':''}>${esc(c.label)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="f-field">
+        <label>&nbsp;</label>
+        <button class="btn btn-gold" onclick="applyFilters()">Найти</button>
+      </div>
+    </div>
+
+    <div class="grid" id="grid"></div>
+    <div class="center-row" id="loadMoreRow"></div>
+  `;
+
+  // Initial load
+  catalogState.offset = 0;
+  catalogState.total = 0;
+  document.getElementById('grid').innerHTML = skeletonCards(6);
+  loadListings(true);
+
+  // Enter-to-search on text inputs
+  ['f-search','f-city','f-min','f-max'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.addEventListener('keydown', e=>{ if(e.key==='Enter') applyFilters(); });
+  });
+}
+
+function skeletonCards(n){
+  return Array.from({length:n}).map(()=>'<div class="skeleton"></div>').join('');
+}
+
+function applyFilters(){
+  const num = id => {
+    const v = document.getElementById(id).value.trim();
+    return v === '' ? '' : v;
+  };
+  catalogState.filters = {
+    search:    document.getElementById('f-search').value.trim(),
+    category:  document.getElementById('f-category').value,
+    city:      document.getElementById('f-city').value.trim(),
+    min_price: num('f-min'),
+    max_price: num('f-max'),
+    condition: document.getElementById('f-condition').value,
+  };
+  catalogState.offset = 0;
+  document.getElementById('grid').innerHTML = skeletonCards(6);
+  document.getElementById('loadMoreRow').innerHTML = '';
+  loadListings(true);
+}
+
+async function loadListings(reset){
+  if(catalogState.loading) return;
+  catalogState.loading = true;
+  const f = catalogState.filters;
+  const params = new URLSearchParams();
+  params.set('limit', LIMIT);
+  params.set('offset', catalogState.offset);
+  if(f.search)    params.set('search', f.search);
+  if(f.category)  params.set('category', f.category);
+  if(f.city)      params.set('city', f.city);
+  if(f.min_price !== '' && f.min_price != null) params.set('min_price', f.min_price);
+  if(f.max_price !== '' && f.max_price != null) params.set('max_price', f.max_price);
+  if(f.condition) params.set('condition', f.condition);
+
+  const grid = document.getElementById('grid');
+  const moreRow = document.getElementById('loadMoreRow');
+
+  try{
+    const res = await fetch(API + '/board/listings?' + params.toString());
+    if(!res.ok) throw new Error('status '+res.status);
+    const data = await res.json();
+    catalogState.total = data.total || 0;
+
+    if(reset) grid.innerHTML = '';
+    if((data.listings||[]).length === 0 && reset){
+      grid.innerHTML = `<div class="state" style="grid-column:1/-1">
+        <div class="big">Ничего не найдено</div>
+        <div>Попробуйте изменить фильтры или разместите своё объявление.</div>
+      </div>`;
+      moreRow.innerHTML = '';
+    }else{
+      grid.insertAdjacentHTML('beforeend', data.listings.map(cardHTML).join(''));
+      catalogState.offset += data.listings.length;
+      // Load more button
+      if(catalogState.offset < catalogState.total){
+        moreRow.innerHTML = `<button class="btn btn-outline" id="loadMoreBtn">Показать ещё</button>`;
+        document.getElementById('loadMoreBtn').addEventListener('click', ()=>{
+          const b = document.getElementById('loadMoreBtn');
+          b.disabled = true; b.textContent = 'Загрузка…';
+          loadListings(false);
+        });
+      }else{
+        moreRow.innerHTML = '';
+      }
+    }
+  }catch(e){
+    if(reset) grid.innerHTML = `<div class="state" style="grid-column:1/-1">
+      <div class="big">Ошибка загрузки</div><div>Не удалось получить объявления. Обновите страницу.</div></div>`;
+  }finally{
+    catalogState.loading = false;
+  }
+}
+
+function cardHTML(l){
+  const photo = (l.photos && l.photos.length)
+    ? `<img src="${esc(l.photos[0])}" alt="${esc(l.title)}" loading="lazy">`
+    : `<span class="ph-icon">🍞</span>`;
+  const verdict = verdictBadge(l.ai_verdict);
+  const cond = COND_LABEL[l.condition] || l.condition;
+  return `
+    <div class="card" onclick="location.hash='#listing/${l.id}'">
+      <div class="card-photo">
+        ${photo}
+        ${verdict ? `<span class="card-verdict">${verdict}</span>` : ''}
+      </div>
+      <div class="card-body">
+        <div class="card-title">${esc(l.title)}</div>
+        <div class="card-price">${fmtPrice(l.price)}</div>
+        <div class="card-meta">
+          ${l.city ? `<span class="badge city">📍 ${esc(l.city)}</span>` : ''}
+          ${cond ? `<span class="badge">${esc(cond)}</span>` : ''}
+        </div>
+        <div class="card-time">${esc(relDate(l.created_at))}</div>
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// SINGLE LISTING VIEW (#listing/{id})
+// ============================================================
+async function renderListing(id){
+  const app = document.getElementById('app');
+  app.innerHTML = `<a href="#catalog" class="back-link">← Назад к объявлениям</a>
+    <div class="state"><div class="big">Загрузка…</div></div>`;
+
+  try{
+    const res = await fetch(API + '/board/listings/' + encodeURIComponent(id), { headers: authHeaders() });
+    if(res.status === 404) throw new Error('not_found');
+    if(!res.ok) throw new Error('status '+res.status);
+    const l = await res.json();
+    app.innerHTML = listingHTML(l);
+    wireGallery(l);
+  }catch(e){
+    app.innerHTML = `<a href="#catalog" class="back-link">← Назад к объявлениям</a>
+      <div class="state"><div class="big">${e.message==='not_found'?'Объявление не найдено':'Ошибка загрузки'}</div>
+      <div>${e.message==='not_found'?'Возможно, оно было снято с публикации.':'Попробуйте обновить страницу.'}</div></div>`;
+  }
+}
+
+function listingHTML(l){
+  const photos = l.photos || [];
+  const mainPhoto = photos.length
+    ? `<img id="galMain" src="${esc(photos[0])}" alt="${esc(l.title)}">`
+    : `<span class="ph-icon">🍞</span>`;
+  const thumbs = photos.length > 1
+    ? `<div class="thumbs">${photos.map((p,i)=>
+        `<div class="thumb ${i===0?'active':''}" data-src="${esc(p)}" data-i="${i}"><img src="${esc(p)}" alt=""></div>`
+      ).join('')}</div>` : '';
+
+  const embed = videoEmbedSrc(l.video_url);
+  const video = embed
+    ? `<div class="video-embed"><iframe src="${esc(embed)}" allowfullscreen allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"></iframe></div>`
+    : '';
+
+  const cond = COND_LABEL[l.condition] || l.condition;
+
+  // AI assessment
+  let aiBlock = '';
+  if(l.ai_verdict && VERDICT[l.ai_verdict]){
+    const info = VERDICT[l.ai_verdict];
+    const range = (l.ai_market_min || l.ai_market_max)
+      ? `<div class="ai-range">Рыночный диапазон: <b>${l.ai_market_min?fmtPrice(l.ai_market_min):'—'} – ${l.ai_market_max?fmtPrice(l.ai_market_max):'—'}</b></div>` : '';
+    aiBlock = `
+      <div class="block ai-block">
+        <div class="ai-head">
+          <h3 style="margin:0">AI-оценка</h3>
+          <span class="ai-verdict-pill ${info.cls}">${info.emoji} ${esc(info.label)}</span>
+        </div>
+        ${range}
+        ${l.ai_comment ? `<div class="ai-comment">${esc(l.ai_comment)}</div>` : ''}
+      </div>`;
+  }
+
+  // Seller / contacts
+  let sellerBlock;
+  if(l.contacts_hidden){
+    sellerBlock = `
+      <div class="block">
+        <h3>Контакты продавца</h3>
+        <div class="locked">
+          <p>Войдите через Telegram, чтобы увидеть контакты продавца.</p>
+          <div id="contactsTgWidget" style="display:flex;justify-content:center"></div>
+        </div>
+      </div>`;
+  }else{
+    const rows = [];
+    if(l.phone) rows.push(`<div class="contact-row"><span class="ico">📞</span><a href="tel:${esc(l.phone)}">${esc(l.phone)}</a></div>`);
+    if(l.telegram_username){
+      const u = String(l.telegram_username).replace(/^@/,'');
+      rows.push(`<div class="contact-row"><span class="ico">✈️</span><a href="https://t.me/${esc(u)}" target="_blank" rel="noopener">@${esc(u)}</a></div>`);
+    }
+    if(!rows.length) rows.push(`<div class="contact-row" style="color:var(--text-secondary)">Продавец не указал контакты.</div>`);
+    sellerBlock = `
+      <div class="block">
+        <h3>Контакты продавца</h3>
+        ${l.seller_name ? `<div class="contact-row"><span class="ico">👤</span>${esc(l.seller_name)}</div>` : ''}
+        ${rows.join('')}
+      </div>`;
+  }
+
+  return `
+    <a href="#catalog" class="back-link">← Назад к объявлениям</a>
+    <div class="detail">
+      <div class="detail-gallery">
+        <div class="gallery-main" id="galleryMain">${mainPhoto}</div>
+        ${thumbs}
+        ${video}
+      </div>
+      <div class="detail-side">
+        <h1>${esc(l.title)}</h1>
+        <div class="detail-price">${fmtPrice(l.price)}</div>
+        <div class="detail-meta">
+          ${l.city ? `<span class="badge city">📍 ${esc(l.city)}</span>` : ''}
+          ${cond ? `<span class="badge">${esc(cond)}</span>` : ''}
+          ${typeof l.views==='number' ? `<span class="badge">👁 ${l.views}</span>` : ''}
+          <span class="badge">${esc(relDate(l.created_at))}</span>
+        </div>
+        ${aiBlock}
+        ${l.description ? `<div class="block"><h3>Описание</h3><div class="desc">${esc(l.description)}</div></div>` : ''}
+        ${sellerBlock}
+        <a class="report-link" href="https://t.me/${esc(TG_BOT)}" target="_blank" rel="noopener">⚑ Пожаловаться на объявление</a>
+      </div>
+    </div>`;
+}
+
+function wireGallery(l){
+  const photos = l.photos || [];
+  // contacts login widget (if locked)
+  if(l.contacts_hidden){
+    renderTgWidget(document.getElementById('contactsTgWidget'), 'large');
+  }
+  // thumbnails switch + lightbox
+  const main = document.getElementById('galleryMain');
+  const mainImg = document.getElementById('galMain');
+  document.querySelectorAll('.thumb').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      const src = t.getAttribute('data-src');
+      if(mainImg) mainImg.src = src;
+      document.querySelectorAll('.thumb').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+    });
+  });
+  if(mainImg && main){
+    main.addEventListener('click', ()=> openLightbox(mainImg.src));
+  }
+}
+
+// ============================================================
+// LIGHTBOX
+// ============================================================
+function openLightbox(src){
+  const lb = document.getElementById('lightbox');
+  document.getElementById('lightboxImg').src = src;
+  lb.classList.add('open');
+}
+document.getElementById('lightbox').addEventListener('click', ()=>{
+  document.getElementById('lightbox').classList.remove('open');
+});
+
+// ============================================================
+// CREATE LISTING VIEW (#new)
+// ============================================================
+let newPhotos = [];        // array of base64 data URLs
+let newCondition = 'used';
+
+function renderNew(){
+  const app = document.getElementById('app');
+
+  if(!getUser()){
+    app.innerHTML = `
+      <a href="#catalog" class="back-link">← Назад к объявлениям</a>
+      <div class="form-wrap">
+        <div class="form-card" style="text-align:center">
+          <h1 style="font-size:34px;text-transform:uppercase;margin-bottom:14px">Нужен вход</h1>
+          <p style="color:var(--text-secondary);margin-bottom:24px">Чтобы разместить объявление, войдите через Telegram.</p>
+          <div id="newTgWidget" style="display:flex;justify-content:center"></div>
+        </div>
+      </div>`;
+    renderTgWidget(document.getElementById('newTgWidget'), 'large');
+    return;
+  }
+
+  newPhotos = [];
+  newCondition = 'used';
+
+  app.innerHTML = `
+    <a href="#catalog" class="back-link">← Назад к объявлениям</a>
+    <div class="form-wrap">
+      <div class="page-head" style="padding:28px 0 18px">
+        <h1>Новое <span class="accent">объявление</span></h1>
+      </div>
+      <div class="form-card">
+        <div class="field">
+          <label>Заголовок <span class="req">*</span></label>
+          <input id="n-title" class="ctl" placeholder="Тестомес Apach ATR 20, спираль">
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label>Категория</label>
+            <select id="n-category" class="ctl">
+              ${CATEGORIES.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field">
+            <label>Состояние</label>
+            <div class="seg" id="n-condition">
+              ${CONDITIONS.map(c=>`<button type="button" data-v="${c.value}" class="${c.value==='used'?'active':''}">${esc(c.label)}</button>`).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label>Цена, ₽ <span class="req">*</span></label>
+            <input id="n-price" class="ctl" type="number" min="1" placeholder="45000">
+          </div>
+          <div class="field">
+            <label>Город <span class="req">*</span></label>
+            <input id="n-city" class="ctl" placeholder="Москва">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Описание</label>
+          <textarea id="n-description" class="ctl" placeholder="Состояние, год, наработка, причина продажи, комплектация…"></textarea>
+        </div>
+
+        <div class="field">
+          <label>Фотографии <span style="color:var(--text-secondary)">(до 10)</span></label>
+          <div class="dropzone" id="dropzone">
+            <span class="dz-icon">📷</span>
+            Перетащите фото сюда или нажмите
+            <small>JPG / PNG · максимум 10 файлов</small>
+          </div>
+          <input type="file" id="fileInput" accept="image/*" multiple style="display:none">
+          <div class="previews" id="previews"></div>
+        </div>
+
+        <div class="field">
+          <label>Ссылка на видео <span style="color:var(--text-secondary)">(YouTube / Rutube)</span></label>
+          <input id="n-video" class="ctl" placeholder="https://youtu.be/…">
+          <div id="videoPreview"></div>
+        </div>
+
+        <div class="form-row">
+          <div class="field">
+            <label>Телефон</label>
+            <input id="n-phone" class="ctl" placeholder="+7 900 000-00-00">
+          </div>
+          <div class="field">
+            <label>Telegram username</label>
+            <input id="n-tg" class="ctl" placeholder="username (без @)">
+          </div>
+        </div>
+        <div class="hint">Укажите хотя бы один способ связи — телефон или Telegram.</div>
+
+        <div class="form-error" id="newError"></div>
+        <button class="btn btn-gold btn-block" id="submitBtn">Опубликовать</button>
+      </div>
+    </div>`;
+
+  // Condition segmented control
+  document.querySelectorAll('#n-condition button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      document.querySelectorAll('#n-condition button').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      newCondition = b.getAttribute('data-v');
+    });
+  });
+
+  // Photo drag & drop
+  const dz = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  dz.addEventListener('click', ()=>fileInput.click());
+  dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('drag'); });
+  dz.addEventListener('dragleave', ()=>dz.classList.remove('drag'));
+  dz.addEventListener('drop', e=>{
+    e.preventDefault(); dz.classList.remove('drag');
+    handleFiles(e.dataTransfer.files);
+  });
+  fileInput.addEventListener('change', e=>handleFiles(e.target.files));
+
+  // Video preview
+  document.getElementById('n-video').addEventListener('input', e=>{
+    const src = videoEmbedSrc(e.target.value.trim());
+    document.getElementById('videoPreview').innerHTML = src
+      ? `<div class="video-embed" style="margin-top:12px"><iframe src="${esc(src)}" allowfullscreen></iframe></div>`
+      : '';
+  });
+
+  document.getElementById('submitBtn').addEventListener('click', submitListing);
+}
+
+function handleFiles(fileList){
+  const files = Array.from(fileList || []);
+  for(const file of files){
+    if(newPhotos.length >= 10){
+      document.getElementById('newError').textContent = 'Максимум 10 фотографий.';
+      break;
+    }
+    if(!file.type.startsWith('image/')) continue;
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      if(newPhotos.length >= 10) return;
+      newPhotos.push(ev.target.result);
+      renderPreviews();
+    };
+    reader.readAsDataURL(file);
+  }
+}
+function renderPreviews(){
+  const wrap = document.getElementById('previews');
+  wrap.innerHTML = newPhotos.map((p,i)=>
+    `<div class="preview"><img src="${esc(p)}" alt=""><button type="button" onclick="removePhoto(${i})">✕</button></div>`
+  ).join('');
+}
+function removePhoto(i){
+  newPhotos.splice(i,1);
+  renderPreviews();
+}
+
+async function submitListing(){
+  const err = document.getElementById('newError');
+  err.textContent = '';
+
+  const title = document.getElementById('n-title').value.trim();
+  const price = parseInt(document.getElementById('n-price').value, 10);
+  const city  = document.getElementById('n-city').value.trim();
+
+  if(!title){ err.textContent = 'Укажите заголовок.'; return; }
+  if(!price || price <= 0){ err.textContent = 'Укажите корректную цену.'; return; }
+  if(!city){ err.textContent = 'Укажите город.'; return; }
+
+  const tg = document.getElementById('n-tg').value.trim().replace(/^@/,'');
+  const phone = document.getElementById('n-phone').value.trim();
+  const video = document.getElementById('n-video').value.trim();
+  if(video && !videoEmbedSrc(video)){
+    err.textContent = 'Видео: поддерживаются только ссылки YouTube и Rutube.'; return;
+  }
+
+  const payload = {
+    title,
+    category: document.getElementById('n-category').value,
+    condition: newCondition,
+    price,
+    city,
+    description: document.getElementById('n-description').value.trim() || null,
+    photos: newPhotos,
+    video_url: video || null,
+    phone: phone || null,
+    telegram_username: tg || null,
+  };
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  const orig = btn.textContent;
+  btn.textContent = 'Публикуем…';
+  try{
+    const res = await fetch(API + '/board/listings', {
+      method:'POST',
+      headers: Object.assign({'Content-Type':'application/json'}, authHeaders()),
+      body: JSON.stringify(payload)
+    });
+    if(res.status === 401){ err.textContent = 'Сессия истекла. Войдите через Telegram заново.'; logout(); return; }
+    if(res.status === 429){ err.textContent = 'Лимит: не более 5 объявлений в сутки.'; btn.disabled=false; btn.textContent=orig; return; }
+    if(!res.ok){
+      let msg = 'Не удалось опубликовать объявление.';
+      try{ const d = await res.json(); if(d.detail) msg = typeof d.detail==='string'?d.detail:msg; }catch(e){}
+      throw new Error(msg);
+    }
+    const data = await res.json();
+    location.hash = '#listing/' + data.id;
+  }catch(e){
+    err.textContent = e.message || 'Ошибка публикации.';
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+}
+
+// ============================================================
+// INIT
+// ============================================================
+updateHeader();
+router();
+</script>
+</body>
+</html>
