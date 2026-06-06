@@ -423,6 +423,10 @@ const API = '/api';
 const TG_BOT = 'IndMartAlertsBot';
 const LIMIT = 12;
 
+// Single-listing AI chat state
+let currentListing = null;
+let aiChatHistory = []; // store conversation history
+
 const CATEGORIES = ['Тестомесы','Печи','Расстойки','Пароконвектоматы','Холодильное','Упаковочное','Прочее'];
 
 const CONDITIONS = [
@@ -766,8 +770,11 @@ async function renderListing(id){
     if(res.status === 404) throw new Error('not_found');
     if(!res.ok) throw new Error('status '+res.status);
     const l = await res.json();
+    currentListing = l;
+    aiChatHistory = [];
     app.innerHTML = listingHTML(l);
     wireGallery(l);
+    initAIChat(l);
   }catch(e){
     app.innerHTML = `<a href="#catalog" class="back-link">← Назад к объявлениям</a>
       <div class="state"><div class="big">${e.message==='not_found'?'Объявление не найдено':'Ошибка загрузки'}</div>
@@ -853,6 +860,14 @@ function listingHTML(l){
           ${typeof l.views==='number' ? `<span class="badge">👁 ${l.views}</span>` : ''}
           <span class="badge">${esc(relDate(l.created_at))}</span>
         </div>
+        <button id="ask-ai-btn" class="btn btn-outline btn-block" style="margin-bottom:18px">🤖 Спросить AI об этом оборудовании</button>
+        <div id="ai-chat-panel" style="display:none;background:var(--bg-elevated);border:1px solid #C7D6F0;border-radius:14px;padding:16px;margin-bottom:18px">
+          <div id="ai-messages-list" style="max-height:300px;overflow-y:auto;margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px">
+            <input id="ai-question-input" class="ctl" placeholder="Ваш вопрос об оборудовании…" style="flex:1">
+            <button id="ai-send-btn" class="btn btn-gold" style="padding:11px 18px">→</button>
+          </div>
+        </div>
         ${aiBlock}
         ${l.description ? `<div class="block"><h3>Описание</h3><div class="desc">${esc(l.description)}</div></div>` : ''}
         ${sellerBlock}
@@ -881,6 +896,94 @@ function wireGallery(l){
   if(mainImg && main){
     main.addEventListener('click', ()=> openLightbox(mainImg.src));
   }
+}
+
+// ============================================================
+// AI CHAT (single listing)
+// ============================================================
+function initAIChat(listing) {
+  currentListing = listing;
+  aiChatHistory = [];
+
+  const btn = document.getElementById('ask-ai-btn');
+  if (!btn) return;
+
+  btn.onclick = function() {
+    const panel = document.getElementById('ai-chat-panel');
+    if (!panel) return;
+    const isOpen = panel.style.display !== 'none';
+    panel.style.display = isOpen ? 'none' : 'block';
+    if (!isOpen && aiChatHistory.length === 0) {
+      addAIMessage('bot', `Готов ответить на вопросы о ${esc(listing.title)}. Спрашивайте!`);
+    }
+  };
+
+  const sendBtn = document.getElementById('ai-send-btn');
+  const input = document.getElementById('ai-question-input');
+  if (sendBtn) sendBtn.onclick = sendAIMessage;
+  if (input) input.onkeydown = (e) => { if (e.key === 'Enter') sendAIMessage(); };
+}
+
+async function sendAIMessage() {
+  const input = document.getElementById('ai-question-input');
+  if (!input || !currentListing) return;
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  addAIMessage('user', text);
+  aiChatHistory.push({role: 'user', content: text});
+
+  const sendBtn = document.getElementById('ai-send-btn');
+  if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = '...'; }
+
+  const systemContext = [
+    'Ты AI-консультант по пищевому оборудованию на платформе IndMart.',
+    `Объявление: "${currentListing.title}"`,
+    `Цена: ${(currentListing.price||0).toLocaleString('ru-RU')} ₽`,
+    `Город: ${currentListing.city || 'не указан'}`,
+    `Состояние: ${currentListing.condition === 'used' ? 'б/у' : currentListing.condition === 'new' ? 'новое' : 'на запчасти'}`,
+    currentListing.description ? `Описание: ${currentListing.description.slice(0, 300)}` : '',
+    currentListing.ai_comment ? `AI оценка: ${currentListing.ai_comment}` : '',
+    (currentListing.ai_market_min && currentListing.ai_market_max)
+      ? `Рыночный диапазон: ${currentListing.ai_market_min.toLocaleString('ru-RU')} - ${currentListing.ai_market_max.toLocaleString('ru-RU')} ₽` : '',
+    'Отвечай кратко, по делу, на русском языке.'
+  ].filter(Boolean).join('\n');
+
+  try {
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        message: text,
+        system: systemContext,
+        history: aiChatHistory.slice(-6) // last 3 exchanges
+      })
+    });
+    const data = await resp.json();
+    const reply = data.reply || data.response || 'Не удалось получить ответ';
+    addAIMessage('bot', reply);
+    aiChatHistory.push({role: 'assistant', content: reply});
+  } catch(e) {
+    addAIMessage('bot', 'Ошибка соединения. Попробуйте ещё раз.');
+  } finally {
+    if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '→'; }
+  }
+}
+
+function addAIMessage(role, text) {
+  const msgs = document.getElementById('ai-messages-list');
+  if (!msgs) return;
+  const div = document.createElement('div');
+  div.style.cssText = `margin:8px 0;text-align:${role === 'user' ? 'right' : 'left'}`;
+  const span = document.createElement('span');
+  span.style.cssText = role === 'user'
+    ? 'background:#1B3A6B;color:#fff;padding:6px 12px;border-radius:12px 12px 2px 12px;display:inline-block;max-width:80%;font-size:13px'
+    : 'background:#fff;border:1px solid #E5E7EB;padding:6px 12px;border-radius:12px 12px 12px 2px;display:inline-block;max-width:80%;font-size:13px';
+  span.textContent = (role === 'bot' ? '🤖 ' : '') + text;
+  div.appendChild(span);
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
 }
 
 // ============================================================
@@ -952,6 +1055,7 @@ function renderNew(){
           <div class="field">
             <label>Цена, ₽ <span class="req">*</span></label>
             <input id="n-price" class="ctl" type="number" min="1" placeholder="45000">
+            <div id="price-market-hint" style="display:none;font-size:12px;margin-top:6px"></div>
           </div>
           <div class="field">
             <label>Город <span class="req">*</span></label>
@@ -1026,6 +1130,48 @@ function renderNew(){
       ? `<div class="video-embed" style="margin-top:12px"><iframe src="${esc(src)}" allowfullscreen></iframe></div>`
       : '';
   });
+
+  // AI price hint on blur (logged-in users only)
+  const priceInput = document.getElementById('n-price');
+  const titleInput = document.getElementById('n-title');
+  if (priceInput) {
+    priceInput.addEventListener('blur', async function() {
+      const token = localStorage.getItem('indmart_token');
+      if (!token) return; // only for logged in users
+
+      const title = titleInput ? titleInput.value.trim() : '';
+      const price = parseInt(this.value);
+      if (!title || !price || price <= 0) return;
+
+      const hint = document.getElementById('price-market-hint');
+      if (!hint) return;
+      hint.textContent = '⏳ Оцениваю рыночную стоимость...';
+      hint.style.display = 'block';
+      hint.style.color = '#6B7280';
+
+      try {
+        const resp = await fetch('/api/avito-eval', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({title, price, region: '', description: '', photos: []})
+        });
+        const d = await resp.json();
+        if (d.market_min && d.market_max && !d.error) {
+          const median = (d.market_min + d.market_max) / 2;
+          const ratio = price / median;
+          const assessment = ratio < 0.85 ? '✅ выгодная цена — продадите быстро'
+                           : ratio > 1.15 ? '⚠️ цена выше рынка — может продаваться долго'
+                           : '👍 цена в рынке';
+          hint.innerHTML = `📊 Рынок: ${d.market_min.toLocaleString('ru-RU')} — ${d.market_max.toLocaleString('ru-RU')} ₽. ${assessment}`;
+          hint.style.color = ratio > 1.15 ? '#D97706' : '#16A34A';
+        } else {
+          hint.style.display = 'none';
+        }
+      } catch(e) {
+        hint.style.display = 'none';
+      }
+    });
+  }
 
   document.getElementById('submitBtn').addEventListener('click', submitListing);
 }

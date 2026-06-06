@@ -22,6 +22,7 @@ from schemas import (
     AvitoEvalIn,
     AvitoEvalOut,
     ChatIn,
+    ChatMessage,
     ChatOut,
     FetchUrlIn,
     FetchUrlOut,
@@ -74,14 +75,44 @@ def health():
 
 # ---------- AI chat ----------
 
-@app.post("/chat", response_model=ChatOut)
-def chat(req: ChatIn):
+@app.post("/chat")
+def chat(data: dict = Body(...)):
+    """Dual-contract chat.
+
+    Legacy (index.html / extension): {messages: [{role,content},...], system, max_tokens}
+    New (listings.html AI chat):     {message, system, history: [{role,content},...]}
+    Both return {reply, stop_reason}.
+    """
+    system = data.get("system")
+    max_tokens = max(1, min(int(data.get("max_tokens") or 1024), 8192))
+
+    raw = data.get("messages")
+    if not raw:
+        # New single-message contract — history already includes the current
+        # user turn (frontend pushes it before sending), so avoid duplicating it.
+        history = data.get("history") or []
+        msg = (data.get("message") or "").strip()
+        raw = list(history)
+        if msg and not (raw and raw[-1].get("role") == "user" and raw[-1].get("content") == msg):
+            raw.append({"role": "user", "content": msg})
+
+    # Anthropic requires the conversation to start with a user turn.
+    while raw and raw[0].get("role") != "user":
+        raw.pop(0)
+    if not raw:
+        raise HTTPException(status_code=400, detail="message required")
+
     try:
-        text, stop = ai.chat(req.messages, system=req.system, max_tokens=req.max_tokens)
+        messages = [ChatMessage(role=m["role"], content=m["content"]) for m in raw]
+    except Exception:
+        raise HTTPException(status_code=400, detail="invalid messages")
+
+    try:
+        text, stop = ai.chat(messages, system=system, max_tokens=max_tokens)
     except Exception as e:
         logger.exception("anthropic chat failed")
         raise HTTPException(status_code=502, detail=f"AI error: {e}")
-    return ChatOut(reply=text, stop_reason=stop)
+    return {"reply": text, "stop_reason": stop}
 
 
 # ---------- Reseller analysis ----------
