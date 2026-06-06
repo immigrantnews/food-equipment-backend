@@ -163,6 +163,37 @@ select.ctl{appearance:none;cursor:pointer;
 }
 .price-pair{display:flex;gap:8px}
 
+/* ===== SEARCH MODE TOGGLE ===== */
+.search-mode{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.mode-btn{
+  font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer;
+  padding:9px 18px;border-radius:100px;border:1px solid var(--border);
+  background:#fff;color:var(--text-secondary);transition:all .18s ease;
+}
+.mode-btn:hover{border-color:var(--primary-light)}
+.mode-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.mode-btn.ai.active{background:linear-gradient(135deg,#2D5BA3,#1B3A6B)}
+.ai-badge{
+  font-size:13px;font-weight:600;color:var(--primary);
+  background:var(--bg-elevated);border:1px solid #C7D6F0;border-radius:100px;padding:5px 12px;
+}
+/* AI info bar above results */
+.ai-info-bar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  background:var(--bg-elevated);border:1px solid #C7D6F0;border-radius:12px;
+  padding:12px 16px;margin-bottom:18px;font-size:14px;color:var(--primary);
+}
+.ai-info-bar .tag{font-weight:700}
+.ai-info-bar .muted{color:var(--text-secondary);font-weight:500}
+.ai-upgrade{
+  background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;
+  padding:16px 18px;margin-bottom:18px;
+}
+.ai-upgrade h4{font-family:'Montserrat',sans-serif;color:#9A3412;font-size:16px;margin-bottom:6px}
+.ai-upgrade p{color:#7C2D12;font-size:14px;margin-bottom:12px}
+/* Hide structured filters in AI mode (AI extracts them itself) */
+.filters.ai-mode .f-field:not(.f-search):not(.f-action){display:none}
+
 /* ===== LISTING GRID ===== */
 .grid{
   display:grid;
@@ -592,6 +623,11 @@ window.addEventListener('hashchange', router);
 // ============================================================
 let catalogState = { filters:{}, offset:0, total:0, loading:false };
 
+// AI search state
+let searchMode = 'normal';
+let aiSearchInProgress = false;
+let aiUpgradeBannerShown = false;
+
 function renderCatalog(){
   const f = catalogState.filters;
   const app = document.getElementById('app');
@@ -604,7 +640,13 @@ function renderCatalog(){
       <a href="#new" class="btn btn-gold">＋ Разместить объявление</a>
     </div>
 
-    <div class="filters">
+    <div class="search-mode">
+      <button id="modeNormal" class="mode-btn active" onclick="setSearchMode('normal')">🔍 Обычный поиск</button>
+      <button id="modeAI" class="mode-btn ai" onclick="setSearchMode('ai')">🤖 AI-поиск</button>
+      <span id="aiUsageBadge" class="ai-badge" style="display:none"></span>
+    </div>
+
+    <div class="filters" id="filtersBox">
       <div class="f-field f-search">
         <label>Поиск</label>
         <input id="f-search" class="ctl" placeholder="Название оборудования…" value="${esc(f.search||'')}">
@@ -634,12 +676,13 @@ function renderCatalog(){
           ${CONDITIONS.map(c=>`<option value="${c.value}" ${f.condition===c.value?'selected':''}>${esc(c.label)}</option>`).join('')}
         </select>
       </div>
-      <div class="f-field">
+      <div class="f-field f-action">
         <label>&nbsp;</label>
-        <button class="btn btn-gold" onclick="applyFilters()">Найти</button>
+        <button id="searchBtn" class="btn btn-gold" onclick="applyFilters()">Найти</button>
       </div>
     </div>
 
+    <div id="aiInfoBar"></div>
     <div class="grid" id="grid"></div>
     <div class="center-row" id="loadMoreRow"></div>
   `;
@@ -655,6 +698,9 @@ function renderCatalog(){
     const el = document.getElementById(id);
     el.addEventListener('keydown', e=>{ if(e.key==='Enter') applyFilters(); });
   });
+
+  // Re-sync the search-mode UI (catalog HTML is rebuilt on each entry)
+  applySearchModeUI();
 }
 
 function skeletonCards(n){
@@ -662,6 +708,11 @@ function skeletonCards(n){
 }
 
 function applyFilters(){
+  // In AI mode, route the search box through the AI search flow instead.
+  if(searchMode === 'ai'){
+    performAISearch(document.getElementById('f-search').value.trim());
+    return;
+  }
   const num = id => {
     const v = document.getElementById(id).value.trim();
     return v === '' ? '' : v;
@@ -678,6 +729,159 @@ function applyFilters(){
   document.getElementById('grid').innerHTML = skeletonCards(6);
   document.getElementById('loadMoreRow').innerHTML = '';
   loadListings(true);
+}
+
+// ============================================================
+// AI SEARCH
+// ============================================================
+function showToast(msg, type='info') {
+  const existing = document.getElementById('toast-msg');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.id = 'toast-msg';
+  const colors = {info:'#1B3A6B', error:'#DC2626', warning:'#D97706', success:'#16A34A'};
+  t.style.cssText = `position:fixed;bottom:20px;right:20px;background:${colors[type]||colors.info};color:white;padding:12px 20px;border-radius:8px;font-size:14px;z-index:99999;box-shadow:0 4px 12px rgba(0,0,0,0.3);max-width:320px`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+// Sync the catalog DOM to the current searchMode (catalog HTML is rebuilt on entry)
+function applySearchModeUI(){
+  const mN = document.getElementById('modeNormal');
+  const mA = document.getElementById('modeAI');
+  const filtersBox = document.getElementById('filtersBox');
+  const input = document.getElementById('f-search');
+  const badge = document.getElementById('aiUsageBadge');
+  const infoBar = document.getElementById('aiInfoBar');
+  if(!mN || !mA) return;
+  const ai = searchMode === 'ai';
+  mN.classList.toggle('active', !ai);
+  mA.classList.toggle('active', ai);
+  if(filtersBox) filtersBox.classList.toggle('ai-mode', ai);
+  if(input) input.placeholder = ai
+    ? 'Опишите что ищете: «тестомес до 50000 в Москве»'
+    : 'Название оборудования…';
+  if(badge) badge.style.display = ai ? '' : 'none';
+  if(!ai && infoBar) infoBar.innerHTML = '';
+}
+
+function setSearchMode(mode){
+  searchMode = mode;
+  applySearchModeUI();
+  if(mode === 'ai') checkAISearchAccess();
+}
+
+async function checkAISearchAccess(){
+  if(!getToken()){
+    showToast('Войдите через Telegram для AI-поиска', 'warning');
+    setSearchMode('normal');
+    return;
+  }
+  try{
+    const res = await fetch(API + '/search/ai/usage', { headers: authHeaders() });
+    if(res.status === 401){
+      showToast('Войдите через Telegram для AI-поиска', 'warning');
+      setSearchMode('normal');
+      return;
+    }
+    if(res.ok){
+      const d = await res.json();
+      updateAIBadge(d.remaining, d.daily_limit);
+    }
+  }catch(e){ /* badge stays hidden */ }
+}
+
+function updateAIBadge(remaining, limit){
+  const badge = document.getElementById('aiUsageBadge');
+  if(!badge) return;
+  badge.style.display = '';
+  badge.textContent = `AI-поиск: осталось ${remaining}/${limit||30}`;
+}
+
+async function performAISearch(query){
+  query = (query || '').trim();
+  if(query.length < 3){ showToast('Введите запрос (минимум 3 символа)', 'warning'); return; }
+  if(aiSearchInProgress) return;
+  aiSearchInProgress = true;
+
+  const btn = document.getElementById('searchBtn');
+  const grid = document.getElementById('grid');
+  const moreRow = document.getElementById('loadMoreRow');
+  const infoBar = document.getElementById('aiInfoBar');
+  if(btn){ btn.disabled = true; btn.textContent = 'Ищу…'; }
+  if(moreRow) moreRow.innerHTML = '';
+  if(grid) grid.innerHTML = skeletonCards(6);
+  if(infoBar) infoBar.innerHTML = `<div class="ai-info-bar"><span class="tag">🤖 AI ищет…</span><span class="muted">«${esc(query)}»</span></div>`;
+
+  try{
+    const res = await fetch(API + '/search/ai', {
+      method: 'POST',
+      headers: Object.assign({'Content-Type':'application/json'}, authHeaders()),
+      body: JSON.stringify({ query })
+    });
+
+    if(res.status === 401){
+      if(infoBar) infoBar.innerHTML = '';
+      showToast('Войдите через Telegram для AI-поиска', 'warning');
+      setSearchMode('normal');
+      return;
+    }
+    if(res.status === 403){
+      if(grid) grid.innerHTML = '';
+      showAIUpgradePrompt();
+      showToast('AI-поиск доступен по подписке', 'warning');
+      return;
+    }
+    if(res.status === 429){
+      let msg = 'Дневной лимит AI-поиска исчерпан';
+      try{ const d = await res.json(); if(d.detail) msg = d.detail; }catch(e){}
+      if(infoBar) infoBar.innerHTML = '';
+      showToast(msg, 'warning');
+      setSearchMode('normal');
+      return;
+    }
+    if(!res.ok){
+      if(infoBar) infoBar.innerHTML = '';
+      showToast('Ошибка AI-поиска. Попробуйте ещё раз.', 'error');
+      return;
+    }
+
+    const data = await res.json();
+    const results = data.results || [];
+    updateAIBadge(data.remaining_today, data.daily_limit);
+    if(infoBar) infoBar.innerHTML =
+      `<div class="ai-info-bar"><span class="tag">🤖 AI-поиск</span>
+        <span>Найдено: ${data.total}</span>
+        <span class="muted">• осталось сегодня ${data.remaining_today}/${data.daily_limit}</span></div>`;
+    if(results.length === 0){
+      if(grid) grid.innerHTML = `<div class="state" style="grid-column:1/-1">
+        <div class="big">Ничего не найдено</div>
+        <div>Попробуйте переформулировать запрос.</div></div>`;
+    }else if(grid){
+      grid.innerHTML = results.map(cardHTML).join('');
+    }
+  }catch(e){
+    if(infoBar) infoBar.innerHTML = '';
+    showToast('Ошибка соединения. Попробуйте ещё раз.', 'error');
+  }finally{
+    aiSearchInProgress = false;
+    const b = document.getElementById('searchBtn');
+    if(b){ b.disabled = false; b.textContent = 'Найти'; }
+  }
+}
+
+function showAIUpgradePrompt(){
+  if(aiUpgradeBannerShown) return;
+  aiUpgradeBannerShown = true;
+  const infoBar = document.getElementById('aiInfoBar');
+  if(!infoBar) return;
+  infoBar.innerHTML = `
+    <div class="ai-upgrade">
+      <h4>🤖 AI-поиск — для подписчиков</h4>
+      <p>Опишите запрос обычными словами, и AI подберёт оборудование по смыслу. Доступно ${'30'} запросов в день по подписке.</p>
+      <a href="/upgrade" class="btn btn-gold">Оформить подписку</a>
+    </div>`;
 }
 
 async function loadListings(reset){

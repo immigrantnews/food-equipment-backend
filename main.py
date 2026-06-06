@@ -53,6 +53,7 @@ JWT_SECRET = os.environ.get('JWT_SECRET', 'indmart-secret-key')
 ADMIN_TELEGRAM_IDS = [
     int(x.strip()) for x in os.environ.get('ADMIN_TELEGRAM_IDS', '').split(',') if x.strip()
 ]
+DAILY_AI_SEARCH_LIMIT = 30
 
 
 def get_current_user(authorization: Optional[str] = None) -> Optional[dict]:
@@ -1163,3 +1164,207 @@ def admin_export_subscribers(authorization: str = Header(None)):
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=subscribers.csv"}
     )
+
+
+# ---------- AI search (paid subscribers, 30/day) ----------
+
+def check_paid_subscription(user_id: int, telegram_username: str) -> bool:
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            # Try by telegram_username first (strip @ if present)
+            username_clean = (telegram_username or '').lstrip('@').lower()
+            if username_clean:
+                cur.execute("""
+                    SELECT is_paid FROM subscribers
+                    WHERE LOWER(REPLACE(telegram_username, '@', '')) = %s
+                    AND is_active = true AND is_group = false
+                """, (username_clean,))
+                row = cur.fetchone()
+                if row:
+                    return bool(row[0])
+            return False
+
+
+@app.post("/search/ai")
+async def ai_search(data: dict = Body(...), authorization: str = Header(None)):
+    user = get_current_user(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    query = (data.get('query') or '').strip()
+    if len(query) < 3:
+        raise HTTPException(status_code=400, detail="Query too short (min 3 chars)")
+    query = query[:500]
+
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            # Get user telegram_username
+            cur.execute(
+                "SELECT telegram_username FROM users WHERE id = %s",
+                (user['user_id'],)
+            )
+            user_row = cur.fetchone()
+            if not user_row:
+                raise HTTPException(status_code=404, detail="User not found")
+            telegram_username = user_row[0] or ''
+
+    # Check paid subscription
+    is_paid = check_paid_subscription(user['user_id'], telegram_username)
+    if not is_paid:
+        raise HTTPException(
+            status_code=403,
+            detail="AI search requires paid subscription"
+        )
+
+    # Check daily limit
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT COUNT(*) FROM ai_search_usage
+                WHERE user_id = %s
+                AND created_at > NOW() - INTERVAL '24 hours'
+            """, (user['user_id'],))
+            used_today = cur.fetchone()[0]
+
+    if used_today >= DAILY_AI_SEARCH_LIMIT:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Daily limit reached ({DAILY_AI_SEARCH_LIMIT}/day)"
+        )
+
+    # Extract search params via Claude with fallback
+    params = {"keywords": [], "category": None, "city": None,
+              "max_price": None, "min_price": None, "condition": None}
+
+    try:
+        import anthropic as _anthropic
+        import json as _json
+        client = _anthropic.Anthropic(
+            api_key=os.environ.get('ANTHROPIC_API_KEY', ''),
+            timeout=10.0
+        )
+        response = client.messages.create(
+            model=os.environ.get('ANTHROPIC_MODEL', 'claude-sonnet-4-6'),
+            max_tokens=300,
+            messages=[{"role": "user", "content": f"""Извлеки параметры поиска из запроса для базы пищевого оборудования.
+Верни ТОЛЬКО JSON без markdown:
+{{"keywords":["слово1","слово2"],"category":"Тестомесы|Печи|Расстойки|Пароконвектоматы|Холодильное|Упаковочное|Коптильное|Прочее|null","city":"город или null","max_price":число или null,"min_price":число или null,"condition":"used|new|null"}}
+Запрос: {query}"""}]
+        )
+        text = response.content[0].text.strip().strip('`').strip()
+        if text.startswith('json'):
+            text = text[4:].strip()
+        raw = _json.loads(text)
+
+        # Validate each field before using
+        if isinstance(raw.get('keywords'), list):
+            params['keywords'] = [str(k)[:50] for k in raw['keywords'][:5] if k]
+        valid_categories = ('Тестомесы', 'Печи', 'Расстойки', 'Пароконвектоматы',
+                            'Холодильное', 'Упаковочное', 'Коптильное', 'Прочее')
+        if raw.get('category') in valid_categories:
+            params['category'] = raw['category']
+        if raw.get('city') and isinstance(raw['city'], str):
+            params['city'] = str(raw['city'])[:100]
+        if raw.get('max_price') and str(raw['max_price']).isdigit():
+            params['max_price'] = int(raw['max_price'])
+        if raw.get('min_price') and str(raw['min_price']).isdigit():
+            params['min_price'] = int(raw['min_price'])
+        if raw.get('condition') in ('used', 'new', 'parts'):
+            params['condition'] = raw['condition']
+
+    except Exception as e:
+        # Fallback: use query words directly
+        logger.warning(f"AI param extraction failed: {e}, using keyword fallback")
+        params['keywords'] = [w for w in query.split()[:5] if len(w) >= 3]
+
+    # If no keywords extracted at all use original query words
+    if not params['keywords']:
+        params['keywords'] = [w for w in query.split()[:5] if len(w) >= 3]
+
+    # Build and execute search query
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            where = ["l.status = 'active'"]
+            sql_params = []
+
+            if params['keywords']:
+                kw_conditions = []
+                for kw in params['keywords']:
+                    kw_conditions.append(
+                        "(l.title ILIKE %s OR l.description ILIKE %s)"
+                    )
+                    sql_params.extend([f"%{kw}%", f"%{kw}%"])
+                where.append(f"({' OR '.join(kw_conditions)})")
+
+            if params['category']:
+                where.append("l.category = %s")
+                sql_params.append(params['category'])
+            if params['city']:
+                where.append("l.city ILIKE %s")
+                sql_params.append(f"%{params['city']}%")
+            if params['max_price']:
+                where.append("l.price <= %s")
+                sql_params.append(params['max_price'])
+            if params['min_price']:
+                where.append("l.price >= %s")
+                sql_params.append(params['min_price'])
+            if params['condition']:
+                where.append("l.condition = %s")
+                sql_params.append(params['condition'])
+
+            where_str = ' AND '.join(where)
+            cur.execute(f"""
+                SELECT l.id, l.title, l.price, l.city, l.condition,
+                       l.photos, l.status, l.views, l.ai_verdict,
+                       l.ai_market_min, l.ai_market_max,
+                       l.created_at, u.first_name, u.telegram_username
+                FROM listings l
+                LEFT JOIN users u ON l.user_id = u.id
+                WHERE {where_str}
+                ORDER BY l.created_at DESC
+                LIMIT 20
+            """, sql_params)
+            results = [{
+                "id": r[0], "title": r[1], "price": r[2], "city": r[3],
+                "condition": r[4], "photos": r[5] if r[5] else [],
+                "status": r[6], "views": r[7], "ai_verdict": r[8],
+                "ai_market_min": r[9], "ai_market_max": r[10],
+                "created_at": r[11].isoformat() if r[11] else None,
+                "seller_name": r[12], "seller_username": r[13]
+            } for r in cur.fetchall()]
+
+            # Save usage AFTER successful search
+            cur.execute(
+                "INSERT INTO ai_search_usage (user_id, query, results_count) VALUES (%s, %s, %s)",
+                (user['user_id'], query, len(results))
+            )
+            conn.commit()
+
+    remaining = DAILY_AI_SEARCH_LIMIT - used_today - 1
+    return {
+        "results": results,
+        "total": len(results),
+        "remaining_today": max(0, remaining),
+        "daily_limit": DAILY_AI_SEARCH_LIMIT,
+        "extracted": params
+    }
+
+
+@app.get("/search/ai/usage")
+def get_ai_search_usage(authorization: str = Header(None)):
+    user = get_current_user(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT COUNT(*) FROM ai_search_usage
+                WHERE user_id = %s
+                AND created_at > NOW() - INTERVAL '24 hours'
+            """, (user['user_id'],))
+            used_today = cur.fetchone()[0]
+    return {
+        "used_today": used_today,
+        "daily_limit": DAILY_AI_SEARCH_LIMIT,
+        "remaining": max(0, DAILY_AI_SEARCH_LIMIT - used_today)
+    }
