@@ -50,6 +50,9 @@ app.add_middleware(
 
 # ---------- Bulletin board: JWT auth ----------
 JWT_SECRET = os.environ.get('JWT_SECRET', 'indmart-secret-key')
+ADMIN_TELEGRAM_IDS = [
+    int(x.strip()) for x in os.environ.get('ADMIN_TELEGRAM_IDS', '').split(',') if x.strip()
+]
 
 
 def get_current_user(authorization: Optional[str] = None) -> Optional[dict]:
@@ -61,6 +64,16 @@ def get_current_user(authorization: Optional[str] = None) -> Optional[dict]:
         return pyjwt.decode(token, JWT_SECRET, algorithms=['HS256'])
     except Exception:
         return None
+
+
+def check_admin(authorization: str) -> dict:
+    """Require an authenticated admin (telegram_id in ADMIN_TELEGRAM_IDS)."""
+    user = get_current_user(authorization)
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    if user.get('telegram_id') not in ADMIN_TELEGRAM_IDS:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
 
 
 @app.get("/")
@@ -778,3 +791,205 @@ def board_update_listing_status(
     if not updated:
         raise HTTPException(status_code=404, detail="Listing not found or not yours")
     return {"ok": True}
+
+
+# ---------- Admin panel API ----------
+
+@app.get("/admin/stats")
+def admin_stats(authorization: str = Header(None)):
+    check_admin(authorization)
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT status, COUNT(*) FROM listings GROUP BY status")
+            listings_by_status = {r[0]: r[1] for r in cur.fetchall()}
+
+            cur.execute("SELECT COUNT(*) FROM users")
+            total_users = cur.fetchone()[0]
+
+            cur.execute("SELECT COUNT(*) FROM users WHERE created_at > NOW() - INTERVAL '7 days'")
+            new_users_week = cur.fetchone()[0]
+
+            cur.execute("SELECT COUNT(*) FROM subscribers WHERE is_active = true AND is_group = false")
+            total_subscribers = cur.fetchone()[0]
+
+            cur.execute("SELECT COUNT(*) FROM subscribers WHERE is_paid = true AND is_active = true AND is_group = false")
+            paid_subscribers = cur.fetchone()[0]
+
+            cur.execute("SELECT COALESCE(SUM(views), 0) FROM listings")
+            total_views = cur.fetchone()[0]
+
+            cur.execute("""
+                SELECT l.id, l.title, l.price, l.city, l.status, l.views,
+                       l.created_at, u.telegram_username
+                FROM listings l
+                LEFT JOIN users u ON l.user_id = u.id
+                ORDER BY l.created_at DESC LIMIT 20
+            """)
+            recent_listings = [{
+                "id": r[0], "title": r[1], "price": r[2], "city": r[3],
+                "status": r[4], "views": r[5],
+                "created_at": r[6].isoformat() if r[6] else None,
+                "seller": r[7]
+            } for r in cur.fetchall()]
+
+    return {
+        "listings_by_status": listings_by_status,
+        "total_users": total_users,
+        "new_users_week": new_users_week,
+        "total_subscribers": total_subscribers,
+        "paid_subscribers": paid_subscribers,
+        "total_views": int(total_views),
+        "recent_listings": recent_listings
+    }
+
+
+@app.get("/admin/listings")
+def admin_get_listings(
+    status: str = None,
+    limit: int = 50,
+    offset: int = 0,
+    authorization: str = Header(None)
+):
+    check_admin(authorization)
+    limit = min(max(1, limit), 100)
+    offset = max(0, offset)
+
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            where = ["l.status != 'deleted'"]
+            params = []
+            if status and status in ('active', 'sold', 'archived', 'moderation'):
+                where.append("l.status = %s")
+                params.append(status)
+
+            where_str = ' AND '.join(where)
+
+            cur.execute(f"""
+                SELECT l.id, l.title, l.price, l.city, l.status, l.views,
+                       l.created_at, l.category, l.condition,
+                       u.telegram_username, u.first_name
+                FROM listings l
+                LEFT JOIN users u ON l.user_id = u.id
+                WHERE {where_str}
+                ORDER BY l.created_at DESC
+                LIMIT %s OFFSET %s
+            """, params + [limit, offset])
+            rows = cur.fetchall()
+
+            cur.execute(
+                f"SELECT COUNT(*) FROM listings l LEFT JOIN users u ON l.user_id = u.id WHERE {where_str}",
+                params
+            )
+            total = cur.fetchone()[0]
+
+    return {
+        "listings": [{
+            "id": r[0], "title": r[1], "price": r[2], "city": r[3],
+            "status": r[4], "views": r[5],
+            "created_at": r[6].isoformat() if r[6] else None,
+            "category": r[7], "condition": r[8],
+            "seller_username": r[9], "seller_name": r[10]
+        } for r in rows],
+        "total": total
+    }
+
+
+@app.put("/admin/listings/{listing_id}")
+def admin_update_listing(
+    listing_id: int,
+    data: dict = Body(...),
+    authorization: str = Header(None)
+):
+    check_admin(authorization)
+
+    # Whitelist fields with type validation
+    allowed = {
+        'title': str,
+        'price': int,
+        'city': str,
+        'status': str,
+        'description': str,
+        'category': str
+    }
+    allowed_statuses = ('active', 'sold', 'archived', 'moderation')
+
+    updates = {}
+    for field, field_type in allowed.items():
+        if field in data:
+            val = data[field]
+            if field == 'status' and val not in allowed_statuses:
+                raise HTTPException(status_code=400, detail=f"Invalid status: {val}")
+            if field == 'price':
+                try:
+                    val = int(val)
+                    if val <= 0:
+                        raise ValueError()
+                except Exception:
+                    raise HTTPException(status_code=400, detail="Price must be positive integer")
+            updates[field] = val
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+
+    set_clause = ', '.join([f"{k} = %s" for k in updates])
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"UPDATE listings SET {set_clause}, updated_at = NOW() WHERE id = %s RETURNING id",
+                list(updates.values()) + [listing_id]
+            )
+            if not cur.fetchone():
+                raise HTTPException(status_code=404, detail="Listing not found")
+            conn.commit()
+    return {"ok": True}
+
+
+@app.delete("/admin/listings/{listing_id}")
+def admin_delete_listing(
+    listing_id: int,
+    authorization: str = Header(None)
+):
+    check_admin(authorization)
+    # Soft delete - keep data but hide from public
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE listings SET status = 'deleted', updated_at = NOW() WHERE id = %s RETURNING id",
+                (listing_id,)
+            )
+            if not cur.fetchone():
+                raise HTTPException(status_code=404, detail="Listing not found")
+            conn.commit()
+    return {"ok": True}
+
+
+@app.get("/admin/subscribers")
+def admin_get_subscribers(
+    limit: int = 100,
+    offset: int = 0,
+    authorization: str = Header(None)
+):
+    check_admin(authorization)
+    limit = min(limit, 200)
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT telegram_username, name, is_paid, is_active,
+                       user_type, region, paid_at, created_at
+                FROM subscribers
+                WHERE is_group = false
+                ORDER BY created_at DESC
+                LIMIT %s OFFSET %s
+            """, (limit, offset))
+            rows = cur.fetchall()
+            cur.execute("SELECT COUNT(*) FROM subscribers WHERE is_group = false")
+            total = cur.fetchone()[0]
+    return {
+        "subscribers": [{
+            "username": r[0], "name": r[1], "is_paid": r[2],
+            "is_active": r[3], "user_type": r[4], "region": r[5],
+            "paid_at": r[6].isoformat() if r[6] else None,
+            "created_at": r[7].isoformat() if r[7] else None
+        } for r in rows],
+        "total": total
+    }

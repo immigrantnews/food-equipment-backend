@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IndMart — Панель администратора</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+:root{
+  --bg:#F8F9FA;
+  --bg-card:#FFFFFF;
+  --bg-elevated:#F0F4FF;
+  --primary:#1B3A6B;
+  --primary-light:#2D5BA3;
+  --accent:#FF6B35;
+  --accent-dark:#E85A28;
+  --text-primary:#1A1A2E;
+  --text-secondary:#6B7280;
+  --border:#E5E7EB;
+  --green:#16A34A;
+  --yellow:#D97706;
+  --red:#DC2626;
+  --shadow:0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg:0 12px 28px rgba(27,58,107,0.14);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:var(--bg);color:var(--text-primary);
+  font-family:'Inter',sans-serif;line-height:1.6;min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:-0.01em;color:var(--text-primary)}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--accent);color:#fff}
+
+.container{max-width:1280px;margin:0 auto;padding:0 24px}
+
+/* buttons */
+.btn{
+  font-family:'Inter',sans-serif;font-size:14px;font-weight:600;
+  padding:10px 18px;border-radius:9px;border:none;cursor:pointer;
+  display:inline-flex;align-items:center;gap:8px;white-space:nowrap;
+  transition:transform .18s ease,box-shadow .25s ease,background .2s ease,border-color .2s ease;
+}
+.btn-orange{background:var(--accent);color:#fff;box-shadow:0 4px 14px rgba(255,107,53,0.28)}
+.btn-orange:hover{background:var(--accent-dark);transform:translateY(-1px)}
+.btn-navy{background:var(--primary);color:#fff}
+.btn-navy:hover{background:var(--primary-light);transform:translateY(-1px)}
+.btn-outline{background:#fff;color:var(--primary);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--primary-light);background:var(--bg-elevated)}
+.btn-ghost{background:transparent;color:var(--text-secondary);border:1px solid var(--border);padding:7px 12px}
+.btn-ghost:hover{color:var(--primary);border-color:var(--primary-light)}
+.btn-sm{padding:6px 12px;font-size:13px}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.icon-btn{
+  background:transparent;border:1px solid var(--border);border-radius:8px;
+  width:34px;height:34px;cursor:pointer;font-size:15px;
+  display:inline-flex;align-items:center;justify-content:center;
+  transition:all .15s ease;
+}
+.icon-btn:hover{border-color:var(--primary-light);background:var(--bg-elevated)}
+.icon-btn.danger:hover{border-color:var(--red);background:#FEF2F2}
+
+/* ===== LOGIN ===== */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.login-card{
+  background:#fff;border:1px solid var(--border);border-radius:18px;
+  padding:44px 40px;text-align:center;max-width:420px;width:100%;
+  box-shadow:var(--shadow-lg);
+}
+.login-card .logo{font-family:'Montserrat',sans-serif;font-weight:800;font-size:34px;color:var(--primary);letter-spacing:-0.02em}
+.login-card .subtitle{color:var(--text-secondary);font-size:15px;margin:6px 0 28px}
+.login-card .tg-slot{display:flex;justify-content:center;min-height:48px}
+.login-card .denied{color:var(--red);font-weight:600;margin-top:8px}
+.login-card .denied-sub{color:var(--text-secondary);font-size:14px;margin:8px 0 18px}
+
+/* ===== HEADER ===== */
+.topbar{
+  position:sticky;top:0;z-index:40;background:#fff;
+  border-bottom:1px solid var(--border);box-shadow:var(--shadow);
+}
+.topbar-inner{display:flex;align-items:center;gap:16px;padding:14px 0}
+.topbar .logo{font-family:'Montserrat',sans-serif;font-weight:800;font-size:24px;color:var(--primary);letter-spacing:-0.02em}
+.topbar .logo .admin-tag{color:var(--accent)}
+.topbar .spacer{flex:1}
+.admin-who{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text-secondary)}
+.admin-who .av{
+  width:30px;height:30px;border-radius:50%;background:var(--primary);
+  color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;
+}
+
+/* ===== STATS ===== */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin:28px 0}
+.stat-card{
+  background:#fff;border:1px solid var(--border);border-radius:14px;
+  padding:22px;box-shadow:var(--shadow);display:flex;align-items:center;gap:16px;
+}
+.stat-icon{
+  width:52px;height:52px;border-radius:12px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:24px;
+  background:var(--bg-elevated);
+}
+.stat-num{font-family:'Montserrat',sans-serif;font-weight:800;font-size:28px;line-height:1;color:var(--primary)}
+.stat-num .sub{font-size:15px;color:var(--text-secondary);font-weight:600}
+.stat-label{font-size:13px;color:var(--text-secondary);margin-top:4px}
+
+/* ===== TABS ===== */
+.tabs{display:flex;gap:8px;border-bottom:2px solid var(--border);margin-bottom:22px}
+.tab{
+  padding:12px 20px;cursor:pointer;font-weight:600;font-size:15px;color:var(--text-secondary);
+  border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .2s ease,border-color .2s ease;
+}
+.tab:hover{color:var(--primary)}
+.tab.active{color:var(--primary);border-bottom-color:var(--accent)}
+
+/* ===== TOOLBAR ===== */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.filter-pills{display:flex;gap:8px;flex-wrap:wrap}
+.pill{
+  padding:8px 16px;border-radius:100px;cursor:pointer;font-size:14px;font-weight:600;
+  background:#fff;border:1px solid var(--border);color:var(--text-secondary);transition:all .18s ease;
+}
+.pill:hover{border-color:var(--primary-light)}
+.pill.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.search-input{
+  flex:1;min-width:200px;max-width:340px;margin-left:auto;
+  background:#fff;border:1px solid var(--border);border-radius:9px;padding:10px 14px;
+  font-family:'Inter',sans-serif;font-size:14px;color:var(--text-primary);outline:none;
+  transition:border-color .2s ease,box-shadow .2s ease;
+}
+.search-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(27,58,107,0.12)}
+
+/* ===== TABLE ===== */
+.table-wrap{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;min-width:760px}
+thead th{
+  text-align:left;padding:14px 16px;font-size:12px;text-transform:uppercase;
+  letter-spacing:.03em;color:var(--text-secondary);font-weight:600;
+  background:var(--bg);border-bottom:1px solid var(--border);white-space:nowrap;
+}
+tbody td{padding:13px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#FAFBFC}
+.td-title{font-weight:600;color:var(--primary);max-width:280px}
+.td-price{font-weight:700;color:var(--accent);white-space:nowrap}
+.cell-input{
+  width:100%;background:#fff;border:1px solid var(--primary-light);border-radius:7px;
+  padding:7px 9px;font-family:'Inter',sans-serif;font-size:13px;color:var(--text-primary);outline:none;
+}
+.cell-input:focus{box-shadow:0 0 0 3px rgba(27,58,107,0.12)}
+.row-actions{display:flex;gap:6px;white-space:nowrap}
+
+/* status badges */
+.st{display:inline-block;padding:4px 10px;border-radius:100px;font-size:12px;font-weight:600;white-space:nowrap}
+.st-active{background:#DCFCE7;color:#166534}
+.st-sold{background:#E0E7FF;color:#3730A3}
+.st-archived{background:#F3F4F6;color:#4B5563}
+.st-moderation{background:#FEF3C7;color:#92400E}
+.st-deleted{background:#FEE2E2;color:#991B1B}
+
+.badge-bool{display:inline-block;padding:3px 10px;border-radius:100px;font-size:12px;font-weight:600}
+.b-yes{background:#DCFCE7;color:#166534}
+.b-no{background:#F3F4F6;color:#6B7280}
+
+/* subscriber rows */
+tr.sub-paid{background:#F0FDF4}
+tr.sub-paid:hover{background:#E7F9ED}
+tr.sub-inactive{background:#F9FAFB;color:var(--text-secondary)}
+
+/* pagination */
+.pagination{display:flex;align-items:center;justify-content:center;gap:14px;margin:22px 0 60px;font-size:14px;color:var(--text-secondary)}
+
+/* states */
+.muted{color:var(--text-secondary);text-align:center;padding:48px 16px}
+
+/* ===== TOAST ===== */
+.toast-wrap{position:fixed;bottom:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:10px}
+.toast{
+  background:#fff;border:1px solid var(--border);border-left:4px solid var(--primary);
+  border-radius:10px;padding:13px 18px;box-shadow:var(--shadow-lg);font-size:14px;font-weight:500;
+  min-width:220px;max-width:340px;animation:toastIn .25s ease;
+}
+.toast.success{border-left-color:var(--green)}
+.toast.error{border-left-color:var(--red)}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+.hidden{display:none !important}
+
+@media(max-width:900px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:560px){
+  .stats-grid{grid-template-columns:1fr}
+  .search-input{margin-left:0;max-width:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN VIEW ===== -->
+<div id="loginView" class="login-wrap">
+  <div class="login-card">
+    <div class="logo">IndMart</div>
+    <div class="subtitle">Панель администратора</div>
+    <div id="loginTgSlot" class="tg-slot"></div>
+    <div id="loginDenied" class="hidden">
+      <div class="denied">⛔ Доступ запрещён</div>
+      <div class="denied-sub">Этот Telegram-аккаунт не входит в список администраторов.</div>
+      <button class="btn btn-outline" onclick="logout()">Войти другим аккаунтом</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DASHBOARD VIEW ===== -->
+<div id="dashboardView" class="hidden">
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="logo">IndMart <span class="admin-tag">Admin</span></div>
+      <div class="spacer"></div>
+      <div class="admin-who">
+        <span class="av" id="adminAv">A</span>
+        <span id="adminName">—</span>
+      </div>
+      <button class="btn btn-ghost" onclick="logout()">Выйти</button>
+    </div>
+  </header>
+
+  <div class="container">
+    <!-- STATS -->
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <div class="tab active" data-tab="listings" onclick="switchTab('listings')">Объявления</div>
+      <div class="tab" data-tab="subscribers" onclick="switchTab('subscribers')">Подписчики</div>
+    </div>
+
+    <!-- LISTINGS TAB -->
+    <div id="tab-listings">
+      <div class="toolbar">
+        <div class="filter-pills" id="statusFilters">
+          <div class="pill active" data-status="">Все</div>
+          <div class="pill" data-status="active">Активные</div>
+          <div class="pill" data-status="sold">Проданные</div>
+          <div class="pill" data-status="archived">Архив</div>
+        </div>
+        <input id="listingSearch" class="search-input" placeholder="Поиск по названию, городу, продавцу…">
+      </div>
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th><th>Название</th><th>Цена</th><th>Город</th>
+                <th>Продавец</th><th>Просмотры</th><th>Статус</th><th>Действия</th>
+              </tr>
+            </thead>
+            <tbody id="listingsBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="pagination" id="listingsPagination"></div>
+    </div>
+
+    <!-- SUBSCRIBERS TAB -->
+    <div id="tab-subscribers" class="hidden">
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Username</th><th>Имя</th><th>Тип</th><th>Регион</th>
+                <th>Платный</th><th>Активный</th><th>Дата</th>
+              </tr>
+            </thead>
+            <tbody id="subscribersBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="pagination" id="subscribersPagination"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+// ============================================================
+// CONFIG / STATE
+// ============================================================
+const API = '/api';
+const TG_BOT = 'IndMartAlertsBot';
+const PAGE_SIZE = 20;
+
+let adminUser = null;
+let listingState = { status:'', search:'', page:0, total:0, rows:[] };
+let subState = { page:0, total:0 };
+
+const STATUS_LABEL = { active:'Активно', sold:'Продано', archived:'Архив', moderation:'Модерация', deleted:'Удалено' };
+const COND_LABEL = { used:'Б/у', new:'Новое', parts:'На запчасти' };
+
+// ============================================================
+// HELPERS
+// ============================================================
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g,c=>(
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+  ));
+}
+function fmtPrice(p){ const n=Number(p); return (isNaN(n)?p:n.toLocaleString('ru-RU'))+' ₽'; }
+function fmtDate(iso){ if(!iso) return '—'; const d=new Date(iso); return d.toLocaleDateString('ru-RU'); }
+function getToken(){ return localStorage.getItem('indmart_token'); }
+function authHeaders(){ const t=getToken(); return t?{'Authorization':'Bearer '+t}:{}; }
+
+function toast(msg, type){
+  const wrap = document.getElementById('toastWrap');
+  const el = document.createElement('div');
+  el.className = 'toast ' + (type||'');
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(),300); }, 3200);
+}
+
+// Admin API wrapper — handles 401/403 globally
+async function adminFetch(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({}, opts.headers||{}, authHeaders());
+  const res = await fetch(API + path, opts);
+  if(res.status === 401 || res.status === 403){
+    handleAuthFailure(res.status);
+    throw new Error('auth_'+res.status);
+  }
+  return res;
+}
+function handleAuthFailure(status){
+  if(status === 403){
+    // Logged in but not admin — keep token, show denied screen
+    showLogin(true);
+  }else{
+    localStorage.removeItem('indmart_token');
+    localStorage.removeItem('indmart_user');
+    showLogin(false);
+  }
+}
+
+// ============================================================
+// AUTH / TELEGRAM
+// ============================================================
+function renderTgWidget(container){
+  if(!container) return;
+  container.innerHTML = '';
+  const s = document.createElement('script');
+  s.async = true;
+  s.src = 'https://telegram.org/js/telegram-widget.js?22';
+  s.setAttribute('data-telegram-login', TG_BOT);
+  s.setAttribute('data-size', 'large');
+  s.setAttribute('data-onauth', 'onTelegramAuth(user)');
+  s.setAttribute('data-request-access', 'write');
+  s.setAttribute('data-radius', '8');
+  container.appendChild(s);
+}
+
+async function onTelegramAuth(user){
+  try{
+    const res = await fetch(API + '/auth/telegram', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(user)
+    });
+    if(!res.ok) throw new Error('auth failed');
+    const data = await res.json();
+    localStorage.setItem('indmart_token', data.token);
+    localStorage.setItem('indmart_user', JSON.stringify(data.user));
+    bootstrap();
+  }catch(e){
+    toast('Не удалось войти через Telegram', 'error');
+  }
+}
+
+function logout(){
+  localStorage.removeItem('indmart_token');
+  localStorage.removeItem('indmart_user');
+  adminUser = null;
+  showLogin(false);
+}
+
+function showLogin(denied){
+  document.getElementById('dashboardView').classList.add('hidden');
+  document.getElementById('loginView').classList.remove('hidden');
+  const deniedBox = document.getElementById('loginDenied');
+  const slot = document.getElementById('loginTgSlot');
+  if(denied){
+    deniedBox.classList.remove('hidden');
+    slot.classList.add('hidden');
+  }else{
+    deniedBox.classList.add('hidden');
+    slot.classList.remove('hidden');
+    renderTgWidget(slot);
+  }
+}
+
+function showDashboard(){
+  document.getElementById('loginView').classList.add('hidden');
+  document.getElementById('dashboardView').classList.remove('hidden');
+  try{ adminUser = JSON.parse(localStorage.getItem('indmart_user')||'null'); }catch(e){ adminUser=null; }
+  if(adminUser){
+    const name = adminUser.username ? '@'+adminUser.username : (adminUser.first_name||'admin');
+    document.getElementById('adminName').textContent = name;
+    document.getElementById('adminAv').textContent = (adminUser.first_name||adminUser.username||'A').charAt(0).toUpperCase();
+  }
+}
+
+// ============================================================
+// BOOTSTRAP — verify admin via /admin/stats
+// ============================================================
+async function bootstrap(){
+  if(!getToken()){ showLogin(false); return; }
+  try{
+    const res = await adminFetch('/admin/stats');
+    if(!res.ok) throw new Error('stats '+res.status);
+    const stats = await res.json();
+    showDashboard();
+    renderStats(stats);
+    loadListings();
+  }catch(e){
+    // adminFetch already handled 401/403; other errors → show login
+    if(!String(e.message).startsWith('auth_')) showLogin(false);
+  }
+}
+
+// ============================================================
+// STATS
+// ============================================================
+function renderStats(s){
+  const lbs = s.listings_by_status || {};
+  const active = lbs.active || 0;
+  const totalListings = Object.entries(lbs)
+    .filter(([k])=>k!=='deleted').reduce((a,[,v])=>a+v,0);
+  const cards = [
+    { icon:'📦', num:active, sub:'/ '+totalListings, label:'Активных / всего объявлений' },
+    { icon:'👥', num:s.total_users||0, sub:'+'+(s.new_users_week||0)+' за неделю', label:'Пользователей' },
+    { icon:'⭐', num:s.total_subscribers||0, sub:'/ '+(s.paid_subscribers||0)+' платных', label:'Подписчиков' },
+    { icon:'👁', num:(s.total_views||0).toLocaleString('ru-RU'), sub:'', label:'Просмотров всего' },
+  ];
+  document.getElementById('statsGrid').innerHTML = cards.map(c=>`
+    <div class="stat-card">
+      <div class="stat-icon">${c.icon}</div>
+      <div>
+        <div class="stat-num">${c.num} ${c.sub?`<span class="sub">${esc(c.sub)}</span>`:''}</div>
+        <div class="stat-label">${esc(c.label)}</div>
+      </div>
+    </div>`).join('');
+}
+
+async function refreshStats(){
+  if(document.getElementById('dashboardView').classList.contains('hidden')) return;
+  try{
+    const res = await adminFetch('/admin/stats');
+    if(res.ok) renderStats(await res.json());
+  }catch(e){ /* handled */ }
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
+  document.getElementById('tab-listings').classList.toggle('hidden', tab!=='listings');
+  document.getElementById('tab-subscribers').classList.toggle('hidden', tab!=='subscribers');
+  if(tab==='subscribers') loadSubscribers();
+}
+
+// ============================================================
+// LISTINGS
+// ============================================================
+async function loadListings(){
+  const body = document.getElementById('listingsBody');
+  body.innerHTML = `<tr><td colspan="8" class="muted">Загрузка…</td></tr>`;
+  const params = new URLSearchParams();
+  if(listingState.status) params.set('status', listingState.status);
+  params.set('limit', PAGE_SIZE);
+  params.set('offset', listingState.page*PAGE_SIZE);
+  try{
+    const res = await adminFetch('/admin/listings?'+params.toString());
+    if(!res.ok) throw new Error('listings '+res.status);
+    const data = await res.json();
+    listingState.total = data.total||0;
+    listingState.rows = data.listings||[];
+    renderListings();
+  }catch(e){
+    if(!String(e.message).startsWith('auth_'))
+      body.innerHTML = `<tr><td colspan="8" class="muted">Ошибка загрузки</td></tr>`;
+  }
+}
+
+function filteredRows(){
+  const q = listingState.search.trim().toLowerCase();
+  if(!q) return listingState.rows;
+  return listingState.rows.filter(l =>
+    (l.title||'').toLowerCase().includes(q) ||
+    (l.city||'').toLowerCase().includes(q) ||
+    (l.seller_username||'').toLowerCase().includes(q) ||
+    (l.seller_name||'').toLowerCase().includes(q)
+  );
+}
+
+function statusBadge(st){
+  return `<span class="st st-${esc(st)}">${esc(STATUS_LABEL[st]||st)}</span>`;
+}
+
+function renderListings(){
+  const body = document.getElementById('listingsBody');
+  const rows = filteredRows();
+  if(rows.length === 0){
+    body.innerHTML = `<tr><td colspan="8" class="muted">Объявлений нет</td></tr>`;
+  }else{
+    body.innerHTML = rows.map(rowHTML).join('');
+  }
+  // pagination
+  const pages = Math.max(1, Math.ceil(listingState.total/PAGE_SIZE));
+  const pg = document.getElementById('listingsPagination');
+  if(listingState.total <= PAGE_SIZE && listingState.page===0){
+    pg.innerHTML = '';
+  }else{
+    pg.innerHTML = `
+      <button class="btn btn-outline btn-sm" ${listingState.page<=0?'disabled':''} onclick="pageListings(-1)">← Назад</button>
+      <span>Стр. ${listingState.page+1} из ${pages}</span>
+      <button class="btn btn-outline btn-sm" ${listingState.page>=pages-1?'disabled':''} onclick="pageListings(1)">Вперёд →</button>`;
+  }
+}
+
+function rowHTML(l){
+  const seller = l.seller_username ? '@'+esc(l.seller_username) : (esc(l.seller_name)||'—');
+  return `<tr id="row-${l.id}">
+    <td>${l.id}</td>
+    <td class="td-title">${esc(l.title)}</td>
+    <td class="td-price">${fmtPrice(l.price)}</td>
+    <td>${esc(l.city)||'—'}</td>
+    <td>${seller}</td>
+    <td>${l.views||0}</td>
+    <td>${statusBadge(l.status)}</td>
+    <td>
+      <div class="row-actions">
+        <button class="icon-btn" title="Редактировать" onclick="startEdit(${l.id})">✏️</button>
+        <button class="icon-btn danger" title="Удалить" onclick="deleteListing(${l.id})">🗑️</button>
+      </div>
+    </td>
+  </tr>`;
+}
+
+function startEdit(id){
+  const l = listingState.rows.find(x=>x.id===id);
+  if(!l) return;
+  const row = document.getElementById('row-'+id);
+  const statuses = ['active','sold','archived','moderation'];
+  row.innerHTML = `
+    <td>${l.id}</td>
+    <td><input class="cell-input" id="edit-title-${id}" value="${esc(l.title)}"></td>
+    <td><input class="cell-input" id="edit-price-${id}" type="number" min="1" value="${esc(l.price)}" style="max-width:110px"></td>
+    <td><input class="cell-input" id="edit-city-${id}" value="${esc(l.city||'')}" style="max-width:120px"></td>
+    <td>${l.seller_username?'@'+esc(l.seller_username):(esc(l.seller_name)||'—')}</td>
+    <td>${l.views||0}</td>
+    <td>
+      <select class="cell-input" id="edit-status-${id}">
+        ${statuses.map(s=>`<option value="${s}" ${l.status===s?'selected':''}>${esc(STATUS_LABEL[s])}</option>`).join('')}
+      </select>
+    </td>
+    <td>
+      <div class="row-actions">
+        <button class="icon-btn" title="Сохранить" onclick="saveEdit(${id})">✓</button>
+        <button class="icon-btn" title="Отмена" onclick="renderListings()">✕</button>
+      </div>
+    </td>`;
+  // Enter saves, Escape cancels
+  ['title','price','city'].forEach(f=>{
+    const inp = document.getElementById(`edit-${f}-${id}`);
+    if(inp) inp.addEventListener('keydown', e=>{
+      if(e.key==='Enter') saveEdit(id);
+      if(e.key==='Escape') renderListings();
+    });
+  });
+  const t = document.getElementById('edit-title-'+id);
+  if(t) t.focus();
+}
+
+async function saveEdit(id){
+  const title = document.getElementById('edit-title-'+id).value.trim();
+  const price = parseInt(document.getElementById('edit-price-'+id).value, 10);
+  const city = document.getElementById('edit-city-'+id).value.trim();
+  const status = document.getElementById('edit-status-'+id).value;
+  if(!title){ toast('Название не может быть пустым','error'); return; }
+  if(!price || price<=0){ toast('Цена должна быть положительной','error'); return; }
+  try{
+    const res = await adminFetch('/admin/listings/'+id, {
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ title, price, city, status })
+    });
+    if(!res.ok){
+      let m='Ошибка сохранения'; try{ const d=await res.json(); if(d.detail) m=d.detail; }catch(e){}
+      toast(m,'error'); return;
+    }
+    toast('Сохранено','success');
+    loadListings();
+    refreshStats();
+  }catch(e){ if(!String(e.message).startsWith('auth_')) toast('Ошибка соединения','error'); }
+}
+
+async function deleteListing(id){
+  const l = listingState.rows.find(x=>x.id===id);
+  const title = l ? l.title : ('#'+id);
+  if(!window.confirm(`Удалить объявление "${title}"?`)) return;
+  try{
+    const res = await adminFetch('/admin/listings/'+id, { method:'DELETE' });
+    if(!res.ok){ toast('Не удалось удалить','error'); return; }
+    toast('Объявление удалено','success');
+    const row = document.getElementById('row-'+id);
+    if(row) row.remove();
+    listingState.rows = listingState.rows.filter(x=>x.id!==id);
+    refreshStats();
+    if(filteredRows().length===0) loadListings();
+  }catch(e){ if(!String(e.message).startsWith('auth_')) toast('Ошибка соединения','error'); }
+}
+
+function pageListings(dir){
+  const pages = Math.max(1, Math.ceil(listingState.total/PAGE_SIZE));
+  const next = listingState.page + dir;
+  if(next<0 || next>=pages) return;
+  listingState.page = next;
+  loadListings();
+}
+
+// Status filter pills
+document.getElementById('statusFilters').addEventListener('click', e=>{
+  const pill = e.target.closest('.pill');
+  if(!pill) return;
+  document.querySelectorAll('#statusFilters .pill').forEach(p=>p.classList.remove('active'));
+  pill.classList.add('active');
+  listingState.status = pill.dataset.status;
+  listingState.page = 0;
+  loadListings();
+});
+// Search (client-side over loaded page)
+document.getElementById('listingSearch').addEventListener('input', e=>{
+  listingState.search = e.target.value;
+  renderListings();
+});
+
+// ============================================================
+// SUBSCRIBERS
+// ============================================================
+async function loadSubscribers(){
+  const body = document.getElementById('subscribersBody');
+  body.innerHTML = `<tr><td colspan="7" class="muted">Загрузка…</td></tr>`;
+  const params = new URLSearchParams();
+  params.set('limit', PAGE_SIZE);
+  params.set('offset', subState.page*PAGE_SIZE);
+  try{
+    const res = await adminFetch('/admin/subscribers?'+params.toString());
+    if(!res.ok) throw new Error('subs '+res.status);
+    const data = await res.json();
+    subState.total = data.total||0;
+    renderSubscribers(data.subscribers||[]);
+  }catch(e){
+    if(!String(e.message).startsWith('auth_'))
+      body.innerHTML = `<tr><td colspan="7" class="muted">Ошибка загрузки</td></tr>`;
+  }
+}
+
+function renderSubscribers(subs){
+  const body = document.getElementById('subscribersBody');
+  if(subs.length===0){
+    body.innerHTML = `<tr><td colspan="7" class="muted">Подписчиков нет</td></tr>`;
+  }else{
+    body.innerHTML = subs.map(s=>{
+      const cls = s.is_paid ? 'sub-paid' : (!s.is_active ? 'sub-inactive' : '');
+      const bool = (v)=>v?`<span class="badge-bool b-yes">да</span>`:`<span class="badge-bool b-no">нет</span>`;
+      return `<tr class="${cls}">
+        <td>${s.username?'@'+esc(s.username):'—'}</td>
+        <td>${esc(s.name)||'—'}</td>
+        <td>${esc(s.user_type)||'—'}</td>
+        <td>${esc(s.region)||'—'}</td>
+        <td>${bool(s.is_paid)}</td>
+        <td>${bool(s.is_active)}</td>
+        <td>${fmtDate(s.created_at)}</td>
+      </tr>`;
+    }).join('');
+  }
+  const pages = Math.max(1, Math.ceil(subState.total/PAGE_SIZE));
+  const pg = document.getElementById('subscribersPagination');
+  if(subState.total <= PAGE_SIZE && subState.page===0){
+    pg.innerHTML = '';
+  }else{
+    pg.innerHTML = `
+      <button class="btn btn-outline btn-sm" ${subState.page<=0?'disabled':''} onclick="pageSubs(-1)">← Назад</button>
+      <span>Стр. ${subState.page+1} из ${pages}</span>
+      <button class="btn btn-outline btn-sm" ${subState.page>=pages-1?'disabled':''} onclick="pageSubs(1)">Вперёд →</button>`;
+  }
+}
+
+function pageSubs(dir){
+  const pages = Math.max(1, Math.ceil(subState.total/PAGE_SIZE));
+  const next = subState.page + dir;
+  if(next<0 || next>=pages) return;
+  subState.page = next;
+  loadSubscribers();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+// Refresh stats when the tab/window regains focus (no timer)
+window.addEventListener('focus', refreshStats);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) refreshStats(); });
+
+bootstrap();
+</script>
+</body>
+</html>
