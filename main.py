@@ -1400,8 +1400,11 @@ def _validate_search_params(raw: dict) -> dict:
     return params
 
 
-def _search_listings(params: dict) -> list:
-    """Run the active-listings search for validated params. Returns dict rows."""
+def _search_listings(params: dict) -> dict:
+    """Search active board listings AND evaluated market (Avito) listings.
+
+    Returns {"results": [...board...], "market_results": [...avito...]}.
+    """
     with get_db_conn() as conn:
         with conn.cursor() as cur:
             where = ["l.status = 'active'"]
@@ -1438,7 +1441,7 @@ def _search_listings(params: dict) -> list:
                 ORDER BY l.created_at DESC
                 LIMIT 20
             """, sql_params)
-            return [{
+            results = [{
                 "id": r[0], "title": r[1], "price": r[2], "city": r[3],
                 "condition": r[4], "photos": r[5] if r[5] else [],
                 "status": r[6], "views": r[7], "ai_verdict": r[8],
@@ -1446,6 +1449,57 @@ def _search_listings(params: dict) -> list:
                 "created_at": r[11].isoformat() if r[11] else None,
                 "seller_name": r[12], "seller_username": r[13]
             } for r in cur.fetchall()]
+
+            # Build separate WHERE for market_listings (different field names)
+            market_where = [
+                "listing_url IS NOT NULL",
+                "listing_url != ''",
+                "ts > NOW() - INTERVAL '60 days'"
+            ]
+            market_params = []
+            # Use same keywords but with correct field names for this table
+            if params.get('keywords'):
+                kw_conditions = []
+                for kw in params['keywords']:
+                    kw_conditions.append("title ILIKE %s")
+                    market_params.append(f"%{kw}%")
+                market_where.append(f"({' OR '.join(kw_conditions)})")
+            if params.get('category'):
+                market_where.append("category ILIKE %s")
+                market_params.append(f"%{params['category']}%")
+            if params.get('city'):
+                market_where.append("region ILIKE %s")
+                market_params.append(f"%{params['city']}%")
+            if params.get('max_price'):
+                market_where.append("price <= %s")
+                market_params.append(params['max_price'])
+            if params.get('min_price'):
+                market_where.append("price >= %s")
+                market_params.append(params['min_price'])
+
+            market_where_str = ' AND '.join(market_where)
+            cur.execute(f"""
+                SELECT id, title, price, region, listing_url,
+                       category, verdict, ts
+                FROM market_listings
+                WHERE {market_where_str}
+                ORDER BY ts DESC
+                LIMIT 5
+            """, market_params)
+            market_results = [{
+                "id": r[0],
+                "title": r[1],
+                "price": r[2],
+                "region": r[3],
+                "listing_url": r[4],
+                "category": r[5],
+                "verdict": r[6],
+                "ts": r[7].isoformat() if r[7] else None,
+                "is_market": True,
+                "source": "avito"
+            } for r in cur.fetchall()]
+
+    return {"results": results, "market_results": market_results}
 
 
 def _keyword_fallback(text: str) -> list:
@@ -1556,7 +1610,9 @@ async def ai_search_dialog(data: dict = Body(...), authorization: str = Header(N
         params['keywords'] = _keyword_fallback(all_user_text)
 
     external_links = _build_external_links(params)
-    results = _search_listings(params)
+    search_data = _search_listings(params)
+    results = search_data["results"]
+    market_results = search_data["market_results"]
 
     with get_db_conn() as conn:
         with conn.cursor() as cur:
@@ -1570,6 +1626,7 @@ async def ai_search_dialog(data: dict = Body(...), authorization: str = Header(N
         "type": "results",
         "results": results,
         "total": len(results),
+        "market_results": market_results,
         "external_links": external_links,
         "remaining_today": max(0, DAILY_AI_SEARCH_LIMIT - used_today - 1),
         "daily_limit": DAILY_AI_SEARCH_LIMIT,
@@ -1621,4 +1678,65 @@ def admin_search_analytics(authorization: str = Header(None)):
         "avg_results": round(float(avg_results or 0), 1),
         "top_queries": top_queries,
         "recent": recent,
+    }
+
+
+# ---------- Market listings (Avito evaluated via extension) ----------
+
+@app.get("/market/listings")
+def get_market_listings(
+    search: str = None,
+    category: str = None,
+    region: str = None,
+    limit: int = 10,
+    offset: int = 0
+):
+    limit = min(max(1, limit), 20)
+    offset = max(0, offset)
+
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            # Only show records with URL, not older than 60 days
+            where = [
+                "listing_url IS NOT NULL",
+                "listing_url != ''",
+                "ts > NOW() - INTERVAL '60 days'"
+            ]
+            params = []
+            if search:
+                where.append("title ILIKE %s")
+                params.append(f"%{search[:100]}%")
+            if category:
+                where.append("category ILIKE %s")
+                params.append(f"%{category[:50]}%")
+            if region:
+                where.append("region ILIKE %s")
+                params.append(f"%{region[:50]}%")
+
+            where_str = ' AND '.join(where)
+            cur.execute(f"""
+                SELECT id, title, price, region, listing_url,
+                       category, brand, model, verdict, ts
+                FROM market_listings
+                WHERE {where_str}
+                ORDER BY ts DESC
+                LIMIT %s OFFSET %s
+            """, params + [limit, offset])
+            rows = cur.fetchall()
+
+            cur.execute(
+                f"SELECT COUNT(*) FROM market_listings WHERE {where_str}",
+                params
+            )
+            total = cur.fetchone()[0]
+
+    return {
+        "listings": [{
+            "id": r[0], "title": r[1], "price": r[2],
+            "region": r[3], "listing_url": r[4],
+            "category": r[5], "brand": r[6], "model": r[7],
+            "verdict": r[8],
+            "ts": r[9].isoformat() if r[9] else None
+        } for r in rows],
+        "total": total
     }

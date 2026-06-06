@@ -278,4 +278,29 @@ def evaluate_avito_listing(title: str, price: int, region: str, description: str
     except Exception:
         pass
 
+    # Only save records with URL to market_listings
+    if listing_url:
+        try:
+            # Use direct psycopg2 to avoid circular import issues
+            import psycopg2 as _pg2
+            import os as _os
+            _conn = _pg2.connect(_os.environ.get('DATABASE_URL', ''))
+            _cur = _conn.cursor()
+            _cur.execute("""
+                INSERT INTO market_listings
+                (ts, title, price, region, listing_url, category, brand, model, verdict)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (listing_url) DO NOTHING
+            """, (
+                datetime.datetime.utcnow(),
+                title, price, region, listing_url,
+                result.get('category'), result.get('brand'),
+                result.get('model'), result.get('verdict')
+            ))
+            _conn.commit()
+            _cur.close()
+            _conn.close()
+        except Exception:
+            pass  # Never break evaluation for DB write failure
+
     return result

@@ -984,6 +984,54 @@ function renderAIResults(data){
   }else if(grid){
     grid.innerHTML = results.map(cardHTML).join('');
   }
+
+  // Avito evaluated listings (from market_listings) — separate section
+  if(grid && data.market_results && data.market_results.length > 0){
+    const marketDiv = document.createElement('div');
+    marketDiv.style.cssText = 'grid-column:1/-1;margin-top:24px';
+
+    const verdictLabels = { flash: '⚡', green: '🟢', yellow: '🟡', red: '🔴' };
+
+    const items = data.market_results.map(r => {
+      const date = r.ts ? new Date(r.ts).toLocaleDateString('ru-RU') : '';
+      const verdictBadge = r.verdict && verdictLabels[r.verdict]
+        ? `<span style="font-size:11px">${verdictLabels[r.verdict]}</span>`
+        : '';
+      return `<a href="${esc(r.listing_url)}" target="_blank" rel="noopener"
+        style="display:flex;align-items:center;justify-content:space-between;
+        background:white;border:1px solid #E5E7EB;border-radius:8px;
+        padding:12px 16px;text-decoration:none;color:#1A1A2E;
+        transition:border-color 0.2s;margin-bottom:8px"
+        onmouseover="this.style.borderColor='#FF6B35'"
+        onmouseout="this.style.borderColor='#E5E7EB'">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            ${verdictBadge} ${esc(r.title)}
+          </div>
+          <div style="font-size:12px;color:#6B7280;margin-top:2px">
+            ${esc(r.region || '')} • ${esc(r.category || '')} • оценено ${date}
+          </div>
+        </div>
+        <div style="text-align:right;margin-left:12px;flex-shrink:0">
+          <div style="font-weight:700;color:#FF6B35;font-size:15px">
+            ${(r.price||0).toLocaleString('ru-RU')} ₽
+          </div>
+          <div style="font-size:11px;color:#9CA3AF">Авито →</div>
+        </div>
+      </a>`;
+    }).join('');
+
+    marketDiv.innerHTML = `
+      <h3 style="font-size:15px;font-weight:600;color:#1A1A2E;margin-bottom:12px">
+        🔍 Оценённые объявления на Авито
+      </h3>
+      <p style="font-size:12px;color:#9CA3AF;margin-bottom:12px">
+        Объявления которые пользователи IndMart оценивали через расширение
+      </p>
+      ${items}
+    `;
+    grid.appendChild(marketDiv);
+  }
 }
 
 function showAIUpgradePrompt(){
