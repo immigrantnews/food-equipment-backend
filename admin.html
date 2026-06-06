@@ -130,6 +130,35 @@ a{color:inherit;text-decoration:none}
   transition:border-color .2s ease,box-shadow .2s ease;
 }
 .search-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(27,58,107,0.12)}
+.filter-select{
+  background:#fff;border:1px solid var(--border);border-radius:9px;padding:9px 14px;
+  font-family:'Inter',sans-serif;font-size:14px;color:var(--text-primary);outline:none;min-width:150px;
+  transition:border-color .2s ease,box-shadow .2s ease;
+}
+.filter-select:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(27,58,107,0.12)}
+
+/* category breakdown line */
+.cat-breakdown{
+  margin:-8px 0 26px;font-size:14px;color:var(--text-secondary);
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.cat-breakdown .lead{font-weight:600;color:var(--text-primary)}
+.cat-breakdown .cat-item{color:var(--primary);font-weight:500}
+.cat-breakdown .cat-item b{color:var(--accent)}
+
+/* user filter chip (active listing filter) */
+.user-chip-row{margin-bottom:16px}
+.user-chip-row .chip{
+  display:inline-flex;align-items:center;gap:10px;
+  background:var(--bg-elevated);border:1px solid #C7D6F0;border-radius:100px;
+  padding:7px 8px 7px 16px;font-size:14px;color:var(--primary);font-weight:600;
+}
+.user-chip-row .chip button{
+  background:var(--primary);color:#fff;border:none;border-radius:50%;
+  width:22px;height:22px;cursor:pointer;font-size:13px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+}
+.user-chip-row .chip button:hover{background:var(--accent)}
 
 /* ===== TABLE ===== */
 .table-wrap{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
@@ -230,10 +259,12 @@ tr.sub-inactive{background:#F9FAFB;color:var(--text-secondary)}
   <div class="container">
     <!-- STATS -->
     <div class="stats-grid" id="statsGrid"></div>
+    <div class="cat-breakdown" id="catBreakdown"></div>
 
     <!-- TABS -->
     <div class="tabs">
       <div class="tab active" data-tab="listings" onclick="switchTab('listings')">Объявления</div>
+      <div class="tab" data-tab="users" onclick="switchTab('users')">Пользователи</div>
       <div class="tab" data-tab="subscribers" onclick="switchTab('subscribers')">Подписчики</div>
     </div>
 
@@ -248,6 +279,19 @@ tr.sub-inactive{background:#F9FAFB;color:var(--text-secondary)}
         </div>
         <input id="listingSearch" class="search-input" placeholder="Поиск по названию, городу, продавцу…">
       </div>
+      <div class="toolbar">
+        <select id="listingCategory" class="filter-select">
+          <option value="">Все категории</option>
+        </select>
+        <input id="listingCity" class="filter-select" placeholder="Город">
+        <div class="filter-pills" id="dateFilters">
+          <div class="pill" data-range="today">Сегодня</div>
+          <div class="pill" data-range="week">Неделя</div>
+          <div class="pill" data-range="month">Месяц</div>
+          <div class="pill active" data-range="">Всё время</div>
+        </div>
+      </div>
+      <div id="userFilterChip" class="user-chip-row hidden"></div>
       <div class="table-wrap">
         <div class="table-scroll">
           <table>
@@ -264,8 +308,33 @@ tr.sub-inactive{background:#F9FAFB;color:var(--text-secondary)}
       <div class="pagination" id="listingsPagination"></div>
     </div>
 
+    <!-- USERS TAB -->
+    <div id="tab-users" class="hidden">
+      <div class="toolbar">
+        <input id="userSearch" class="search-input" style="margin-left:0" placeholder="Поиск по имени или username…">
+      </div>
+      <div class="table-wrap">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Имя</th><th>Username</th><th>Тип</th><th>Город</th>
+                <th>Объявлений</th><th>Просмотров</th><th>Подписка</th><th>Дата</th><th>Действия</th>
+              </tr>
+            </thead>
+            <tbody id="usersBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="pagination" id="usersPagination"></div>
+    </div>
+
     <!-- SUBSCRIBERS TAB -->
     <div id="tab-subscribers" class="hidden">
+      <div class="toolbar">
+        <div class="spacer" style="flex:1"></div>
+        <button class="btn btn-orange btn-sm" onclick="exportCSV()">📥 Экспорт CSV</button>
+      </div>
       <div class="table-wrap">
         <div class="table-scroll">
           <table>
@@ -294,12 +363,31 @@ const API = '/api';
 const TG_BOT = 'IndMartAlertsBot';
 const PAGE_SIZE = 20;
 
+const CATEGORIES = ['Тестомесы','Печи','Расстойки','Пароконвектоматы','Холодильное','Упаковочное','Прочее'];
+
 let adminUser = null;
-let listingState = { status:'', search:'', page:0, total:0, rows:[] };
+let listingState = { status:'', search:'', category:'', city:'', dateRange:'', userId:null, userLabel:'', page:0, total:0, rows:[] };
+let userState = { search:'', page:0, total:0 };
 let subState = { page:0, total:0 };
 
 const STATUS_LABEL = { active:'Активно', sold:'Продано', archived:'Архив', moderation:'Модерация', deleted:'Удалено' };
 const COND_LABEL = { used:'Б/у', new:'Новое', parts:'На запчасти' };
+
+// debounce helper
+function debounce(fn, ms){
+  let t;
+  return function(...args){ clearTimeout(t); t = setTimeout(()=>fn.apply(this, args), ms); };
+}
+// Compute an ISO date_from for a named range ('today'|'week'|'month'); '' = no bound.
+function rangeToDateFrom(range){
+  if(!range) return '';
+  const now = new Date();
+  const d = new Date(now);
+  if(range==='today') d.setHours(0,0,0,0);
+  else if(range==='week') d.setDate(d.getDate()-7);
+  else if(range==='month') d.setMonth(d.getMonth()-1);
+  return d.toISOString();
+}
 
 // ============================================================
 // HELPERS
@@ -421,6 +509,7 @@ async function bootstrap(){
     if(!res.ok) throw new Error('stats '+res.status);
     const stats = await res.json();
     showDashboard();
+    populateCategoryDropdown();
     renderStats(stats);
     loadListings();
   }catch(e){
@@ -451,6 +540,25 @@ function renderStats(s){
         <div class="stat-label">${esc(c.label)}</div>
       </div>
     </div>`).join('');
+
+  // Categories breakdown line
+  const cb = s.categories_breakdown || {};
+  const entries = Object.entries(cb);
+  const el = document.getElementById('catBreakdown');
+  if(entries.length === 0){
+    el.innerHTML = '';
+  }else{
+    el.innerHTML = '<span class="lead">Топ категорий:</span> ' +
+      entries.map(([cat,n])=>`<span class="cat-item">${esc(cat)} <b>(${n})</b></span>`).join('<span style="opacity:.4">•</span> ');
+  }
+}
+
+function populateCategoryDropdown(){
+  const sel = document.getElementById('listingCategory');
+  if(!sel || sel.dataset.filled) return;
+  sel.insertAdjacentHTML('beforeend',
+    CATEGORIES.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join(''));
+  sel.dataset.filled = '1';
 }
 
 async function refreshStats(){
@@ -467,7 +575,9 @@ async function refreshStats(){
 function switchTab(tab){
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
   document.getElementById('tab-listings').classList.toggle('hidden', tab!=='listings');
+  document.getElementById('tab-users').classList.toggle('hidden', tab!=='users');
   document.getElementById('tab-subscribers').classList.toggle('hidden', tab!=='subscribers');
+  if(tab==='users') loadUsers();
   if(tab==='subscribers') loadSubscribers();
 }
 
@@ -477,8 +587,15 @@ function switchTab(tab){
 async function loadListings(){
   const body = document.getElementById('listingsBody');
   body.innerHTML = `<tr><td colspan="8" class="muted">Загрузка…</td></tr>`;
+  renderUserChip();
   const params = new URLSearchParams();
   if(listingState.status) params.set('status', listingState.status);
+  if(listingState.category) params.set('category', listingState.category);
+  if(listingState.city) params.set('city', listingState.city);
+  if(listingState.search) params.set('search', listingState.search);
+  if(listingState.userId) params.set('user_id', listingState.userId);
+  const df = rangeToDateFrom(listingState.dateRange);
+  if(df) params.set('date_from', df);
   params.set('limit', PAGE_SIZE);
   params.set('offset', listingState.page*PAGE_SIZE);
   try{
@@ -494,24 +611,31 @@ async function loadListings(){
   }
 }
 
-function filteredRows(){
-  const q = listingState.search.trim().toLowerCase();
-  if(!q) return listingState.rows;
-  return listingState.rows.filter(l =>
-    (l.title||'').toLowerCase().includes(q) ||
-    (l.city||'').toLowerCase().includes(q) ||
-    (l.seller_username||'').toLowerCase().includes(q) ||
-    (l.seller_name||'').toLowerCase().includes(q)
-  );
-}
-
 function statusBadge(st){
   return `<span class="st st-${esc(st)}">${esc(STATUS_LABEL[st]||st)}</span>`;
 }
 
+function renderUserChip(){
+  const box = document.getElementById('userFilterChip');
+  if(listingState.userId){
+    box.classList.remove('hidden');
+    box.innerHTML = `<span class="chip">Объявления ${esc(listingState.userLabel||('#'+listingState.userId))}
+      <button title="Сбросить" onclick="clearUserFilter()">✕</button></span>`;
+  }else{
+    box.classList.add('hidden');
+    box.innerHTML = '';
+  }
+}
+function clearUserFilter(){
+  listingState.userId = null;
+  listingState.userLabel = '';
+  listingState.page = 0;
+  loadListings();
+}
+
 function renderListings(){
   const body = document.getElementById('listingsBody');
-  const rows = filteredRows();
+  const rows = listingState.rows;
   if(rows.length === 0){
     body.innerHTML = `<tr><td colspan="8" class="muted">Объявлений нет</td></tr>`;
   }else{
@@ -519,13 +643,15 @@ function renderListings(){
   }
   // pagination
   const pages = Math.max(1, Math.ceil(listingState.total/PAGE_SIZE));
+  const from = listingState.total === 0 ? 0 : listingState.page*PAGE_SIZE + 1;
+  const to = listingState.page*PAGE_SIZE + rows.length;
   const pg = document.getElementById('listingsPagination');
   if(listingState.total <= PAGE_SIZE && listingState.page===0){
-    pg.innerHTML = '';
+    pg.innerHTML = listingState.total ? `<span>Показано ${from}–${to} из ${listingState.total}</span>` : '';
   }else{
     pg.innerHTML = `
       <button class="btn btn-outline btn-sm" ${listingState.page<=0?'disabled':''} onclick="pageListings(-1)">← Назад</button>
-      <span>Стр. ${listingState.page+1} из ${pages}</span>
+      <span>Показано ${from}–${to} из ${listingState.total}</span>
       <button class="btn btn-outline btn-sm" ${listingState.page>=pages-1?'disabled':''} onclick="pageListings(1)">Вперёд →</button>`;
   }
 }
@@ -618,7 +744,7 @@ async function deleteListing(id){
     if(row) row.remove();
     listingState.rows = listingState.rows.filter(x=>x.id!==id);
     refreshStats();
-    if(filteredRows().length===0) loadListings();
+    if(listingState.rows.length===0) loadListings();
   }catch(e){ if(!String(e.message).startsWith('auth_')) toast('Ошибка соединения','error'); }
 }
 
@@ -640,10 +766,33 @@ document.getElementById('statusFilters').addEventListener('click', e=>{
   listingState.page = 0;
   loadListings();
 });
-// Search (client-side over loaded page)
-document.getElementById('listingSearch').addEventListener('input', e=>{
-  listingState.search = e.target.value;
-  renderListings();
+// Search (server-side, debounced 300ms)
+document.getElementById('listingSearch').addEventListener('input', debounce(e=>{
+  listingState.search = e.target.value.trim();
+  listingState.page = 0;
+  loadListings();
+}, 300));
+// Category dropdown
+document.getElementById('listingCategory').addEventListener('change', e=>{
+  listingState.category = e.target.value;
+  listingState.page = 0;
+  loadListings();
+});
+// City input (debounced)
+document.getElementById('listingCity').addEventListener('input', debounce(e=>{
+  listingState.city = e.target.value.trim();
+  listingState.page = 0;
+  loadListings();
+}, 300));
+// Date range pills
+document.getElementById('dateFilters').addEventListener('click', e=>{
+  const pill = e.target.closest('.pill');
+  if(!pill) return;
+  document.querySelectorAll('#dateFilters .pill').forEach(p=>p.classList.remove('active'));
+  pill.classList.add('active');
+  listingState.dateRange = pill.dataset.range;
+  listingState.page = 0;
+  loadListings();
 });
 
 // ============================================================
@@ -704,6 +853,126 @@ function pageSubs(dir){
   if(next<0 || next>=pages) return;
   subState.page = next;
   loadSubscribers();
+}
+
+// ============================================================
+// USERS
+// ============================================================
+async function loadUsers(){
+  const body = document.getElementById('usersBody');
+  body.innerHTML = `<tr><td colspan="9" class="muted">Загрузка…</td></tr>`;
+  const params = new URLSearchParams();
+  if(userState.search) params.set('search', userState.search);
+  params.set('limit', PAGE_SIZE);
+  params.set('offset', userState.page*PAGE_SIZE);
+  try{
+    const res = await adminFetch('/admin/users?'+params.toString());
+    if(!res.ok) throw new Error('users '+res.status);
+    const data = await res.json();
+    userState.total = data.total||0;
+    renderUsers(data.users||[]);
+  }catch(e){
+    if(!String(e.message).startsWith('auth_'))
+      body.innerHTML = `<tr><td colspan="9" class="muted">Ошибка загрузки</td></tr>`;
+  }
+}
+
+function renderUsers(users){
+  const body = document.getElementById('usersBody');
+  if(users.length===0){
+    body.innerHTML = `<tr><td colspan="9" class="muted">Пользователей нет</td></tr>`;
+  }else{
+    body.innerHTML = users.map(u=>{
+      const sub = u.is_paid_subscriber
+        ? `<span class="badge-bool b-yes">Платная</span>`
+        : `<span class="badge-bool b-no">Нет</span>`;
+      const uname = u.username ? '@'+esc(u.username) : '—';
+      const label = u.username ? '@'+u.username : (u.first_name || ('#'+u.id));
+      return `<tr>
+        <td>${esc(u.first_name)||'—'}</td>
+        <td>${uname}</td>
+        <td>${esc(u.user_type)||'—'}</td>
+        <td>${esc(u.city)||'—'}</td>
+        <td>${u.listing_count||0}</td>
+        <td>${(u.total_views||0).toLocaleString('ru-RU')}</td>
+        <td>${sub}</td>
+        <td>${fmtDate(u.created_at)}</td>
+        <td>
+          <div class="row-actions">
+            <button class="btn btn-outline btn-sm" onclick="filterByUser(${u.id}, '${esc(label).replace(/'/g,"\\'")}')">Объявления</button>
+            <button class="btn btn-sm" style="background:#FEF2F2;color:var(--red);border:1px solid #FECACA" onclick="blockUser(${u.id}, '${esc(label).replace(/'/g,"\\'")}')">Блокировать</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+  const pages = Math.max(1, Math.ceil(userState.total/PAGE_SIZE));
+  const from = userState.total===0 ? 0 : userState.page*PAGE_SIZE+1;
+  const to = userState.page*PAGE_SIZE + users.length;
+  const pg = document.getElementById('usersPagination');
+  if(userState.total <= PAGE_SIZE && userState.page===0){
+    pg.innerHTML = userState.total ? `<span>Показано ${from}–${to} из ${userState.total}</span>` : '';
+  }else{
+    pg.innerHTML = `
+      <button class="btn btn-outline btn-sm" ${userState.page<=0?'disabled':''} onclick="pageUsers(-1)">← Назад</button>
+      <span>Показано ${from}–${to} из ${userState.total}</span>
+      <button class="btn btn-outline btn-sm" ${userState.page>=pages-1?'disabled':''} onclick="pageUsers(1)">Вперёд →</button>`;
+  }
+}
+
+function pageUsers(dir){
+  const pages = Math.max(1, Math.ceil(userState.total/PAGE_SIZE));
+  const next = userState.page + dir;
+  if(next<0 || next>=pages) return;
+  userState.page = next;
+  loadUsers();
+}
+
+// Jump to listings filtered by a user
+function filterByUser(userId, label){
+  listingState.userId = userId;
+  listingState.userLabel = label;
+  listingState.page = 0;
+  switchTab('listings');
+  loadListings();
+}
+
+async function blockUser(userId, label){
+  if(!window.confirm(`Заблокировать пользователя ${label}? Его активные объявления будут отправлены в архив.`)) return;
+  try{
+    const res = await adminFetch('/admin/users/'+userId+'/block', { method:'PUT' });
+    if(!res.ok){ toast('Не удалось заблокировать','error'); return; }
+    toast('Пользователь заблокирован','success');
+    loadUsers();
+    refreshStats();
+  }catch(e){ if(!String(e.message).startsWith('auth_')) toast('Ошибка соединения','error'); }
+}
+
+// User search (server-side, debounced)
+document.getElementById('userSearch').addEventListener('input', debounce(e=>{
+  userState.search = e.target.value.trim();
+  userState.page = 0;
+  loadUsers();
+}, 300));
+
+// ============================================================
+// CSV EXPORT
+// ============================================================
+async function exportCSV(){
+  try{
+    const resp = await adminFetch('/admin/subscribers/export');
+    if(!resp.ok){ toast('Не удалось выгрузить CSV','error'); return; }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'subscribers.csv';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast('Файл выгружен','success');
+  }catch(e){ if(!String(e.message).startsWith('auth_')) toast('Ошибка соединения','error'); }
 }
 
 // ============================================================

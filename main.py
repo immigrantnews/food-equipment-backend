@@ -76,6 +76,36 @@ def check_admin(authorization: str) -> dict:
     return user
 
 
+def notify_admin_new_listing(listing_id: int, title: str, price: int, city: str, seller: str):
+    """Notify all admins in Telegram about a newly created listing (best-effort)."""
+    bot_token = os.environ.get('TELEGRAM_NOTIFY_TOKEN', '')
+    admin_ids = ADMIN_TELEGRAM_IDS
+    if not bot_token or not admin_ids:
+        return
+    msg = (
+        f"📦 Новое объявление #{listing_id}\n\n"
+        f"*{title}*\n"
+        f"💰 {price:,} ₽\n"
+        f"📍 {city or 'не указан'}\n"
+        f"👤 @{seller or 'неизвестен'}\n\n"
+        f"🔗 [Открыть](https://indmart.ru/listings#listing/{listing_id})"
+    )
+    import threading
+
+    def send():
+        try:
+            import httpx
+            for admin_id in admin_ids:
+                httpx.post(
+                    f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                    json={"chat_id": admin_id, "text": msg, "parse_mode": "Markdown"},
+                    timeout=5
+                )
+        except Exception as e:
+            logger.warning(f"Admin notification failed: {e}")
+    threading.Thread(target=send, daemon=True).start()
+
+
 @app.get("/")
 def root():
     return {"service": "food-equipment-api", "status": "ok"}
@@ -764,6 +794,9 @@ def board_create_listing(req: ListingCreate, authorization: str = Header(None)):
     import threading
     threading.Thread(target=run_ai_eval, daemon=True).start()
 
+    # Notify admins about the new listing (best-effort, non-blocking)
+    notify_admin_new_listing(listing_id, req.title, req.price, req.city or '', user.get('username', ''))
+
     return {"id": listing_id, "status": "active"}
 
 
@@ -819,6 +852,15 @@ def admin_stats(authorization: str = Header(None)):
             total_views = cur.fetchone()[0]
 
             cur.execute("""
+                SELECT category, COUNT(*)
+                FROM listings
+                WHERE status = 'active' AND category IS NOT NULL
+                GROUP BY category
+                ORDER BY COUNT(*) DESC
+            """)
+            categories_breakdown = {r[0]: r[1] for r in cur.fetchall()}
+
+            cur.execute("""
                 SELECT l.id, l.title, l.price, l.city, l.status, l.views,
                        l.created_at, u.telegram_username
                 FROM listings l
@@ -839,6 +881,7 @@ def admin_stats(authorization: str = Header(None)):
         "total_subscribers": total_subscribers,
         "paid_subscribers": paid_subscribers,
         "total_views": int(total_views),
+        "categories_breakdown": categories_breakdown,
         "recent_listings": recent_listings
     }
 
@@ -846,6 +889,12 @@ def admin_stats(authorization: str = Header(None)):
 @app.get("/admin/listings")
 def admin_get_listings(
     status: str = None,
+    category: str = None,
+    city: str = None,
+    user_id: int = None,
+    date_from: str = None,
+    date_to: str = None,
+    search: str = None,
     limit: int = 50,
     offset: int = 0,
     authorization: str = Header(None)
@@ -861,6 +910,25 @@ def admin_get_listings(
             if status and status in ('active', 'sold', 'archived', 'moderation'):
                 where.append("l.status = %s")
                 params.append(status)
+            if category:
+                where.append("l.category = %s")
+                params.append(category)
+            if city:
+                where.append("l.city ILIKE %s")
+                params.append(f"%{city}%")
+            if user_id is not None:
+                where.append("l.user_id = %s")
+                params.append(user_id)
+            if date_from:
+                where.append("l.created_at >= %s")
+                params.append(date_from)
+            if date_to:
+                where.append("l.created_at <= %s")
+                params.append(date_to)
+            if search:
+                where.append("(l.title ILIKE %s OR l.city ILIKE %s OR u.telegram_username ILIKE %s)")
+                like = f"%{search.strip()[:100]}%"
+                params.extend([like, like, like])
 
             where_str = ' AND '.join(where)
 
@@ -993,3 +1061,105 @@ def admin_get_subscribers(
         } for r in rows],
         "total": total
     }
+
+
+@app.get("/admin/users")
+def admin_get_users(
+    search: str = None,
+    limit: int = 50,
+    offset: int = 0,
+    authorization: str = Header(None)
+):
+    check_admin(authorization)
+    limit = min(limit, 100)
+    offset = max(0, offset)
+
+    search_where = ""
+    params = []
+    if search:
+        search_where = "WHERE u.telegram_username ILIKE %s OR u.first_name ILIKE %s"
+        params = [f"%{search}%", f"%{search}%"]
+
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(f"""
+                SELECT u.id, u.telegram_id, u.telegram_username, u.first_name,
+                       u.user_type, u.city, u.created_at,
+                       COUNT(DISTINCT l.id) FILTER (WHERE l.status != 'deleted') as listing_count,
+                       COALESCE(SUM(l.views) FILTER (WHERE l.status != 'deleted'), 0) as total_views,
+                       s.is_paid, s.is_active as sub_active
+                FROM users u
+                LEFT JOIN listings l ON l.user_id = u.id
+                LEFT JOIN subscribers s ON LOWER(s.telegram_username) = LOWER(u.telegram_username)
+                {search_where}
+                GROUP BY u.id, s.is_paid, s.is_active
+                ORDER BY u.created_at DESC
+                LIMIT %s OFFSET %s
+            """, params + [limit, offset])
+            rows = cur.fetchall()
+            cur.execute(f"SELECT COUNT(*) FROM users u {search_where}", params)
+            total = cur.fetchone()[0]
+
+    return {
+        "users": [{
+            "id": r[0], "telegram_id": r[1], "username": r[2],
+            "first_name": r[3], "user_type": r[4], "city": r[5],
+            "created_at": r[6].isoformat() if r[6] else None,
+            "listing_count": r[7], "total_views": int(r[8]),
+            "is_paid_subscriber": r[9], "has_subscription": r[10]
+        } for r in rows],
+        "total": total
+    }
+
+
+@app.put("/admin/users/{user_id}/block")
+def admin_block_user(user_id: int, authorization: str = Header(None)):
+    check_admin(authorization)
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE users SET is_active = false WHERE id = %s RETURNING id",
+                (user_id,)
+            )
+            if not cur.fetchone():
+                raise HTTPException(404, "User not found")
+            # Also archive all their listings
+            cur.execute(
+                "UPDATE listings SET status = 'archived' WHERE user_id = %s AND status = 'active'",
+                (user_id,)
+            )
+            conn.commit()
+    return {"ok": True}
+
+
+@app.get("/admin/subscribers/export")
+def admin_export_subscribers(authorization: str = Header(None)):
+    check_admin(authorization)
+    from fastapi.responses import StreamingResponse
+    import csv
+    import io
+
+    with get_db_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT telegram_username, name, is_paid, is_active,
+                       user_type, region, created_at
+                FROM subscribers WHERE is_group = false
+                ORDER BY created_at DESC
+            """)
+            rows = cur.fetchall()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Username', 'Имя', 'Платный', 'Активный', 'Тип', 'Регион', 'Дата'])
+    for r in rows:
+        writer.writerow([r[0], r[1], 'Да' if r[2] else 'Нет',
+                        'Да' if r[3] else 'Нет', r[4], r[5],
+                        r[6].strftime('%d.%m.%Y') if r[6] else ''])
+
+    output.seek(0)
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode('utf-8-sig')),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=subscribers.csv"}
+    )
