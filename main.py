@@ -189,6 +189,7 @@ def avito_eval(req: AvitoEvalIn):
             description=req.description,
             photos=req.photos,
             seller_type=req.seller_type,
+            listing_url=req.listing_url,
         )
         if data.get('urgency') in ('urgent', 'liquidation'):
             try:
@@ -779,6 +780,7 @@ def board_create_listing(req: ListingCreate, authorization: str = Header(None)):
                 description=req.description or '',
                 photos=[],
                 seller_type='unknown',
+                listing_url=f"https://indmart.ru/listings#listing/{listing_id}",
             )
             with get_db_conn() as conn2:
                 with conn2.cursor() as cur2:

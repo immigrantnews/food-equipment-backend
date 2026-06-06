@@ -166,7 +166,7 @@ AVITO_EVAL_SYSTEM = """Ты эксперт по рынку б/у пищевог�
 - red = цена выше рынка более чем на 15%"""
 
 
-def evaluate_avito_listing(title: str, price: int, region: str, description: str, photos: list = [], seller_type: str = "unknown") -> dict:
+def evaluate_avito_listing(title: str, price: int, region: str, description: str, photos: list = [], seller_type: str = "unknown", listing_url: str = "") -> dict:
     content = []
 
     # photos are now base64 JPEG strings (already compressed in the extension)
@@ -266,6 +266,7 @@ def evaluate_avito_listing(title: str, price: int, region: str, description: str
         "title": title,
         "price": price,
         "region": region,
+        "listing_url": listing_url,
         "category": result.get("category"),
         "brand": result.get("brand"),
         "model": result.get("model"),

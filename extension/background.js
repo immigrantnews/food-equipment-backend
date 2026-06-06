@@ -50,7 +50,8 @@ async function handleEval(message) {
         title: message.title,
         price: message.price,
         region: message.region,
-        description: message.description
+        description: message.description,
+        listing_url: message.listing_url || ''
       })
     });
     clearTimeout(timeout);
