@@ -1,0 +1,1548 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Доска объявлений — IndMart | Пищевое оборудование б/у</title>
+<meta name="description" content="Купить б/у пищевое оборудование. Тестомесы, печи, расстойники, отсадочные машины от проверенных продавцов.">
+<link rel="canonical" href="https://indmart.ru/listings">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #1B3A6B;
+  --navy-light: #254d8f;
+  --orange: #FF6B35;
+  --orange-dark: #e55a25;
+  --white: #fff;
+  --bg: #f8f9fc;
+  --card: #ffffff;
+  --border: #e0e4ef;
+  --text: #1a2236;
+  --muted: #8892a4;
+  --green: #059669;
+  --red: #dc2626;
+  --yellow: #d97706;
+  --radius: 12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; min-height: 100vh; }
+
+/* ── NAV ── */
+nav {
+  background: white;
+  border-bottom: 1px solid #eee;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+.nav-logo { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 20px; color: #1B3A6B; text-decoration: none; }
+.nav-logo span { color: var(--orange); }
+.nav-center { display: flex; gap: 4px; }
+.nav-link { color: #555; text-decoration: none; font-size: 14px; padding: 6px 12px; border-radius: 6px; transition: all 0.15s; white-space: nowrap; }
+.nav-link:hover, .nav-link.active { color: #1B3A6B; background: #f5f7ff; }
+.nav-right { display: flex; gap: 8px; align-items: center; }
+.btn-post { background: var(--navy); color: white; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; white-space: nowrap; }
+.btn-post:hover { background: var(--navy-light); }
+.user-box { display: flex; align-items: center; gap: 8px; color: #1B3A6B; font-size: 13px; }
+.user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--orange); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: white; }
+.btn-login { background: white; color: #1B3A6B; border: 1px solid #ddd; border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.btn-login:hover { background: #f5f7ff; }
+.btn-logout { background: none; border: none; color: #aaa; cursor: pointer; font-size: 12px; font-family: inherit; }
+
+/* ── PAGES ── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── CATALOG PAGE ── */
+.catalog-header {
+  background: white;
+  padding: 24px 24px 0;
+  border-bottom: 1px solid var(--border);
+}
+.catalog-title-row {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.catalog-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  font-size: 24px;
+  color: var(--navy);
+}
+.catalog-title span { color: var(--orange); }
+
+/* Filters */
+.filters-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 0;
+  padding: 16px 20px;
+  display: grid;
+  grid-template-columns: 1fr 160px 160px 160px auto;
+  gap: 10px;
+  align-items: end;
+}
+.f-field { display: flex; flex-direction: column; gap: 4px; }
+.f-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.f-input, .f-select {
+  height: 38px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text);
+  background: white;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.f-input:focus, .f-select:focus { border-color: var(--navy); }
+.f-select { cursor: pointer; }
+.price-row { display: flex; gap: 6px; }
+.price-row .f-input { width: 70px; }
+.btn-search {
+  height: 38px;
+  
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.btn-search:hover { background: var(--orange-dark); }
+
+/* Hide filters in AI mode */
+.filters-wrap.hidden { display: none; }
+/* AI Search toggle */
+.search-toggle {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: white;
+  border-top: 1px solid var(--border);
+  padding: 8px 20px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.toggle-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  background: white;
+  color: var(--muted);
+  transition: all 0.15s;
+}
+.toggle-btn.active {  color: white; border-color: var(--navy); }
+.ai-search-box {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: white;
+  border-top: 1px solid var(--border);
+  padding: 16px 20px;
+  display: none;
+}
+.ai-search-box.visible { display: block; }
+.ai-chat-messages {
+  min-height: 120px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ai-msg {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.ai-msg-bot .ai-bubble {
+  background: #f0f4ff;
+  color: var(--text);
+  border-radius: 0 12px 12px 12px;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 85%;
+}
+.ai-msg-user {
+  flex-direction: row-reverse;
+}
+.ai-msg-user .ai-bubble {
+  background: var(--navy);
+  color: white;
+  border-radius: 12px 0 12px 12px;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 85%;
+}
+.ai-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--navy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.ai-input-row { display: flex; gap: 10px; align-items: center; }
+.ai-input { flex: 1; height: 44px; border: 1.5px solid var(--border); border-radius: 10px; padding: 0 16px; font-size: 14px; font-family: inherit; outline: none; }
+.ai-input:focus { border-color: var(--navy); }
+
+/* Catalog body */
+.catalog-body {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 24px 60px;
+}
+.results-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.results-count strong { color: var(--text); }
+
+/* Grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+/* Card */
+.card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+.card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(27,58,107,0.12); border-color: #c0ccdf; }
+.card-photo {
+  height: 180px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  position: relative;
+  overflow: hidden;
+}
+.card-photo img { width: 100%; height: 100%; object-fit: cover; }
+.card-verdict {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255,255,255,0.95);
+}
+.verdict-green { color: var(--green); }
+.verdict-orange { color: var(--orange); }
+.verdict-red { color: var(--red); }
+.card-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.card-title { font-weight: 600; font-size: 14px; color: var(--text); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card-price { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 20px; color: var(--orange); }
+.card-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+.badge-city { background: var(--bg); color: var(--muted); }
+.badge-condition { background: #eff6ff; color: #1d4ed8; }
+.badge-urgent { background: #fee2e2; color: var(--red); }
+.badge-new { background: #dcfce7; color: var(--green); }
+.card-time { font-size: 11px; color: var(--muted); }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 80px 24px; color: var(--muted); }
+.empty-state h3 { font-size: 18px; margin-bottom: 8px; color: var(--text); }
+
+/* Load more */
+.load-more-wrap { text-align: center; margin-top: 32px; }
+.btn-load-more { background: white; border: 1.5px solid var(--border); color: var(--navy); border-radius: 10px; padding: 12px 32px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.btn-load-more:hover { border-color: var(--navy); background: var(--bg); }
+
+/* ── DETAIL PAGE ── */
+.detail-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 24px 80px;
+}
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  margin-bottom: 20px;
+  background: none;
+  border: none;
+  font-family: inherit;
+}
+.back-link:hover { text-decoration: underline; }
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 28px;
+}
+.gallery-main {
+  aspect-ratio: 4/3;
+  background: var(--bg);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 72px;
+  border: 1.5px solid var(--border);
+  margin-bottom: 10px;
+}
+.gallery-main img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-thumbs { display: flex; gap: 8px; flex-wrap: wrap; }
+.gallery-thumb {
+  width: 68px;
+  height: 68px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.gallery-thumb:hover, .gallery-thumb.active { border-color: var(--navy); }
+.gallery-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+.detail-side { }
+.detail-title { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 24px; color: var(--text); line-height: 1.2; margin-bottom: 12px; }
+.detail-price { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 32px; color: var(--navy); margin-bottom: 16px; }
+.detail-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.detail-card { background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+.detail-card h3 { font-size: 14px; font-weight: 700; color: var(--navy); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+.contact-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 15px; }
+.contact-row .ico { font-size: 18px; }
+.contact-row a { color: var(--navy); font-weight: 600; text-decoration: none; }
+.contact-row a:hover { text-decoration: underline; }
+.locked-block { text-align: center; padding: 16px; }
+.locked-block p { color: var(--muted); font-size: 14px; margin-bottom: 14px; line-height: 1.5; }
+.btn-tg-login { background: #2ca5e0; color: white; border: none; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; }
+
+.detail-meta-list { display: flex; flex-direction: column; gap: 8px; }
+.meta-row { display: flex; justify-content: space-between; font-size: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--bg); }
+.meta-row:last-child { border-bottom: none; padding-bottom: 0; }
+.meta-key { color: var(--muted); }
+.meta-val { font-weight: 500; }
+
+.desc-text { font-size: 14px; line-height: 1.7; color: var(--text); white-space: pre-wrap; }
+
+/* AI analysis block */
+.ai-block {
+  background: linear-gradient(135deg, var(--navy), var(--navy-light));
+  border-radius: var(--radius);
+  padding: 16px;
+  color: white;
+  margin-bottom: 16px;
+}
+.ai-block-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.5); margin-bottom: 6px; }
+.ai-block-text { font-size: 14px; line-height: 1.6; }
+.ai-verdict-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.ai-price-range { font-size: 13px; color: rgba(255,255,255,0.7); }
+
+/* ── NEW LISTING PAGE ── */
+.new-wrap {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+.form-card {
+  background: var(--card);
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+}
+.form-title { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 22px; color: var(--navy); margin-bottom: 24px; }
+.field { margin-bottom: 18px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.ctl { width: 100%; height: 42px; border: 1.5px solid var(--border); border-radius: 8px; padding: 0 14px; font-size: 14px; font-family: inherit; color: var(--text); background: white; outline: none; transition: border-color 0.15s; }
+.ctl:focus { border-color: var(--navy); }
+textarea.ctl { height: auto; min-height: 100px; padding: 12px 14px; resize: vertical; line-height: 1.6; }
+.condition-btns { display: flex; gap: 8px; }
+.cond-btn { flex: 1; height: 38px; border: 1.5px solid var(--border); border-radius: 8px; background: white; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; color: var(--muted); transition: all 0.15s; }
+.cond-btn.active {  color: white; border-color: var(--navy); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.dropzone {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 28px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  color: var(--muted);
+  font-size: 14px;
+}
+.dropzone:hover { border-color: var(--navy); }
+.dz-icon { font-size: 32px; display: block; margin-bottom: 8px; }
+.previews { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.preview { position: relative; }
+.preview img { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; }
+.preview .rm { position: absolute; top: -4px; right: -4px;  color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.ai-improve-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 7px 14px;
+  
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.ai-improve-status { margin-top: 8px; padding: 10px; background: #f0f4ff; border-radius: 8px; font-size: 13px; color: var(--navy); display: none; }
+.hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.form-error { color: var(--red); font-size: 13px; margin-bottom: 12px; display: none; }
+.btn-submit {
+  width: 100%;
+  height: 48px;
+  background: var(--orange);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.btn-submit:hover { background: var(--orange-dark); }
+.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Auth required */
+.auth-required {
+  text-align: center;
+  padding: 48px 32px;
+}
+.auth-required h2 { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 22px; color: var(--navy); margin-bottom: 12px; }
+.auth-required p { color: var(--muted); font-size: 15px; line-height: 1.6; margin-bottom: 8px; }
+.auth-perks { list-style: none; margin: 20px 0 28px; display: flex; flex-direction: column; gap: 10px; text-align: left; max-width: 300px; margin-left: auto; margin-right: auto; }
+.auth-perks li { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text); }
+.auth-perks li::before { content: '✓'; color: var(--orange); font-weight: 700; }
+
+/* Telegram widget */
+#tgWidgetWrap { display: flex; justify-content: center; margin-top: 16px; }
+
+/* ── FOOTER ── */
+footer {
+  background: #f8f9fc;
+  border-top: 1px solid #eee;
+  padding: 28px 24px;
+  text-align: center;
+  color: #aaa;
+  font-size: 13px;
+}
+.footer-logo { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 16px; color: #1B3A6B; margin-bottom: 6px; }
+.footer-logo span { color: var(--orange); }
+.footer-links { display: flex; justify-content: center; gap: 20px; margin-bottom: 10px; }
+.footer-links a { color: #aaa; text-decoration: none; font-size: 13px; }
+.footer-links a:hover { color: #1B3A6B; }
+
+/* ── MODAL ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: white;
+  border-radius: 16px;
+  padding: 36px 32px;
+  width: 100%;
+  max-width: 400px;
+  margin: 16px;
+  position: relative;
+}
+.modal-close { position: absolute; top: 14px; right: 14px; background: none; border: none; font-size: 20px; cursor: pointer; color: var(--muted); }
+.modal h2 { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 20px; color: var(--navy); margin-bottom: 6px; text-align: center; }
+.modal p { color: var(--muted); font-size: 14px; text-align: center; margin-bottom: 20px; line-height: 1.5; }
+.modal-divider { display: flex; align-items: center; gap: 12px; margin: 16px 0; }
+.modal-divider::before, .modal-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.modal-divider span { color: var(--muted); font-size: 12px; }
+.code-inputs { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; }
+.code-digit { width: 44px; height: 52px; text-align: center; font-size: 22px; font-weight: 700; border: 1.5px solid var(--border); border-radius: 10px; outline: none; color: var(--navy); font-family: inherit; }
+.code-digit:focus { border-color: var(--navy); }
+.timer-text { text-align: center; font-size: 13px; color: var(--muted); margin-top: 10px; }
+.btn-resend { background: none; border: none; color: var(--orange); cursor: pointer; font-size: 13px; text-decoration: underline; display: none; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 900px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+  .detail-grid { grid-template-columns: 1fr; }
+  .filters-wrap { grid-template-columns: 1fr 1fr; }
+  .filters-wrap .btn-search { grid-column: 1/-1; }
+}
+@media (max-width: 600px) {
+  nav { padding: 0 14px; }
+  .nav-center { display: none; }
+  .grid { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+  .filters-wrap { grid-template-columns: 1fr; padding: 12px; }
+  .catalog-body { padding: 14px 14px 60px; }
+  .new-wrap { padding: 20px 14px 60px; }
+  .detail-wrap { padding: 16px 14px 60px; }
+  .form-card { padding: 20px; }
+}
+
+[hidden] { display: none !important; }
+.skeleton { background: linear-gradient(90deg, #f0f2f7 25%, #e5e8f0 50%, #f0f2f7 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: 8px; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* View toggle */
+.view-sort-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+.view-btns { display: flex; gap: 4px; }
+.view-btn {
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.15s;
+  color: var(--muted);
+}
+.view-btn:hover { border-color: var(--navy); color: var(--navy); }
+.view-btn.active { background: var(--navy); border-color: var(--navy); color: white; }
+.sort-select {
+  height: 34px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text);
+  background: white;
+  cursor: pointer;
+  outline: none;
+}
+.sort-select:focus { border-color: var(--navy); }
+
+/* Grid views */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+.grid.view-2 { grid-template-columns: repeat(2, 1fr); }
+.grid.view-3 { grid-template-columns: repeat(3, 1fr); }
+.grid.view-list { grid-template-columns: 1fr; }
+
+/* List view card */
+.grid.view-list .card { flex-direction: row; height: 130px; }
+.grid.view-list .card-photo { width: 160px; height: 130px; flex-shrink: 0; }
+.grid.view-list .card-body { padding: 12px 16px; justify-content: center; }
+.grid.view-list .card-title { -webkit-line-clamp: 1; font-size: 15px; }
+.grid.view-list .card-price { font-size: 22px; }
+
+@media (max-width: 768px) {
+  .grid.view-3 { grid-template-columns: repeat(2, 1fr); }
+  .grid.view-list .card-photo { width: 120px; }
+}
+@media (max-width: 500px) {
+  .grid.view-2, .grid.view-3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="nav-logo">Ind<span>Mart</span></a>
+  <div class="nav-center">
+    <a href="/listings" class="nav-link active" onclick="showCatalog();return false;">Доска объявлений</a>
+    <a href="/consultant" class="nav-link">AI Консультант</a>
+    <a href="/baza" class="nav-link">База знаний</a>
+  </div>
+  <div class="nav-right">
+    <button class="btn-post" onclick="showNew()">+ Разместить объявление</button>
+    <div id="navUser" style="display:none">
+      <div class="user-box">
+        <div class="user-avatar" id="userAvatar">A</div>
+        <span id="userName">User</span>
+        <button class="btn-logout" onclick="logout()">Выйти</button>
+      </div>
+    </div>
+    <button id="navLoginBtn" class="btn-login" onclick="openLoginModal()">Войти через Telegram</button>
+  </div>
+</nav>
+
+<!-- ══════════════ CATALOG PAGE ══════════════ -->
+<div id="pageCatalog" class="page active">
+  <div class="catalog-header">
+    <div class="catalog-title-row">
+      <h1 class="catalog-title">Доска <span>объявлений</span></h1>
+      <span id="catalogCount" style="color:var(--muted);font-size:14px;"></span>
+    </div>
+
+    <div class="filters-wrap" id="filtersWrap">
+      <div class="f-field" style="grid-column: 1/-1 / span 1">
+        <div class="f-label">Поиск</div>
+        <input id="fSearch" class="f-input" placeholder="Название оборудования…" onkeydown="if(event.key==='Enter') doSearch()">
+      </div>
+      <div class="f-field">
+        <div class="f-label">Категория</div>
+        <select id="fCategory" class="f-select">
+          <option value="">Все категории</option>
+          <optgroup label="Хлебопекарное и кондитерское">
+          <option>Тестомесильные машины</option>
+          <option>Печи хлебопекарные</option>
+          <option>Шкафы расстоечные</option>
+          <option>Отсадочные машины</option>
+          <option>Миксеры, кремовзбивальные машины</option>
+          <option>Тестоделительные машины</option>
+          <option>Тестоокруглительные машины</option>
+          <option>Тестозакаточные, формующие машины</option>
+          <option>Тесторaскатывающие машины</option>
+          <option>Дозаторы начинок, шприцы</option>
+          <option>Глазировочные, дражировочные машины</option>
+          <option>Мукопросеиватели</option>
+          <option>Хлеборезки</option>
+          <option>Для производства макаронных изделий</option>
+          <option>Запчасти для хлебопекарного оборудования</option>
+          <option>Прочее хлебопекарное оборудование</option>
+          </optgroup>
+          <optgroup label="Другое пищевое">
+          <option>Мясоперерабатывающее оборудование</option>
+          <option>Холодильное оборудование</option>
+          <option>Для молочной промышленности</option>
+          <option>Зерноперерабатывающее оборудование</option>
+          <option>Для переработки овощей и фруктов</option>
+          <option>Для производства продуктов питания</option>
+          <option>Упаковочное оборудование</option>
+          <option>Весоизмерительное оборудование</option>
+          <option>Ёмкостное оборудование</option>
+          <option>Сушильное оборудование</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="f-field">
+        <div class="f-label">Город</div>
+        <input id="fCity" class="f-input" placeholder="Любой">
+      </div>
+      <div class="f-field">
+        <div class="f-label">Цена, ₽</div>
+        <div class="price-row">
+          <input id="fMin" class="f-input" type="number" placeholder="от">
+          <input id="fMax" class="f-input" type="number" placeholder="до">
+        </div>
+      </div>
+      <div class="f-field">
+        <div class="f-label">&nbsp;</div>
+        <button class="btn-search" onclick="doSearch()">Найти</button>
+      </div>
+    </div>
+
+    <div class="search-toggle">
+      <button class="toggle-btn" id="toggleNormal" onclick="setSearchMode('normal')" style="display:none;">← Обычный поиск</button>
+      <button class="toggle-btn" id="toggleAI" onclick="setSearchMode('ai')" style="display:inline-flex;align-items:center;gap:6px;"><svg width="16" height="16" viewBox="0 0 28 28" fill="none"><circle cx="14" cy="14" r="14" fill="#1B3A6B"/><path d="M16 7L10 15h5l-3 6 8-10h-5l3-6z" fill="#FF6B35"/></svg> AI-поиск</button>
+    </div>
+    <div class="ai-search-box" id="aiSearchBox">
+      <div class="ai-chat-messages" id="aiMessages">
+        <div class="ai-msg ai-msg-bot">
+          <div class="ai-avatar" style="background:none;"><svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="14" cy="14" r="14" fill="#1B3A6B"/>
+  <path d="M16 7L10 15h5l-3 6 8-10h-5l3-6z" fill="#FF6B35"/>
+  <text x="14" y="26" text-anchor="middle" font-family="Montserrat,Arial,sans-serif" font-weight="800" font-size="7" fill="white" letter-spacing="0.5">AI</text>
+</svg></div>
+          <div class="ai-bubble">Привет! Опишите что ищете — модель, мощность, бюджет, город. Найду подходящие объявления.</div>
+        </div>
+      </div>
+      <div class="ai-input-row">
+        <input id="aiInput" class="ai-input" placeholder="Тестомес до 100 тыс в Москве, спиральный…" onkeydown="if(event.key==='Enter') doAISearch()">
+        <button class="btn-search" onclick="doAISearch()" style="height:44px;padding:0 20px;">Найти</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="catalog-body">
+    <div class="view-sort-bar">
+      <div class="results-count" id="resultsCount"></div>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <select class="sort-select" id="sortSelect" onchange="doSort()">
+          <option value="newest">Новые сначала</option>
+          <option value="price_asc">Дешевле сначала</option>
+          <option value="price_desc">Дороже сначала</option>
+          <option value="ai">С AI оценкой</option>
+        </select>
+        <div class="view-btns">
+          <button class="view-btn active" id="view3" onclick="setView(3)" title="3 колонки">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="0" y="0" width="4" height="4" rx="1"/><rect x="6" y="0" width="4" height="4" rx="1"/><rect x="12" y="0" width="4" height="4" rx="1"/><rect x="0" y="6" width="4" height="4" rx="1"/><rect x="6" y="6" width="4" height="4" rx="1"/><rect x="12" y="6" width="4" height="4" rx="1"/><rect x="0" y="12" width="4" height="4" rx="1"/><rect x="6" y="12" width="4" height="4" rx="1"/><rect x="12" y="12" width="4" height="4" rx="1"/></svg>
+          </button>
+          <button class="view-btn" id="view2" onclick="setView(2)" title="2 колонки">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="0" y="0" width="7" height="7" rx="1"/><rect x="9" y="0" width="7" height="7" rx="1"/><rect x="0" y="9" width="7" height="7" rx="1"/><rect x="9" y="9" width="7" height="7" rx="1"/></svg>
+          </button>
+          <button class="view-btn" id="view1" onclick="setView(1)" title="Список">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><rect x="0" y="1" width="16" height="3" rx="1"/><rect x="0" y="7" width="16" height="3" rx="1"/><rect x="0" y="13" width="16" height="3" rx="1"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="grid" class="grid"></div>
+    <div id="emptyState" class="empty-state" hidden>
+      <h3>Объявлений не найдено</h3>
+      <p>Попробуйте изменить фильтры или <button style="background:none;border:none;color:var(--navy);cursor:pointer;font-weight:600;" onclick="resetFilters()">сбросить поиск</button></p>
+    </div>
+    <div class="load-more-wrap" id="loadMoreWrap" hidden>
+      <button class="btn-load-more" onclick="loadMore()">Загрузить ещё</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ DETAIL PAGE ══════════════ -->
+<div id="pageDetail" class="page">
+  <div class="detail-wrap">
+    <button class="back-link" onclick="showCatalog()">← Назад к объявлениям</button>
+    <div class="detail-grid" id="detailContent">
+      <div style="text-align:center;padding:60px;color:var(--muted)">Загрузка...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ NEW LISTING PAGE ══════════════ -->
+<div id="pageNew" class="page">
+  <div class="new-wrap">
+    <div class="form-card" id="newFormCard">
+      <!-- Filled by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ FOOTER ══════════════ -->
+<footer>
+  <div class="footer-logo">Ind<span>Mart</span></div>
+  <div class="footer-links">
+    <a href="/">Главная</a>
+    <a href="/consultant">AI Консультант</a>
+    <a href="/baza">База знаний</a>
+    <a href="/upgrade">Тарифы</a>
+  </div>
+  <div>© 2026 IndMart · Пищевое оборудование б/у</div>
+</footer>
+
+<!-- ══════════════ LOGIN MODAL ══════════════ -->
+<div class="modal-overlay" id="loginModal" onclick="if(event.target===this) closeLoginModal()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeLoginModal()">✕</button>
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="background:var(--navy);color:white;display:inline-block;padding:6px 18px;border-radius:8px;font-family:'Montserrat',sans-serif;font-weight:800;font-size:16px;">Ind<span style="color:var(--orange)">Mart</span></div>
+    </div>
+
+    <div id="loginStep1">
+      <h2>Войти</h2>
+      <p>Введите email — пришлём код подтверждения. <strong style="color:var(--orange)">7 дней Pro бесплатно</strong> после регистрации.</p>
+      <input id="emailInput" type="email" class="ctl" placeholder="your@email.com" onkeydown="if(event.key==='Enter') sendCode()" style="margin-bottom:10px;">
+      <button class="btn-submit" onclick="sendCode()" id="sendCodeBtn">Получить код →</button>
+      <div id="emailError" style="color:var(--red);font-size:13px;margin-top:8px;text-align:center;"></div>
+      <div class="modal-divider"><span>или</span></div>
+      <div id="tgLoginWrap" style="display:flex;justify-content:center;"></div>
+    </div>
+
+    <div id="loginStep2" hidden>
+      <button style="background:none;border:none;color:var(--navy);cursor:pointer;font-size:13px;margin-bottom:14px;" onclick="backToEmail()">← Назад</button>
+      <h2>Введите код</h2>
+      <p id="codeEmailDisplay" style="margin-bottom:16px;"></p>
+      <div class="code-inputs">
+        <input class="code-digit" maxlength="1" inputmode="numeric" oninput="nextDigit(this,1)" onkeydown="prevDigit(event,this,0)">
+        <input class="code-digit" maxlength="1" inputmode="numeric" oninput="nextDigit(this,2)" onkeydown="prevDigit(event,this,1)">
+        <input class="code-digit" maxlength="1" inputmode="numeric" oninput="nextDigit(this,3)" onkeydown="prevDigit(event,this,2)">
+        <input class="code-digit" maxlength="1" inputmode="numeric" oninput="nextDigit(this,4)" onkeydown="prevDigit(event,this,3)">
+        <input class="code-digit" maxlength="1" inputmode="numeric" oninput="nextDigit(this,5)" onkeydown="prevDigit(event,this,4)">
+        <input class="code-digit" maxlength="1" inputmode="numeric" oninput="autoVerify()" onkeydown="prevDigit(event,this,5)">
+      </div>
+      <button class="btn-submit" onclick="verifyCode()" id="verifyBtn" style="margin-top:10px;">Войти</button>
+      <div id="codeError" style="color:var(--red);font-size:13px;margin-top:8px;text-align:center;"></div>
+      <div class="timer-text">
+        <span id="timerText">Повтор через <span id="timerSec">60</span> сек</span>
+        <button class="btn-resend" id="resendBtn" onclick="sendCode()">Отправить повторно</button>
+      </div>
+    </div>
+
+    <div id="loginStep3" hidden style="text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;">✅</div>
+      <h2>Вы вошли!</h2>
+      <p>Добро пожаловать в IndMart</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api';
+const TG_BOT = 'IndMartAlertsBot';
+let currentUser = null;
+let currentToken = null;
+let listings = [];
+let offset = 0;
+const LIMIT = 12;
+let filters = {};
+let searchMode = 'normal';
+let newPhotos = [];
+let timerInterval = null;
+let emailForCode = '';
+
+// ── Auth ──────────────────────────────────────────────────────────────────
+function initAuth() {
+  currentToken = localStorage.getItem('indmart_token');
+  const u = localStorage.getItem('indmart_user');
+  if (u) try { currentUser = JSON.parse(u); } catch(e) {}
+  updateNavAuth();
+}
+
+function updateNavAuth() {
+  const navUser = document.getElementById('navUser');
+  const navLogin = document.getElementById('navLoginBtn');
+  if (currentUser) {
+    navUser.style.display = 'block';
+    navLogin.style.display = 'none';
+    const name = currentUser.username || currentUser.email || 'User';
+    document.getElementById('userName').textContent = '@' + name;
+    document.getElementById('userAvatar').textContent = name[0].toUpperCase();
+  } else {
+    navUser.style.display = 'none';
+    navLogin.style.display = 'block';
+  }
+}
+
+function logout() {
+  localStorage.removeItem('indmart_token');
+  localStorage.removeItem('indmart_user');
+  currentUser = null; currentToken = null;
+  updateNavAuth();
+  showCatalog();
+}
+
+function authHeaders() {
+  return currentToken ? { 'Authorization': 'Bearer ' + currentToken } : {};
+}
+
+// ── Pages ─────────────────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function showCatalog() {
+  showPage('pageCatalog');
+  history.pushState({}, '', '/listings');
+  if (!listings.length) loadListings(true);
+}
+
+function showDetail(id) {
+  showPage('pageDetail');
+  history.pushState({}, '', '/listings/' + id);
+  loadDetail(id);
+}
+
+function showNew() {
+  showPage('pageNew');
+  history.pushState({}, '', '/listings/new');
+  renderNewForm();
+}
+
+// ── Hash routing ──────────────────────────────────────────────────────────
+function handleRoute() {
+  const path = window.location.pathname;
+  const hash = window.location.hash;
+  if (path === '/listings/new' || hash === '#new') { showNew(); return; }
+  const m = path.match(/\/listings\/(\d+)/);
+  if (m) { showDetail(m[1]); return; }
+  if (hash.startsWith('#listing/')) { showDetail(hash.split('/')[1]); return; }
+  showCatalog();
+}
+
+// ── Catalog ───────────────────────────────────────────────────────────────
+async function loadListings(reset = false) {
+  if (reset) { offset = 0; listings = []; }
+  const params = new URLSearchParams({ limit: LIMIT, offset });
+  if (filters.search) params.set('search', filters.search);
+  if (filters.category) params.set('category', filters.category);
+  if (filters.city) params.set('city', filters.city);
+  if (filters.min_price) params.set('min_price', filters.min_price);
+  if (filters.max_price) params.set('max_price', filters.max_price);
+
+  const grid = document.getElementById('grid');
+  if (reset) grid.innerHTML = '<div class="card skeleton" style="height:280px"></div>'.repeat(6);
+
+  try {
+    const res = await fetch(API + '/board/listings?' + params);
+    const data = await res.json();
+    const items = data.listings || data || [];
+    const total = data.total || items.length;
+
+    if (reset) grid.innerHTML = '';
+    listings = reset ? items : [...listings, ...items];
+
+    document.getElementById('catalogCount').textContent = total ? total + ' объявлений' : ''; document.getElementById('catalogCount').style.color = 'var(--muted)';
+    document.getElementById('resultsCount').innerHTML = total ? `Найдено: <strong>${total}</strong>` : '';
+    document.getElementById('emptyState').hidden = listings.length > 0;
+    document.getElementById('loadMoreWrap').hidden = listings.length >= total;
+
+    if (reset) {
+      grid.innerHTML = '';
+      items.forEach(l => grid.appendChild(makeCard(l)));
+    } else {
+      items.forEach(l => grid.appendChild(makeCard(l)));
+    }
+    offset += items.length;
+  } catch(e) {
+    grid.innerHTML = '<div class="empty-state"><h3>Ошибка загрузки</h3><p>Попробуйте обновить страницу</p></div>';
+  }
+}
+
+function makeCard(l) {
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.onclick = () => showDetail(l.id);
+
+  const photo = l.photos && l.photos.length ? `<img src="${l.photos[0]}" loading="lazy">` : '🔧';
+  const verdict = verdictBadge(l.ai_verdict);
+  const price = l.price ? Number(l.price).toLocaleString('ru-RU') + ' ₽' : 'Цена не указана';
+  const time = l.created_at ? timeAgo(l.created_at) : '';
+  const cond = l.condition === 'new' ? '<span class="badge badge-new">Новое</span>' : l.condition === 'used' ? '<span class="badge badge-condition">Б/у</span>' : '';
+
+  div.innerHTML = `
+    <div class="card-photo">
+      ${photo}
+      ${verdict ? `<div class="card-verdict ${verdict.cls}">${verdict.label}</div>` : ''}
+    </div>
+    <div class="card-body">
+      <div class="card-title">${esc(l.title)}</div>
+      <div class="card-price">${price}</div>
+      <div class="card-meta">
+        ${l.city ? `<span class="badge badge-city">📍 ${esc(l.city)}</span>` : ''}
+        ${cond}
+        ${l.urgency === 'urgent' ? '<span class="badge badge-urgent">🔥 Срочно</span>' : ''}
+      </div>
+      <div class="card-time">${time}</div>
+    </div>`;
+  return div;
+}
+
+function verdictBadge(v) {
+  if (v === 'green') return { cls: 'verdict-green', label: '✓ Честная цена' };
+  if (v === 'flash') return { cls: 'verdict-orange', label: '⚡ Флеш-продажа' };
+  if (v === 'yellow') return { cls: 'verdict-orange', label: '⚠ Торгуйся' };
+  if (v === 'red') return { cls: 'verdict-red', label: '✗ Дорого' };
+  return null;
+}
+
+function doSearch() {
+  filters = {
+    search: document.getElementById('fSearch').value.trim(),
+    category: document.getElementById('fCategory').value,
+    city: document.getElementById('fCity').value.trim(),
+    min_price: document.getElementById('fMin').value,
+    max_price: document.getElementById('fMax').value,
+  };
+  loadListings(true);
+}
+
+function resetFilters() {
+  document.getElementById('fSearch').value = '';
+  document.getElementById('fCategory').value = '';
+  document.getElementById('fCity').value = '';
+  document.getElementById('fMin').value = '';
+  document.getElementById('fMax').value = '';
+  filters = {};
+  loadListings(true);
+}
+
+function loadMore() { loadListings(false); }
+
+function setSearchMode(mode) {
+  searchMode = mode;
+  const isAI = mode === 'ai';
+  document.getElementById('toggleNormal').style.display = isAI ? 'inline-flex' : 'none';
+  document.getElementById('toggleAI').style.display = isAI ? 'none' : 'inline-flex';
+  document.getElementById('aiSearchBox').classList.toggle('visible', isAI);
+  document.getElementById('filtersWrap').classList.toggle('hidden', isAI);
+  if (isAI) setTimeout(() => document.getElementById('aiInput')?.focus(), 100);
+}
+
+async function doAISearch() {
+  const q = document.getElementById('aiInput').value.trim();
+  if (!q) return;
+  
+  const messages = document.getElementById('aiMessages');
+  const input = document.getElementById('aiInput');
+  
+  // Add user message
+  messages.innerHTML += `<div class="ai-msg ai-msg-user"><div class="ai-bubble">${esc(q)}</div></div>`;
+  input.value = '';
+  messages.scrollTop = messages.scrollHeight;
+
+  if (!currentToken) {
+    messages.innerHTML += `<div class="ai-msg ai-msg-bot"><div class="ai-avatar" style="background:none;"><svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="14" cy="14" r="14" fill="#1B3A6B"/>
+  <path d="M16 7L10 15h5l-3 6 8-10h-5l3-6z" fill="#FF6B35"/>
+  <text x="14" y="26" text-anchor="middle" font-family="Montserrat,Arial,sans-serif" font-weight="800" font-size="7" fill="white" letter-spacing="0.5">AI</text>
+</svg></div><div class="ai-bubble">Для AI-поиска нужно <a href="#" onclick="openLoginModal();return false;" style="color:var(--navy);font-weight:600;">войти в аккаунт</a>. <strong style="color:var(--orange)">7 дней Pro бесплатно!</strong></div></div>`;
+    messages.scrollTop = messages.scrollHeight;
+    return;
+  }
+  
+  // Typing indicator
+  const typingId = 'typing_' + Date.now();
+  messages.innerHTML += `<div class="ai-msg ai-msg-bot" id="${typingId}"><div class="ai-avatar" style="background:none;"><svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="14" cy="14" r="14" fill="#1B3A6B"/>
+  <path d="M16 7L10 15h5l-3 6 8-10h-5l3-6z" fill="#FF6B35"/>
+  <text x="14" y="26" text-anchor="middle" font-family="Montserrat,Arial,sans-serif" font-weight="800" font-size="7" fill="white" letter-spacing="0.5">AI</text>
+</svg></div><div class="ai-bubble">Ищу подходящие варианты...</div></div>`;
+  messages.scrollTop = messages.scrollHeight;
+  
+  try {
+    const res = await fetch(API + '/search/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ query: q })
+    });
+    document.getElementById(typingId)?.remove();
+    if (res.ok) {
+      const data = await res.json();
+      const answer = data.answer || data.message || 'Нашёл несколько вариантов для вас.';
+      messages.innerHTML += `<div class="ai-msg ai-msg-bot"><div class="ai-avatar" style="background:none;"><svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="14" cy="14" r="14" fill="#1B3A6B"/>
+  <path d="M16 7L10 15h5l-3 6 8-10h-5l3-6z" fill="#FF6B35"/>
+  <text x="14" y="26" text-anchor="middle" font-family="Montserrat,Arial,sans-serif" font-weight="800" font-size="7" fill="white" letter-spacing="0.5">AI</text>
+</svg></div><div class="ai-bubble">${esc(answer)}</div></div>`;
+      if (data.listings?.length) {
+        data.listings.forEach(l => {
+          const grid = document.getElementById('grid');
+          grid.innerHTML = '';
+          data.listings.forEach(l => grid.appendChild(makeCard(l)));
+          document.getElementById('resultsCount').innerHTML = `AI нашёл: <strong>${data.listings.length}</strong>`;
+        });
+      }
+    } else if (res.status === 403) {
+      messages.innerHTML += `<div class="ai-msg ai-msg-bot"><div class="ai-avatar" style="background:none;"><svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="14" cy="14" r="14" fill="#1B3A6B"/>
+  <path d="M16 7L10 15h5l-3 6 8-10h-5l3-6z" fill="#FF6B35"/>
+  <text x="14" y="26" text-anchor="middle" font-family="Montserrat,Arial,sans-serif" font-weight="800" font-size="7" fill="white" letter-spacing="0.5">AI</text>
+</svg></div><div class="ai-bubble">AI-поиск доступен на тарифе <a href="/upgrade" style="color:var(--orange);font-weight:600;">Стандарт</a>.</div></div>`;
+    } else {
+      messages.innerHTML += `<div class="ai-msg ai-msg-bot"><div class="ai-avatar" style="background:none;"><svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="14" cy="14" r="14" fill="#1B3A6B"/>
+  <path d="M16 7L10 15h5l-3 6 8-10h-5l3-6z" fill="#FF6B35"/>
+  <text x="14" y="26" text-anchor="middle" font-family="Montserrat,Arial,sans-serif" font-weight="800" font-size="7" fill="white" letter-spacing="0.5">AI</text>
+</svg></div><div class="ai-bubble">Что-то пошло не так. Попробуйте ещё раз.</div></div>`;
+    }
+  } catch(e) {
+    document.getElementById(typingId)?.remove();
+    messages.innerHTML += `<div class="ai-msg ai-msg-bot"><div class="ai-avatar" style="background:none;"><svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="14" cy="14" r="14" fill="#1B3A6B"/>
+  <path d="M16 7L10 15h5l-3 6 8-10h-5l3-6z" fill="#FF6B35"/>
+  <text x="14" y="26" text-anchor="middle" font-family="Montserrat,Arial,sans-serif" font-weight="800" font-size="7" fill="white" letter-spacing="0.5">AI</text>
+</svg></div><div class="ai-bubble">Ошибка соединения. Попробуйте ещё раз.</div></div>`;
+  }
+  messages.scrollTop = messages.scrollHeight;
+}
+
+// ── Detail ────────────────────────────────────────────────────────────────
+async function loadDetail(id) {
+  const content = document.getElementById('detailContent');
+  content.innerHTML = '<div style="text-align:center;padding:60px;color:var(--muted)">Загрузка...</div>';
+  try {
+    const res = await fetch(API + '/board/listings/' + id, { headers: authHeaders() });
+    if (!res.ok) throw new Error();
+    const l = await res.json();
+    renderDetail(l);
+  } catch(e) {
+    content.innerHTML = '<div style="text-align:center;padding:60px;color:var(--muted)">Объявление не найдено</div>';
+  }
+}
+
+function renderDetail(l) {
+  const price = l.price ? Number(l.price).toLocaleString('ru-RU') + ' ₽' : 'Не указана';
+  const photos = l.photos && l.photos.length ? l.photos : [];
+  const mainPhoto = photos.length ? `<img src="${photos[0]}" id="mainPhoto">` : '🔧';
+  const thumbs = photos.length > 1 ? photos.map((p, i) =>
+    `<div class="gallery-thumb ${i===0?'active':''}" onclick="changePhoto('${p}', this)"><img src="${p}"></div>`
+  ).join('') : '';
+
+  const aiBlock = l.ai_verdict ? `
+    <div class="ai-block">
+      <div class="ai-block-label">AI Анализ</div>
+      <div class="ai-verdict-row">
+        <span class="card-verdict ${verdictBadge(l.ai_verdict)?.cls || ''}" style="position:static;font-size:13px;">${verdictBadge(l.ai_verdict)?.label || ''}</span>
+      </div>
+      ${l.ai_market_min && l.ai_market_max ? `<div class="ai-price-range">Рыночная цена: ${Number(l.ai_market_min).toLocaleString('ru-RU')} — ${Number(l.ai_market_max).toLocaleString('ru-RU')} ₽</div>` : ''}
+      ${l.ai_comment ? `<div class="ai-block-text" style="margin-top:8px;">${esc(l.ai_comment)}</div>` : ''}
+    </div>` : '';
+
+  const contacts = l.contacts_hidden ? `
+    <div class="detail-card">
+      <h3>Контакты продавца</h3>
+      <div class="locked-block">
+        <p>Войдите чтобы увидеть контакты продавца. <strong style="color:var(--orange)">7 дней Pro бесплатно</strong> после регистрации.</p>
+        <button class="btn-submit" onclick="openLoginModal()" style="max-width:280px;">Войти / Зарегистрироваться</button>
+      </div>
+    </div>` : `
+    <div class="detail-card">
+      <h3>Контакты продавца</h3>
+      ${l.seller_name ? `<div class="contact-row"><span class="ico">👤</span>${esc(l.seller_name)}</div>` : ''}
+      ${l.phone ? `<div class="contact-row"><span class="ico">📞</span><a href="tel:${esc(l.phone)}">${esc(l.phone)}</a></div>` : ''}
+      ${l.telegram_username ? `<div class="contact-row"><span class="ico">✈️</span><a href="https://t.me/${esc(l.telegram_username.replace('@',''))}" target="_blank">@${esc(l.telegram_username.replace('@',''))}</a></div>` : ''}
+    </div>`;
+
+  document.getElementById('detailContent').innerHTML = `
+    <div>
+      <div class="gallery-main">${mainPhoto}</div>
+      ${thumbs ? `<div class="gallery-thumbs">${thumbs}</div>` : ''}
+    </div>
+    <div class="detail-side">
+      <div class="detail-title">${esc(l.title)}</div>
+      <div class="detail-price">${price}</div>
+      <div class="detail-badges">
+        ${l.city ? `<span class="badge badge-city">📍 ${esc(l.city)}</span>` : ''}
+        ${l.condition === 'used' ? '<span class="badge badge-condition">Б/у</span>' : l.condition === 'new' ? '<span class="badge badge-new">Новое</span>' : ''}
+        ${l.urgency === 'urgent' ? '<span class="badge badge-urgent">🔥 Срочно</span>' : ''}
+      </div>
+      ${aiBlock}
+      ${contacts}
+      ${l.description ? `
+        <div class="detail-card">
+          <h3>Описание</h3>
+          <div class="desc-text">${esc(l.description)}</div>
+        </div>` : ''}
+    </div>`;
+
+  // Update meta
+  document.title = l.title + ' — ' + price + ' | IndMart';
+}
+
+function changePhoto(src, el) {
+  document.getElementById('mainPhoto').src = src;
+  document.querySelectorAll('.gallery-thumb').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ── New listing form ──────────────────────────────────────────────────────
+function renderNewForm() {
+  const card = document.getElementById('newFormCard');
+  if (!currentUser) {
+    card.innerHTML = `
+      <div class="auth-required">
+        <div style="font-size:52px;margin-bottom:16px;">🏭</div>
+        <h2>Разместите объявление бесплатно</h2>
+        <p>Тысячи покупателей пекарного оборудования ищут именно то, что вы продаёте.</p>
+        <p>Войдите и получите <strong style="color:var(--orange)">7 дней Pro бесплатно</strong>.</p>
+        <ul class="auth-perks">
+          <li>AI улучшит текст объявления</li>
+          <li>Покупатели увидят ваши контакты</li>
+          <li>Уведомления о заинтересованных</li>
+        </ul>
+        <button class="btn-submit" onclick="openLoginModal()" style="max-width:280px;">Войти / Зарегистрироваться</button>
+      </div>`;
+    return;
+  }
+  card.innerHTML = `
+    <div class="form-title">Новое объявление</div>
+    <div class="field">
+      <label>Название *</label>
+      <input id="nTitle" class="ctl" placeholder="Тестомес Apach ATR 20, спираль">
+    </div>
+    <div class="field">
+      <label>Состояние</label>
+      <div class="condition-btns">
+        <button class="cond-btn active" onclick="setCond(this,'used')">Б/у</button>
+        <button class="cond-btn" onclick="setCond(this,'new')">Новое</button>
+        <button class="cond-btn" onclick="setCond(this,'parts')">На запчасти</button>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>Цена, ₽ *</label>
+        <input id="nPrice" class="ctl" type="number" placeholder="45000">
+      </div>
+      <div class="field">
+        <label>Город *</label>
+        <input id="nCity" class="ctl" placeholder="Москва">
+      </div>
+    </div>
+    <div class="field">
+      <label>Описание</label>
+      <textarea id="nDesc" class="ctl" placeholder="Состояние, год, наработка, причина продажи…"></textarea>
+      <button class="ai-improve-btn" onclick="aiImprove()">✨ Улучшить с AI <span style="background:var(--orange);border-radius:4px;padding:1px 6px;font-size:10px;margin-left:4px;">PRO</span></button>
+      <div class="ai-improve-status" id="aiImproveStatus"></div>
+    </div>
+    <div class="field">
+      <label>Фотографии (до 10)</label>
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+        <span class="dz-icon">📷</span>
+        Перетащите фото сюда или нажмите
+        <small style="display:block;margin-top:4px;font-size:12px;">JPG / PNG</small>
+      </div>
+      <input type="file" id="fileInput" accept="image/*" multiple hidden onchange="addPhotos(this)">
+      <div id="previews" class="previews"></div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>Телефон</label>
+        <input id="nPhone" class="ctl" placeholder="+7 900 000-00-00">
+      </div>
+      <div class="field">
+        <label>Telegram</label>
+        <input id="nTg" class="ctl" placeholder="username (без @)">
+      </div>
+    </div>
+    <div class="hint">Укажите хотя бы один способ связи</div>
+    <div class="form-error" id="newError"></div>
+    <button class="btn-submit" id="submitBtn" onclick="submitListing()" style="margin-top:16px;">Опубликовать</button>`;
+
+  newPhotos = [];
+  let nCondition = 'used';
+  window.setCond = (btn, val) => {
+    document.querySelectorAll('.cond-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    nCondition = val;
+  };
+  window._getCondition = () => nCondition;
+}
+
+function addPhotos(input) {
+  const files = Array.from(input.files || []);
+  const remaining = 10 - newPhotos.length;
+  const toAdd = files.slice(0, remaining);
+  Promise.all(toAdd.map(f => new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res({ dataUrl: r.result, data: r.result.split(',')[1], mediaType: f.type });
+    r.onerror = rej;
+    r.readAsDataURL(f);
+  }))).then(added => {
+    newPhotos.push(...added);
+    renderPreviews();
+  });
+  input.value = '';
+}
+
+function renderPreviews() {
+  const el = document.getElementById('previews');
+  if (!el) return;
+  el.innerHTML = newPhotos.map((p, i) =>
+    `<div class="preview"><img src="${p.dataUrl}"><button class="rm" onclick="removePhoto(${i})">×</button></div>`
+  ).join('');
+}
+window.removePhoto = (i) => { newPhotos.splice(i, 1); renderPreviews(); };
+
+async function aiImprove() {
+  if (!currentToken) { openLoginModal(); return; }
+  const title = document.getElementById('nTitle')?.value || '';
+  const desc = document.getElementById('nDesc')?.value || '';
+  if (!title && !desc) { alert('Заполните название и описание'); return; }
+  const status = document.getElementById('aiImproveStatus');
+  status.style.display = 'block';
+  status.textContent = 'AI улучшает текст…';
+  try {
+    const res = await fetch(API + '/ai/improve-listing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ title, description: desc })
+    });
+    const data = await res.json();
+    if (data.improved) {
+      document.getElementById('nDesc').value = data.improved;
+      status.textContent = '✅ Текст улучшен';
+      setTimeout(() => { status.style.display = 'none'; }, 3000);
+    } else {
+      status.innerHTML = '⚠️ <a href="/upgrade" style="color:var(--orange);font-weight:700;">Подключите тариф</a>';
+    }
+  } catch(e) {
+    status.textContent = '❌ Ошибка. Попробуйте ещё раз.';
+  }
+}
+
+async function submitListing() {
+  const title = document.getElementById('nTitle')?.value.trim();
+  const price = document.getElementById('nPrice')?.value;
+  const city = document.getElementById('nCity')?.value.trim();
+  const errEl = document.getElementById('newError');
+  const btn = document.getElementById('submitBtn');
+
+  if (!title) { errEl.textContent = 'Введите название'; errEl.style.display = 'block'; return; }
+  if (!price) { errEl.textContent = 'Укажите цену'; errEl.style.display = 'block'; return; }
+  if (!city) { errEl.textContent = 'Укажите город'; errEl.style.display = 'block'; return; }
+
+  const phone = document.getElementById('nPhone')?.value.trim();
+  const tg = document.getElementById('nTg')?.value.trim();
+  if (!phone && !tg) { errEl.textContent = 'Укажите хотя бы один способ связи'; errEl.style.display = 'block'; return; }
+
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Публикуем…';
+
+  try {
+    const res = await fetch(API + '/board/listings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({
+        title,
+        price: Number(price),
+        city,
+        condition: window._getCondition ? window._getCondition() : 'used',
+        description: document.getElementById('nDesc')?.value.trim() || null,
+        phone: phone || null,
+        telegram_username: tg || null,
+        photos: newPhotos.map(p => ({ data: p.data, media_type: p.mediaType })),
+        video_url: document.getElementById('nVideo')?.value.trim() || null,
+      })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Ошибка публикации');
+    }
+    document.getElementById('newFormCard').innerHTML = `
+      <div style="text-align:center;padding:48px 24px;">
+        <div style="font-size:52px;margin-bottom:16px;">🎉</div>
+        <h2 style="font-family:'Montserrat',sans-serif;font-weight:800;font-size:22px;color:var(--navy);margin-bottom:12px;">Объявление опубликовано!</h2>
+        <p style="color:var(--muted);font-size:15px;margin-bottom:24px;">Оно уже видно покупателям на доске объявлений.</p>
+        <button class="btn-submit" onclick="showCatalog()" style="max-width:280px;">Смотреть объявления →</button>
+      </div>`;
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Опубликовать';
+  }
+}
+
+// ── Login Modal ───────────────────────────────────────────────────────────
+function openLoginModal() {
+  document.getElementById('loginModal').classList.add('open');
+  setTimeout(() => document.getElementById('emailInput')?.focus(), 100);
+}
+function closeLoginModal() {
+  document.getElementById('loginModal').classList.remove('open');
+  clearInterval(timerInterval);
+}
+
+async function sendCode() {
+  const email = document.getElementById('emailInput').value.trim();
+  const errEl = document.getElementById('emailError');
+  if (!email || !email.includes('@')) { errEl.textContent = 'Введите корректный email'; return; }
+  const btn = document.getElementById('sendCodeBtn');
+  btn.disabled = true; btn.textContent = 'Отправляем…';
+  errEl.textContent = '';
+  try {
+    const res = await fetch(API + '/auth/email/send-code', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Ошибка');
+    emailForCode = email;
+    document.getElementById('codeEmailDisplay').textContent = email;
+    document.getElementById('loginStep1').hidden = true;
+    document.getElementById('loginStep2').hidden = false;
+    startTimer();
+    setTimeout(() => document.querySelectorAll('.code-digit')[0]?.focus(), 100);
+  } catch(e) { errEl.textContent = e.message; }
+  finally { btn.disabled = false; btn.textContent = 'Получить код →'; }
+}
+
+async function verifyCode() {
+  const code = Array.from(document.querySelectorAll('.code-digit')).map(d => d.value).join('');
+  const errEl = document.getElementById('codeError');
+  const btn = document.getElementById('verifyBtn');
+  if (code.length < 6) { errEl.textContent = 'Введите все 6 цифр'; return; }
+  btn.disabled = true; btn.textContent = 'Проверяем…'; errEl.textContent = '';
+  try {
+    const res = await fetch(API + '/auth/email/verify', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: emailForCode, code })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Неверный код');
+    localStorage.setItem('indmart_token', data.token);
+    localStorage.setItem('indmart_user', JSON.stringify(data.user));
+    currentToken = data.token; currentUser = data.user;
+    clearInterval(timerInterval);
+    document.getElementById('loginStep2').hidden = true;
+    document.getElementById('loginStep3').hidden = false;
+    updateNavAuth();
+    setTimeout(() => { closeLoginModal(); if (document.getElementById('pageNew').classList.contains('active')) renderNewForm(); }, 1500);
+  } catch(e) {
+    errEl.textContent = e.message;
+    document.querySelectorAll('.code-digit').forEach(d => { d.style.borderColor = 'var(--red)'; d.value = ''; });
+    setTimeout(() => document.querySelectorAll('.code-digit').forEach(d => d.style.borderColor = ''), 1500);
+    document.querySelectorAll('.code-digit')[0]?.focus();
+  }
+  finally { btn.disabled = false; btn.textContent = 'Войти'; }
+}
+
+function nextDigit(input, next) {
+  input.value = input.value.replace(/\D/g, '');
+  if (input.value && next < 6) document.querySelectorAll('.code-digit')[next].focus();
+}
+function prevDigit(e, input, idx) {
+  if (e.key === 'Backspace' && !input.value && idx > 0) document.querySelectorAll('.code-digit')[idx-1].focus();
+}
+function autoVerify() {
+  const code = Array.from(document.querySelectorAll('.code-digit')).map(d => d.value).join('');
+  if (code.length === 6) verifyCode();
+}
+function backToEmail() {
+  clearInterval(timerInterval);
+  document.getElementById('loginStep2').hidden = true;
+  document.getElementById('loginStep1').hidden = false;
+}
+function startTimer(sec = 60) {
+  document.getElementById('timerText').style.display = 'inline';
+  document.getElementById('resendBtn').style.display = 'none';
+  document.getElementById('timerSec').textContent = sec;
+  timerInterval = setInterval(() => {
+    sec--;
+    document.getElementById('timerSec').textContent = sec;
+    if (sec <= 0) {
+      clearInterval(timerInterval);
+      document.getElementById('timerText').style.display = 'none';
+      document.getElementById('resendBtn').style.display = 'inline';
+    }
+  }, 1000);
+}
+
+function onTelegramAuth(user) {
+  fetch(API + '/auth/telegram', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(user) })
+    .then(r => r.json()).then(data => {
+      if (data.token) {
+        localStorage.setItem('indmart_token', data.token);
+        localStorage.setItem('indmart_user', JSON.stringify(data.user));
+        currentToken = data.token; currentUser = data.user;
+        updateNavAuth();
+        closeLoginModal();
+        if (document.getElementById('pageNew').classList.contains('active')) renderNewForm();
+      }
+    });
+}
+
+// Load Telegram widget
+function loadTgWidget() {
+  const wrap = document.getElementById('tgLoginWrap');
+  if (!wrap) return;
+  const s = document.createElement('script');
+  s.async = true;
+  s.src = 'https://telegram.org/js/telegram-widget.js?22';
+  s.setAttribute('data-telegram-login', TG_BOT);
+  s.setAttribute('data-size', 'large');
+  s.setAttribute('data-onauth', 'onTelegramAuth(user)');
+  s.setAttribute('data-request-access', 'write');
+  wrap.appendChild(s);
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function timeAgo(iso) {
+  const d = new Date(iso);
+  const diff = (Date.now() - d) / 1000;
+  if (diff < 3600) return Math.floor(diff/60) + ' мин назад';
+  if (diff < 86400) return Math.floor(diff/3600) + ' ч назад';
+  if (diff < 604800) return Math.floor(diff/86400) + ' дн назад';
+  return d.toLocaleDateString('ru-RU');
+}
+
+// Paste code support
+document.addEventListener('paste', e => {
+  if (!document.getElementById('loginModal').classList.contains('open')) return;
+  const text = e.clipboardData.getData('text').replace(/\D/g,'').slice(0,6);
+  if (text.length === 6) {
+    const digits = document.querySelectorAll('.code-digit');
+    text.split('').forEach((c, i) => digits[i].value = c);
+    verifyCode();
+  }
+});
+
+
+let currentView = 3;
+let currentSort = 'newest';
+
+function setView(v) {
+  currentView = v;
+  const grid = document.getElementById('grid');
+  grid.className = 'grid';
+  if (v === 1) grid.classList.add('view-list');
+  else if (v === 2) grid.classList.add('view-2');
+  else grid.classList.add('view-3');
+  document.getElementById('view1').classList.toggle('active', v === 1);
+  document.getElementById('view2').classList.toggle('active', v === 2);
+  document.getElementById('view3').classList.toggle('active', v === 3);
+}
+
+function doSort() {
+  currentSort = document.getElementById('sortSelect').value;
+  let sorted = [...listings];
+  if (currentSort === 'price_asc') sorted.sort((a,b) => (a.price||0) - (b.price||0));
+  else if (currentSort === 'price_desc') sorted.sort((a,b) => (b.price||0) - (a.price||0));
+  else if (currentSort === 'newest') sorted.sort((a,b) => new Date(b.created_at||0) - new Date(a.created_at||0));
+  else if (currentSort === 'ai') sorted.sort((a,b) => (b.ai_verdict?1:0) - (a.ai_verdict?1:0));
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  sorted.forEach(l => grid.appendChild(makeCard(l)));
+}
+
+// Popstate
+window.addEventListener('popstate', handleRoute);
+
+// ── Init ──────────────────────────────────────────────────────────────────
+initAuth();
+handleRoute();
+loadTgWidget();
+</script>
+</body>
+</html>
