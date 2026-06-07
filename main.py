@@ -1785,16 +1785,19 @@ async def email_send_code(data: dict = Body(...)):
             conn.commit()
     finally:
         conn.close()
-    smtp_user = os.environ.get("SMTP_USER")
-    smtp_password = os.environ.get("SMTP_PASSWORD")
     html = "<div style='font-family:Arial;max-width:480px;margin:0 auto'><div style='background:#1B3A6B;padding:24px;text-align:center'><h1 style='color:white;margin:0'>IndMart</h1></div><div style='padding:32px;text-align:center'><p>Ваш код для входа:</p><h2 style='font-size:40px;letter-spacing:12px;color:#1B3A6B'>" + code + "</h2><p style='color:#666'>Код действителен 15 минут</p></div></div>"
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = code + " — код для входа в IndMart"
-    msg["From"] = "IndMart <" + smtp_user + ">"
-    msg["To"] = email
-    msg.attach(MIMEText(html, "html", "utf-8"))
-    await aiosmtplib.send(msg, hostname="smtp.yandex.ru", port=465, use_tls=True,
-                          username=smtp_user, password=smtp_password)
+    import sib_api_v3_sdk
+    brevo_key = os.environ.get("BREVO_API_KEY")
+    configuration = sib_api_v3_sdk.Configuration()
+    configuration.api_key["api-key"] = brevo_key
+    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(sib_api_v3_sdk.ApiClient(configuration))
+    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+        to=[{"email": email}],
+        sender={"name": "IndMart", "email": "noreply@indmart.ru"},
+        subject=code + " — код для входа в IndMart",
+        html_content=html
+    )
+    api_instance.send_transac_email(send_smtp_email)
     return {"success": True}
 
 @app.post("/auth/email/verify")
@@ -1932,3 +1935,135 @@ def listing_ssr(listing_id: str, request: Request):
 <a href="https://indmart.ru/listings">← Все объявления</a>
 </body></html>"""
     return HTMLResponse(content=html)
+
+# ---------- KB Article Generator ----------
+@app.post("/baza/generate")
+async def kb_generate(data: dict = Body(...), authorization: str = Header(None)):
+    check_admin(authorization)
+    slug = data['slug']
+    section = data['section']
+    category = data.get('category', '')
+    title = data['title']
+
+    conn = get_db_conn()
+    try:
+        with conn.cursor() as cur:
+            # Берём реальные данные из объявлений
+            cur.execute("""
+                SELECT title, price, city, created_at
+                FROM listings
+                WHERE status='active' AND (
+                    title ILIKE %s OR category ILIKE %s
+                )
+                ORDER BY created_at DESC LIMIT 10
+            """, (f'%{category}%', f'%{category}%'))
+            listings = cur.fetchall()
+
+            # Берём данные из market_listings (оценённые с Авито)
+            cur.execute("""
+                SELECT title, price, region, verdict
+                FROM market_listings
+                WHERE category ILIKE %s
+                ORDER BY ts DESC LIMIT 20
+            """, (f'%{category}%',))
+            market = cur.fetchall()
+    finally:
+        conn.close()
+
+    listings_text = '\n'.join([f"- {r[0]}: {r[1]}₽, {r[2]}" for r in listings]) if listings else "Нет данных"
+    market_text = '\n'.join([f"- {r[0]}: {r[1]}₽, {r[2]}, вердикт: {r[3]}" for r in market]) if market else "Нет данных"
+
+    prompt = f"""Напиши подробную SEO-статью для сайта IndMart о категории: {title}
+
+Раздел: {section}
+Категория: {category}
+
+Реальные объявления на IndMart:
+{listings_text}
+
+Данные рынка (Авито и др.):
+{market_text}
+
+Структура статьи:
+1. Что такое {title} — краткое описание (2-3 предложения)
+2. Виды и типы — основные разновидности
+3. Популярные бренды — топ-5 брендов с описанием
+4. Цены на б/у рынке — диапазоны цен по классам
+5. На что смотреть при покупке б/у — 5-7 конкретных советов
+6. Частые вопросы (FAQ) — 3-4 вопроса и ответа
+
+Требования:
+- Пиши для профессионалов: перекупщики и владельцы пекарен
+- Конкретные цифры и факты
+- Русский язык, деловой стиль
+- Объём: 800-1200 слов
+- Упомяни что купить и продать можно на IndMart.ru
+
+Верни только текст статьи в формате Markdown."""
+
+    text, _ = ai.chat([{"role": "user", "content": prompt}], max_tokens=2000)
+
+    # Сохраняем в БД
+    meta = f"Купить {title} б/у — цены, бренды, советы по выбору на IndMart"
+    conn = get_db_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO knowledge_base (slug, section, category, title, content, meta_description)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (slug) DO UPDATE SET
+                content=%s, meta_description=%s, updated_at=NOW()
+            """, (slug, section, category, title, text, meta, text, meta))
+            conn.commit()
+    finally:
+        conn.close()
+
+    return {"success": True, "slug": slug, "preview": text[:300]}
+
+
+# ---------- Update listing ----------
+@app.patch("/board/listings/{listing_id}")
+async def update_listing(listing_id: int, data: dict = Body(...), authorization: str = Header(None)):
+    user = get_current_user(authorization)
+    conn = get_db_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT user_id FROM listings WHERE id=%s", (listing_id,))
+            row = cur.fetchone()
+            if not row:
+                raise HTTPException(404, "Not found")
+            if row[0] != user['id']:
+                raise HTTPException(403, "Forbidden")
+
+            fields = []
+            values = []
+            allowed = ['title', 'price', 'city', 'condition', 'description', 'phone',
+                      'telegram_username', 'category', 'status', 'auto_publish']
+            for key in allowed:
+                if key in data:
+                    fields.append(key + "=%s")
+                    values.append(data[key])
+
+            if fields:
+                values.append(listing_id)
+                cur.execute("UPDATE listings SET " + ", ".join(fields) + ", updated_at=NOW() WHERE id=%s", values)
+
+            if data.get('photos'):
+                import base64, uuid, os
+                os.makedirs('/var/www/html/uploads', exist_ok=True)
+                for photo in data['photos']:
+                    img_data = base64.b64decode(photo['data'])
+                    ext = photo.get('media_type', 'image/jpeg').split('/')[-1]
+                    filename = str(uuid.uuid4()) + '.' + ext
+                    path = '/var/www/html/uploads/' + filename
+                    with open(path, 'wb') as f:
+                        f.write(img_data)
+                    url = '/uploads/' + filename
+                    cur.execute("INSERT INTO listing_photos (listing_id, url) VALUES (%s, %s) ON CONFLICT DO NOTHING", (listing_id, url))
+
+            conn.commit()
+            cur.execute("SELECT id, title, price, city, status FROM listings WHERE id=%s", (listing_id,))
+            r = cur.fetchone()
+            return {"id": r[0], "title": r[1], "price": float(r[2]) if r[2] else 0, "city": r[3], "status": r[4]}
+    finally:
+        conn.close()

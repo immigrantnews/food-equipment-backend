@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Редактировать объявление — IndMart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #1B3A6B;
+  --navy-light: #254d8f;
+  --orange: #FF6B35;
+  --orange-dark: #e55a25;
+  --bg: #f8f9fc;
+  --card: #ffffff;
+  --border: #e0e4ef;
+  --text: #1a2236;
+  --muted: #8892a4;
+  --green: #059669;
+  --red: #dc2626;
+  --radius: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; min-height: 100vh; }
+
+nav {
+  background: white;
+  border-bottom: 1px solid #eee;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+.nav-logo { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 20px; color: var(--navy); text-decoration: none; }
+.nav-logo span { color: var(--orange); }
+.nav-links { display: flex; gap: 4px; }
+.nav-link { color: #555; text-decoration: none; font-size: 14px; padding: 6px 12px; border-radius: 6px; }
+.nav-link:hover { color: var(--navy); background: #f5f7ff; }
+.nav-right { display: flex; gap: 8px; align-items: center; position: relative; }
+.user-box { display: flex; align-items: center; gap: 8px; color: var(--navy); font-size: 13px; cursor: pointer; }
+.user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--orange); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: white; }
+
+.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--navy);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  margin-bottom: 24px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
+}
+.back-link:hover { text-decoration: underline; }
+
+.form-card {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+}
+.form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+.form-title { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 22px; color: var(--navy); }
+.listing-id { font-size: 12px; color: var(--muted); }
+
+.field { margin-bottom: 18px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.ctl { width: 100%; height: 42px; border: 1.5px solid var(--border); border-radius: 8px; padding: 0 14px; font-size: 14px; font-family: inherit; color: var(--text); background: white; outline: none; transition: border-color 0.15s; }
+.ctl:focus { border-color: var(--navy); }
+textarea.ctl { height: auto; min-height: 120px; padding: 12px 14px; resize: vertical; line-height: 1.6; }
+select.ctl { cursor: pointer; }
+
+.condition-btns { display: flex; gap: 8px; }
+.cond-btn { flex: 1; height: 38px; border: 1.5px solid var(--border); border-radius: 8px; background: white; font-size: 13px; font-weight: 500; cursor: pointer; font-family: inherit; color: var(--muted); transition: all 0.15s; }
+.cond-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.ai-improve-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 7px 14px;
+  background: var(--navy);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+.ai-improve-btn:hover { background: var(--navy-light); }
+.ai-status { margin-top: 8px; padding: 10px; background: #f0f4ff; border-radius: 8px; font-size: 13px; color: var(--navy); display: none; }
+
+/* Photo section */
+.photos-section { margin-bottom: 18px; }
+.photos-section label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.photos-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.photo-item { position: relative; width: 90px; height: 90px; border-radius: 10px; overflow: hidden; border: 1.5px solid var(--border); }
+.photo-item img { width: 100%; height: 100%; object-fit: cover; }
+.photo-item .photo-rm { position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.photo-add {
+  width: 90px; height: 90px;
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer; color: var(--muted); font-size: 12px;
+  gap: 4px; transition: border-color 0.15s;
+}
+.photo-add:hover { border-color: var(--navy); color: var(--navy); }
+.photo-add span { font-size: 24px; }
+
+/* Status toggle */
+.status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 10px;
+  margin-bottom: 18px;
+}
+.status-info h4 { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.status-info p { font-size: 12px; color: var(--muted); }
+.toggle { position: relative; width: 44px; height: 24px; display: inline-block; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; inset: 0; background: var(--border); border-radius: 24px; transition: 0.3s; }
+.slider:before { content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+.toggle input:checked + .slider { background: var(--green); }
+.toggle input:checked + .slider:before { transform: translateX(20px); }
+
+.form-actions { display: flex; gap: 12px; margin-top: 24px; }
+.btn-save { flex: 1; height: 48px; background: var(--orange); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+.btn-save:hover { background: var(--orange-dark); }
+.btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+.btn-cancel { height: 48px; background: white; color: var(--muted); border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; padding: 0 24px; }
+.btn-cancel:hover { border-color: var(--navy); color: var(--navy); }
+
+.form-error { color: var(--red); font-size: 13px; margin-bottom: 12px; display: none; padding: 10px; background: #fff0f0; border-radius: 8px; }
+.form-success { color: var(--green); font-size: 13px; margin-bottom: 12px; display: none; padding: 10px; background: #f0fff4; border-radius: 8px; }
+
+.loading-overlay { text-align: center; padding: 80px; color: var(--muted); }
+
+footer {
+  background: white;
+  border-top: 1px solid #eee;
+  padding: 20px 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+.footer-logo { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 15px; color: var(--navy); }
+.footer-logo span { color: var(--orange); }
+
+@media (max-width: 600px) {
+  .nav-links { display: none; }
+  .form-card { padding: 20px; }
+  .form-row { grid-template-columns: 1fr; }
+  .form-actions { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">Ind<span>Mart</span></a>
+  <div class="nav-links">
+    <a href="/listings" class="nav-link">Доска объявлений</a>
+    <a href="/consultant" class="nav-link">AI Консультант</a>
+    <a href="/baza" class="nav-link">База знаний</a>
+  </div>
+  <div class="nav-right">
+    <div id="navUser" style="display:none;position:relative;">
+      <div class="user-box" onclick="toggleUserMenu()">
+        <div class="user-avatar" id="userAvatar">A</div>
+        <span id="userName"></span>
+        <span style="font-size:10px;color:var(--muted);">▼</span>
+      </div>
+      <div id="userDropdown" style="display:none;position:absolute;right:0;top:44px;background:white;border:1.5px solid #e0e4ef;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12);min-width:200px;z-index:9999;overflow:hidden;">
+        <a href="/cabinet" style="display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:14px;color:#1a2236;text-decoration:none;" onmouseover="this.style.background='#f5f7ff'" onmouseout="this.style.background=''">👤 Личный кабинет</a>
+        <a href="/cabinet" style="display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:14px;color:#1a2236;text-decoration:none;" onmouseover="this.style.background='#f5f7ff'" onmouseout="this.style.background=''">📋 Мои объявления</a>
+        <div style="height:1px;background:#e0e4ef;margin:4px 0;"></div>
+        <button onclick="localStorage.removeItem('indmart_token');localStorage.removeItem('indmart_user');window.location.href='/'" style="display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:14px;color:#dc2626;background:none;border:none;width:100%;cursor:pointer;font-family:inherit;">🚪 Выйти</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+  <button class="back-link" onclick="history.back()">← Назад</button>
+  <div class="form-card" id="formCard">
+    <div class="loading-overlay">Загрузка объявления...</div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-logo">Ind<span>Mart</span></div>
+  <div>© 2026 IndMart · Пищевое оборудование б/у</div>
+</footer>
+
+<script>
+const API = '/api';
+let currentToken = localStorage.getItem('indmart_token');
+let currentUser = null;
+let listingId = null;
+let existingPhotos = [];
+let newPhotos = [];
+let condition = 'used';
+
+function init() {
+  const u = localStorage.getItem('indmart_user');
+  if (u) try { currentUser = JSON.parse(u); } catch(e) {}
+
+  if (!currentToken || !currentUser) {
+    window.location.href = '/listings';
+    return;
+  }
+
+  // Show user in nav
+  const name = currentUser.username || currentUser.email || 'User';
+  document.getElementById('navUser').style.display = 'block';
+  document.getElementById('userAvatar').textContent = name[0].toUpperCase();
+  document.getElementById('userName').textContent = '@' + name;
+
+  // Get listing ID from URL
+  const m = window.location.pathname.match(/\/listings\/edit\/(\d+)/);
+  if (!m) { window.location.href = '/cabinet'; return; }
+  listingId = m[1];
+
+  loadListing();
+}
+
+async function loadListing() {
+  try {
+    const res = await fetch(API + '/board/listings/' + listingId, {
+      headers: { 'Authorization': 'Bearer ' + currentToken }
+    });
+    if (!res.ok) throw new Error('Not found');
+    const l = await res.json();
+    renderForm(l);
+  } catch(e) {
+    document.getElementById('formCard').innerHTML = '<div class="loading-overlay">Объявление не найдено или у вас нет доступа</div>';
+  }
+}
+
+function renderForm(l) {
+  existingPhotos = l.photos || [];
+  condition = l.condition || 'used';
+
+  document.getElementById('formCard').innerHTML = `
+    <div class="form-header">
+      <div class="form-title">Редактировать объявление</div>
+      <div class="listing-id">#${l.id}</div>
+    </div>
+
+    <div class="form-error" id="formError"></div>
+    <div class="form-success" id="formSuccess"></div>
+
+    <div class="status-row">
+      <div class="status-info">
+        <h4>Статус объявления</h4>
+        <p>Активное объявление видно всем покупателям</p>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="statusToggle" ${l.status === 'active' ? 'checked' : ''}>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="field">
+      <label>Название *</label>
+      <input id="eTitle" class="ctl" value="${esc(l.title || '')}" placeholder="Тестомес Apach ATR 20, спираль">
+    </div>
+
+    <div class="field">
+      <label>Состояние</label>
+      <div class="condition-btns">
+        <button class="cond-btn ${l.condition === 'used' ? 'active' : ''}" onclick="setCond(this,'used')">Б/у</button>
+        <button class="cond-btn ${l.condition === 'new' ? 'active' : ''}" onclick="setCond(this,'new')">Новое</button>
+        <button class="cond-btn ${l.condition === 'parts' ? 'active' : ''}" onclick="setCond(this,'parts')">На запчасти</button>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label>Цена, ₽ *</label>
+        <input id="ePrice" class="ctl" type="number" value="${l.price || ''}" placeholder="45000">
+      </div>
+      <div class="field">
+        <label>Город *</label>
+        <input id="eCity" class="ctl" value="${esc(l.city || '')}" placeholder="Москва">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Категория</label>
+      <select id="eCategory" class="ctl">
+        <option value="">Не указана</option>
+        <optgroup label="Хлебопекарное и кондитерское">
+          <option ${l.category === 'Тестомесильные машины' ? 'selected' : ''}>Тестомесильные машины</option>
+          <option ${l.category === 'Печи хлебопекарные' ? 'selected' : ''}>Печи хлебопекарные</option>
+          <option ${l.category === 'Шкафы расстоечные' ? 'selected' : ''}>Шкафы расстоечные</option>
+          <option ${l.category === 'Отсадочные машины' ? 'selected' : ''}>Отсадочные машины</option>
+          <option ${l.category === 'Миксеры, кремовзбивальные машины' ? 'selected' : ''}>Миксеры, кремовзбивальные машины</option>
+          <option ${l.category === 'Тестоделительные машины' ? 'selected' : ''}>Тестоделительные машины</option>
+          <option ${l.category === 'Хлеборезки' ? 'selected' : ''}>Хлеборезки</option>
+        </optgroup>
+        <optgroup label="Другое пищевое">
+          <option ${l.category === 'Мясоперерабатывающее оборудование' ? 'selected' : ''}>Мясоперерабатывающее оборудование</option>
+          <option ${l.category === 'Холодильное оборудование' ? 'selected' : ''}>Холодильное оборудование</option>
+          <option ${l.category === 'Упаковочное оборудование' ? 'selected' : ''}>Упаковочное оборудование</option>
+        </optgroup>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Описание</label>
+      <textarea id="eDesc" class="ctl">${esc(l.description || '')}</textarea>
+      <button class="ai-improve-btn" onclick="aiImprove()">✨ Улучшить с AI <span style="background:var(--orange);border-radius:4px;padding:1px 6px;font-size:10px;margin-left:4px;">PRO</span></button>
+      <div class="ai-status" id="aiStatus"></div>
+    </div>
+
+    <div class="photos-section">
+      <label>Фотографии</label>
+      <div class="photos-grid" id="photosGrid"></div>
+      <input type="file" id="photoInput" accept="image/*" multiple hidden onchange="addPhotos(this)">
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label>Телефон</label>
+        <input id="ePhone" class="ctl" value="${esc(l.phone || '')}" placeholder="+7 900 000-00-00">
+      </div>
+      <div class="field">
+        <label>Telegram</label>
+        <input id="eTg" class="ctl" value="${esc(l.telegram_username || '')}" placeholder="username (без @)">
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-cancel" onclick="history.back()">Отмена</button>
+      <button class="btn-save" id="saveBtn" onclick="saveListing()">Сохранить изменения</button>
+    </div>
+  `;
+
+  renderPhotos();
+}
+
+function setCond(btn, val) {
+  document.querySelectorAll('.cond-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  condition = val;
+}
+
+function renderPhotos() {
+  const grid = document.getElementById('photosGrid');
+  if (!grid) return;
+  let html = existingPhotos.map((p, i) => `
+    <div class="photo-item">
+      <img src="${p}">
+      <button class="photo-rm" onclick="removeExistingPhoto(${i})">✕</button>
+    </div>`).join('');
+
+  html += newPhotos.map((p, i) => `
+    <div class="photo-item">
+      <img src="${p.dataUrl}">
+      <button class="photo-rm" onclick="removeNewPhoto(${i})">✕</button>
+    </div>`).join('');
+
+  if (existingPhotos.length + newPhotos.length < 10) {
+    html += `<div class="photo-add" onclick="document.getElementById('photoInput').click()">
+      <span>📷</span>Добавить
+    </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function removeExistingPhoto(i) { existingPhotos.splice(i, 1); renderPhotos(); }
+function removeNewPhoto(i) { newPhotos.splice(i, 1); renderPhotos(); }
+
+function addPhotos(input) {
+  const files = Array.from(input.files || []);
+  const remaining = 10 - existingPhotos.length - newPhotos.length;
+  Promise.all(files.slice(0, remaining).map(f => new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res({ dataUrl: r.result, data: r.result.split(',')[1], mediaType: f.type });
+    r.onerror = rej;
+    r.readAsDataURL(f);
+  }))).then(added => { newPhotos.push(...added); renderPhotos(); });
+  input.value = '';
+}
+
+async function aiImprove() {
+  const title = document.getElementById('eTitle')?.value || '';
+  const desc = document.getElementById('eDesc')?.value || '';
+  const status = document.getElementById('aiStatus');
+  status.style.display = 'block';
+  status.textContent = 'AI улучшает текст…';
+  try {
+    const res = await fetch(API + '/ai/improve-listing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
+      body: JSON.stringify({ title, description: desc })
+    });
+    const data = await res.json();
+    if (data.improved) {
+      document.getElementById('eDesc').value = data.improved;
+      status.textContent = '✅ Текст улучшен';
+      setTimeout(() => { status.style.display = 'none'; }, 3000);
+    } else {
+      status.innerHTML = '⚠️ <a href="/upgrade" style="color:var(--orange);font-weight:700;">Подключите тариф</a>';
+    }
+  } catch(e) { status.textContent = '❌ Ошибка'; }
+}
+
+async function saveListing() {
+  const title = document.getElementById('eTitle')?.value.trim();
+  const price = document.getElementById('ePrice')?.value;
+  const city = document.getElementById('eCity')?.value.trim();
+  const errEl = document.getElementById('formError');
+  const successEl = document.getElementById('formSuccess');
+  const btn = document.getElementById('saveBtn');
+
+  errEl.style.display = 'none';
+  successEl.style.display = 'none';
+
+  if (!title) { errEl.textContent = 'Введите название'; errEl.style.display = 'block'; return; }
+  if (!price) { errEl.textContent = 'Укажите цену'; errEl.style.display = 'block'; return; }
+  if (!city) { errEl.textContent = 'Укажите город'; errEl.style.display = 'block'; return; }
+
+  btn.disabled = true; btn.textContent = 'Сохраняем…';
+
+  try {
+    const res = await fetch(API + '/board/listings/' + listingId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
+      body: JSON.stringify({
+        title,
+        price: Number(price),
+        city,
+        condition,
+        status: document.getElementById('statusToggle')?.checked ? 'active' : 'inactive',
+        description: document.getElementById('eDesc')?.value.trim() || null,
+        phone: document.getElementById('ePhone')?.value.trim() || null,
+        telegram_username: document.getElementById('eTg')?.value.trim() || null,
+        category: document.getElementById('eCategory')?.value || null,
+        photos: newPhotos.map(p => ({ data: p.data, media_type: p.mediaType })),
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || 'Ошибка сохранения');
+    }
+
+    successEl.textContent = '✅ Объявление успешно сохранено!';
+    successEl.style.display = 'block';
+    newPhotos = [];
+    const data = await res.json();
+    if (data.photos) existingPhotos = data.photos;
+    renderPhotos();
+    window.scrollTo(0, 0);
+    setTimeout(() => { window.location.href = '/cabinet'; }, 1500);
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+  }
+  btn.disabled = false; btn.textContent = 'Сохранить изменения';
+}
+
+function toggleUserMenu() {
+  const m = document.getElementById('userDropdown');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+  const m = document.getElementById('userDropdown');
+  if (m && !e.target.closest('#navUser')) m.style.display = 'none';
+});
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+init();
+</script>
+</body>
+</html>
