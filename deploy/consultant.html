@@ -1,0 +1,1141 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Консультант — IndMart | Пекарное оборудование</title>
+<meta name="description" content="AI консультант по пекарному и кондитерскому оборудованию. Купить, продать, ремонт, расчёт окупаемости, технология производства.">
+<link rel="canonical" href="https://indmart.ru/consultant">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #1B3A6B;
+  --navy-light: #254d8f;
+  --orange: #FF6B35;
+  --orange-dark: #e55a25;
+  --white: #fff;
+  --bg: #f8f9fc;
+  --border: #e0e4ef;
+  --text: #1a2236;
+  --muted: #8892a4;
+  --radius: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+
+/* NAV */
+nav {
+  background: var(--navy);
+  padding: 0 24px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-logo { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 20px; color: white; text-decoration: none; }
+.nav-logo span { color: var(--orange); }
+.nav-links { display: flex; gap: 8px; align-items: center; }
+.nav-link { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 14px; padding: 6px 12px; border-radius: 6px; transition: all 0.2s; }
+.nav-link:hover { color: white; background: rgba(255,255,255,0.1); }
+.nav-btn { background: var(--orange); color: white; border: none; border-radius: 8px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; }
+
+/* WRAPPER */
+.wrap { max-width: 720px; margin: 0 auto; padding: 0 16px 60px; }
+
+/* HEADER */
+.page-header { padding: 32px 0 24px; text-align: center; }
+.page-header h1 { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: clamp(24px, 4vw, 36px); color: var(--navy); margin-bottom: 8px; }
+.page-header p { color: var(--muted); font-size: 15px; }
+
+/* TRIAL BANNER */
+.trial-banner {
+  background: linear-gradient(135deg, var(--navy), var(--navy-light));
+  border-radius: var(--radius);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+  color: white;
+  font-size: 14px;
+}
+.trial-banner strong { color: var(--orange); }
+.trial-banner a { color: white; font-weight: 600; font-size: 13px; background: var(--orange); padding: 6px 14px; border-radius: 6px; text-decoration: none; white-space: nowrap; }
+
+/* HOME CARDS */
+.home-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.home-card {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.home-card:hover { border-color: var(--navy); box-shadow: 0 4px 16px rgba(27,58,107,0.1); transform: translateY(-2px); }
+.home-card .icon { font-size: 32px; }
+.home-card .label { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 15px; color: var(--navy); }
+.home-card .desc { font-size: 13px; color: var(--muted); line-height: 1.4; }
+.home-card.pro-card { border-color: rgba(255,107,53,0.3); background: linear-gradient(135deg, #fff8f5, #fff); }
+.home-card.pro-card:hover { border-color: var(--orange); }
+.pro-badge { display: inline-block; background: var(--orange); color: white; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; margin-top: 4px; }
+
+/* BACK BTN */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--navy);
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 8px 0;
+  margin-bottom: 16px;
+}
+
+/* SECTION HEADER */
+.section-h2 { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 20px; color: var(--navy); margin-bottom: 16px; }
+
+/* NAV CARDS */
+.nav-cards { display: flex; flex-direction: column; gap: 10px; }
+.nav-card {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.2s;
+  text-align: left;
+}
+.nav-card:hover { border-color: var(--navy); box-shadow: 0 2px 12px rgba(27,58,107,0.08); }
+.nav-card.accent { border-color: rgba(255,107,53,0.3); background: #fff8f5; }
+.nav-card.accent:hover { border-color: var(--orange); }
+.card-icon { font-size: 24px; flex-shrink: 0; }
+.card-body { flex: 1; }
+.card-title { font-weight: 600; font-size: 15px; color: var(--text); display: block; }
+.card-desc { font-size: 13px; color: var(--muted); margin-top: 2px; display: block; }
+.card-arrow { color: var(--muted); font-size: 18px; }
+
+/* CHAT */
+.chat-section { background: white; border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.mode-switch { display: flex; gap: 4px; padding: 10px; background: var(--bg); border-bottom: 1px solid var(--border); overflow-x: auto; }
+.mode-btn { padding: 6px 14px; border-radius: 6px; border: none; background: none; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+.mode-btn.active { background: var(--navy); color: white; }
+.chat { min-height: 200px; max-height: 420px; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.msg-row { display: flex; gap: 8px; align-items: flex-start; }
+.msg-row.user { flex-direction: row-reverse; }
+.avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; background: var(--bg); }
+.msg { padding: 10px 14px; border-radius: 10px; font-size: 14px; line-height: 1.55; max-width: 85%; white-space: pre-wrap; }
+.msg.ai { background: var(--bg); color: var(--text); border-radius: 4px 10px 10px 10px; }
+.msg.user { background: var(--navy); color: white; border-radius: 10px 4px 10px 10px; }
+.msg.typing { color: var(--muted); font-style: italic; }
+.msg.error { background: #fff0f0; color: #cc0000; }
+.msg-photo { max-width: 200px; border-radius: 6px; display: block; margin-bottom: 4px; }
+.suggestions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 12px; }
+.suggestions button { background: var(--bg); border: 1.5px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 12px; color: var(--navy); cursor: pointer; font-weight: 500; transition: all 0.15s; }
+.suggestions button:hover { border-color: var(--navy); background: #e8edf8; }
+.composer { display: flex; gap: 8px; padding: 10px; border-top: 1px solid var(--border); align-items: center; }
+.composer input { flex: 1; border: 1.5px solid var(--border); border-radius: 8px; padding: 9px 12px; font-size: 14px; outline: none; font-family: inherit; }
+.composer input:focus { border-color: var(--navy); }
+.composer button[type=submit] { background: var(--navy); color: white; border: none; border-radius: 8px; padding: 9px 16px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.composer button[type=submit]:hover { background: var(--navy-light); }
+.attach-btn { background: none; border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 10px; cursor: pointer; font-size: 16px; color: var(--muted); }
+.attach-btn:hover { border-color: var(--navy); }
+.previews { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 10px 4px; }
+.preview { position: relative; }
+.preview img { width: 64px; height: 64px; object-fit: cover; border-radius: 6px; }
+.preview .remove { position: absolute; top: -4px; right: -4px; background: var(--navy); color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+/* SPECIALIST LINK */
+.specialist-link { background: none; border: none; color: var(--orange); font-size: 13px; font-weight: 600; cursor: pointer; padding: 8px 16px; text-decoration: underline; }
+.specialist-form { background: var(--bg); border-top: 1px solid var(--border); padding: 16px; }
+.specialist-form h4 { font-size: 15px; font-weight: 700; margin-bottom: 4px; color: var(--navy); }
+.specialist-form .sub { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+.specialist-form .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.specialist-form input { border: 1.5px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 14px; outline: none; font-family: inherit; width: 100%; }
+.specialist-form input:focus { border-color: var(--navy); }
+.time-options { display: flex; gap: 10px; margin-bottom: 12px; }
+.time-options label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+.specialist-form button[type=submit] { background: var(--navy); color: white; border: none; border-radius: 8px; padding: 10px; font-size: 14px; font-weight: 600; cursor: pointer; width: 100%; }
+.success { color: #059669; font-weight: 600; font-size: 14px; text-align: center; padding: 12px; }
+
+/* TABLE */
+.warehouse-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+.warehouse-table th { background: var(--navy); color: white; padding: 8px 10px; text-align: left; font-weight: 600; }
+.warehouse-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); }
+.warehouse-table .total-row td { font-weight: 700; background: var(--bg); }
+.warehouse-table .row-yellow td { background: #fffbeb; }
+.price-col { text-align: right; white-space: nowrap; }
+
+/* PANEL INTRO */
+.panel-intro { font-size: 14px; color: var(--muted); padding: 12px 16px; border-bottom: 1px solid var(--border); line-height: 1.5; }
+
+/* LEAD FORM */
+.lead-form { background: white; border: 1.5px solid var(--border); border-radius: var(--radius); padding: 20px; margin-top: 16px; }
+.lead-form h3 { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 16px; color: var(--navy); margin-bottom: 6px; }
+.lead-form .sub { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+.lead-form .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.lead-form input { border: 1.5px solid var(--border); border-radius: 8px; padding: 9px 12px; font-size: 14px; outline: none; font-family: inherit; width: 100%; }
+.lead-form input:focus { border-color: var(--navy); }
+.lead-form button { background: var(--orange); color: white; border: none; border-radius: 8px; padding: 11px; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%; }
+.lead-form button:hover { background: var(--orange-dark); }
+
+/* PRO GATE */
+.pro-gate { background: linear-gradient(135deg, #fff8f5, white); border: 1.5px solid rgba(255,107,53,0.3); border-radius: var(--radius); padding: 28px; text-align: center; }
+.pro-gate .gate-icon { font-size: 48px; margin-bottom: 12px; }
+.pro-gate h3 { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 18px; color: var(--navy); margin-bottom: 8px; }
+.pro-gate p { font-size: 14px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+.pro-gate a { display: inline-block; background: var(--orange); color: white; border-radius: 10px; padding: 12px 24px; font-weight: 700; font-size: 15px; text-decoration: none; }
+.pro-gate .trial-note { font-size: 12px; color: var(--muted); margin-top: 10px; }
+
+/* MOBILE */
+@media (max-width: 600px) {
+  .home-cards { grid-template-columns: 1fr; }
+  .lead-form .fields { grid-template-columns: 1fr; }
+  .specialist-form .fields { grid-template-columns: 1fr; }
+  nav .nav-links .nav-link { display: none; }
+}
+
+/* HIDDEN */
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">Ind<span>Mart</span></a>
+  <div class="nav-links">
+    <a href="/listings" class="nav-link">Доска объявлений</a>
+    <a href="/consultant" class="nav-link" style="color:white;">AI Консультант</a>
+    <a href="/baza" class="nav-link">База знаний</a>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <a href="/listings" class="nav-btn">+ Разместить</a>
+    <div id="navUser" style="display:none;position:relative;">
+      <div style="display:flex;align-items:center;gap:8px;cursor:pointer;color:white;" onclick="toggleUserMenu()">
+        <div id="userAvatar" style="width:28px;height:28px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;">A</div>
+        <span id="userName" style="font-size:13px;"></span>
+        <span style="font-size:10px;opacity:0.6;">▼</span>
+      </div>
+      <div id="userDropdown" style="display:none;position:absolute;right:0;top:44px;background:white;border:1.5px solid #e0e4ef;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12);min-width:200px;z-index:9999;overflow:hidden;">
+        <a href="/cabinet" style="display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:14px;color:#1a2236;text-decoration:none;" onmouseover="this.style.background='#f5f7ff'" onmouseout="this.style.background=''">👤 Личный кабинет</a>
+        <a href="/cabinet" style="display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:14px;color:#1a2236;text-decoration:none;" onmouseover="this.style.background='#f5f7ff'" onmouseout="this.style.background=''">📋 Мои объявления</a>
+        <a href="/upgrade" style="display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:14px;color:#1a2236;text-decoration:none;" onmouseover="this.style.background='#f5f7ff'" onmouseout="this.style.background=''">⭐ Подписка</a>
+        <div style="height:1px;background:#e0e4ef;margin:4px 0;"></div>
+        <button onclick="localStorage.removeItem('indmart_token');localStorage.removeItem('indmart_user');location.reload();" style="display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:14px;color:#dc2626;background:none;border:none;width:100%;cursor:pointer;font-family:inherit;" onmouseover="this.style.background='#fff0f0'" onmouseout="this.style.background=''">🚪 Выйти</button>
+      </div>
+    </div>
+    <button id="navLoginBtn" style="background:rgba(255,255,255,0.12);color:white;border:1px solid rgba(255,255,255,0.2);border-radius:8px;padding:6px 14px;font-size:13px;cursor:pointer;font-family:inherit;" onclick="document.getElementById('loginPrompt').style.display='flex'">Войти</button>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="page-header">
+    <h1>🤖 AI Консультант</h1>
+    <p>Пекарное и кондитерское оборудование — купить, продать, починить, разобраться с технологией</p>
+  </div>
+
+  <!-- Trial banner (shown if not logged in) -->
+  <div class="trial-banner" id="trialBanner">
+    <div>🎁 <strong>7 дней Про бесплатно</strong> — все функции после регистрации</div>
+    <a href="#" onclick="openLoginModal(); return false;">Попробовать бесплатно</a>
+  </div>
+
+  <!-- HOME SCREEN -->
+  <div id="screen-home">
+    <div class="home-cards">
+      <button class="home-card" onclick="goTo('category-buy')">
+        <span class="icon">🛒</span>
+        <span class="label">Купить оборудование</span>
+        <span class="desc">Новое или б/у — подберём и рассчитаем окупаемость</span>
+      </button>
+      <button class="home-card" onclick="goTo('category-sell')">
+        <span class="icon">📦</span>
+        <span class="label">Продать оборудование</span>
+        <span class="desc">Оценим стоимость, поможем разместить объявление</span>
+      </button>
+      <button class="home-card" onclick="goTo('category-service')">
+        <span class="icon">🔧</span>
+        <span class="label">Обслуживание и ремонт</span>
+        <span class="desc">Диагностика неисправностей и подбор запчастей</span>
+      </button>
+      <button class="home-card" onclick="goTo('category-reseller')">
+        <span class="icon">💼</span>
+        <span class="label">Я перекупщик</span>
+        <span class="desc">Расчёт выкупа, маржи и потенциала перепродажи</span>
+      </button>
+      <button class="home-card pro-card" onclick="goTo('category-technologist')" style="grid-column: 1/-1;">
+        <span class="icon">👨‍🍳</span>
+        <span class="label">AI Технолог <span class="pro-badge">ПРО</span></span>
+        <span class="desc">Технология производства, рецептуры, настройка оборудования. Как отсаживать печенье, режимы выпечки, решение проблем на производстве</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- CATEGORY: КУПИТЬ -->
+  <div id="screen-category-buy" hidden>
+    <button class="back-btn" onclick="goBack('home')">← Назад</button>
+    <div class="section-h2">🛒 Купить оборудование</div>
+    <div class="nav-cards">
+      <button class="nav-card" onclick="goTo('chat-buy-new')">
+        <span class="card-icon">🆕</span>
+        <div class="card-body"><span class="card-title">Новое оборудование</span><span class="card-desc">Подберу модели под вашу задачу и объём</span></div>
+        <span class="card-arrow">→</span>
+      </button>
+      <button class="nav-card" onclick="goTo('chat-buy-used')">
+        <span class="card-icon">♻️</span>
+        <div class="card-body"><span class="card-title">Б/у оборудование</span><span class="card-desc">Цены на рынке, надёжные бренды, риски покупки</span></div>
+        <span class="card-arrow">→</span>
+      </button>
+      <button class="nav-card accent" onclick="goTo('chat-buy-turnkey')">
+        <span class="card-icon">🏭</span>
+        <div class="card-body"><span class="card-title">Открываю пекарню с нуля</span><span class="card-desc">Составлю полный список оборудования с бюджетом</span></div>
+        <span class="card-arrow">→</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- CATEGORY: ПРОДАТЬ -->
+  <div id="screen-category-sell" hidden>
+    <button class="back-btn" onclick="goBack('home')">← Назад</button>
+    <div class="section-h2">📦 Продать оборудование</div>
+    <div class="nav-cards">
+      <button class="nav-card" onclick="goTo('chat-sell-single')">
+        <span class="card-icon">📦</span>
+        <div class="card-body"><span class="card-title">Продаю одну позицию</span><span class="card-desc">AI оценит стоимость и поможет разместить объявление</span></div>
+        <span class="card-arrow">→</span>
+      </button>
+      <button class="nav-card" onclick="goTo('chat-sell-warehouse')">
+        <span class="card-icon">🗂️</span>
+        <div class="card-body"><span class="card-title">Продаю несколько позиций</span><span class="card-desc">Составим список, оценим каждую позицию и итого</span></div>
+        <span class="card-arrow">→</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- CATEGORY: СЕРВИС -->
+  <div id="screen-category-service" hidden>
+    <button class="back-btn" onclick="goBack('home')">← Назад</button>
+    <div class="section-h2">🔧 Обслуживание и ремонт</div>
+    <div class="nav-cards">
+      <button class="nav-card" onclick="goTo('chat-service')">
+        <span class="card-icon">🔧</span>
+        <div class="card-body"><span class="card-title">Диагностика неисправности</span><span class="card-desc">Опишите симптом — AI найдёт причину и решение</span></div>
+        <span class="card-arrow">→</span>
+      </button>
+      <button class="nav-card" onclick="goTo('chat-parts')">
+        <span class="card-icon">⚙️</span>
+        <div class="card-body"><span class="card-title">Подбор запчастей</span><span class="card-desc">Назовите модель и деталь — найдём артикул и поставщика</span></div>
+        <span class="card-arrow">→</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- CATEGORY: ПЕРЕКУПЩИК -->
+  <div id="screen-category-reseller" hidden>
+    <button class="back-btn" onclick="goBack('home')">← Назад</button>
+    <div class="section-h2">💼 Я перекупщик</div>
+    <div class="nav-cards">
+      <button class="nav-card" onclick="goTo('chat-reseller-single')">
+        <span class="card-icon">📦</span>
+        <div class="card-body"><span class="card-title">Одна позиция</span><span class="card-desc">Цена выкупа, перепродажи и маржа</span></div>
+        <span class="card-arrow">→</span>
+      </button>
+      <button class="nav-card" onclick="goTo('chat-reseller-line')">
+        <span class="card-icon">🔗</span>
+        <div class="card-body"><span class="card-title">Линия целиком</span><span class="card-desc">Расчёт по каждой позиции + бонус за комплектность</span></div>
+        <span class="card-arrow">→</span>
+      </button>
+      <button class="nav-card" onclick="goTo('chat-reseller-warehouse')">
+        <span class="card-icon">🗂️</span>
+        <div class="card-body"><span class="card-title">Выбрать из склада</span><span class="card-desc">Покажу что выгодно брать — зелёный / жёлтый / красный</span></div>
+        <span class="card-arrow">→</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- CATEGORY: ТЕХНОЛОГ -->
+  <div id="screen-category-technologist" hidden>
+    <button class="back-btn" onclick="goBack('home')">← Назад</button>
+    <div class="section-h2">👨‍🍳 AI Технолог</div>
+    <div class="nav-cards">
+      <button class="nav-card accent" onclick="goTo('chat-tech-baking')">
+        <span class="card-icon">🍞</span>
+        <div class="card-body"><span class="card-title">Технология выпечки</span><span class="card-desc">Режимы печи, время, температура, пар — для хлеба, булок, печенья</span></div>
+        <span class="card-arrow">→</span>
+      </button>
+      <button class="nav-card" onclick="goTo('chat-tech-troubleshoot')">
+        <span class="card-icon">🔍</span>
+        <div class="card-body"><span class="card-title">Решение проблем</span><span class="card-desc">Хлеб не поднимается, печенье расплывается, тесто рвётся — найдём причину</span></div>
+        <span class="card-arrow">→</span>
+      </button>
+      <button class="nav-card" onclick="goTo('chat-tech-recipe')">
+        <span class="card-icon">📋</span>
+        <div class="card-body"><span class="card-title">Рецептуры под оборудование</span><span class="card-desc">Адаптируем рецептуру под вашу печь, тестомес, отсадочную машину</span></div>
+        <span class="card-arrow">→</span>
+      </button>
+      <button class="nav-card" onclick="goTo('chat-tech-setup')">
+        <span class="card-icon">⚙️</span>
+        <div class="card-body"><span class="card-title">Настройка оборудования</span><span class="card-desc">Как настроить отсадочную машину, тестомес, расстойник под конкретный продукт</span></div>
+        <span class="card-arrow">→</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- CHAT PANELS -->
+
+  <!-- Купить новое -->
+  <div id="screen-chat-buy-new" hidden>
+    <button class="back-btn" onclick="goBack('category-buy')">← Назад</button>
+    <div class="chat-section" id="panel-buy-new">
+      <div class="chat" id="chat-buy-new"></div>
+      <div class="suggestions" id="sug-buy-new">
+        <button onclick="sendTo('buy-new', this.textContent)">Нужна печь для хлеба</button>
+        <button onclick="sendTo('buy-new', this.textContent)">Тестомес для пекарни</button>
+        <button onclick="sendTo('buy-new', this.textContent)">Открываю кондитерский цех</button>
+        <button onclick="sendTo('buy-new', this.textContent)">Расширяю производство</button>
+      </div>
+      <div class="previews" id="prev-buy-new"></div>
+      <form class="composer" onsubmit="submitChat(event,'buy-new')">
+        <button type="button" class="attach-btn" onclick="document.getElementById('file-buy-new').click()">📎</button>
+        <input id="file-buy-new" type="file" accept="image/*" multiple hidden onchange="addPhotos('buy-new',this)">
+        <input id="input-buy-new" type="text" placeholder="Что планируете производить?">
+        <button type="submit">Отправить</button>
+      </form>
+    </div>
+    <form class="lead-form" id="lead-buy-new" hidden>
+      <h3>Получить КП от поставщиков</h3>
+      <p class="sub">Подберём предложения от 3–5 поставщиков в течение дня.</p>
+      <div class="fields">
+        <input name="name" placeholder="Имя" required>
+        <input name="phone" type="tel" placeholder="Телефон" required>
+        <input name="email" type="email" placeholder="Email" required>
+        <input name="city" placeholder="Город" required>
+      </div>
+      <button type="submit" onclick="submitLead(event,'lead-buy-new','buy-new')">Получить КП</button>
+    </form>
+  </div>
+
+  <!-- Купить б/у -->
+  <div id="screen-chat-buy-used" hidden>
+    <button class="back-btn" onclick="goBack('category-buy')">← Назад</button>
+    <div class="chat-section">
+      <div class="chat" id="chat-buy-used"></div>
+      <div class="suggestions" id="sug-buy-used">
+        <button onclick="sendTo('buy-used', this.textContent)">Тестомес б/у</button>
+        <button onclick="sendTo('buy-used', this.textContent)">Печь б/у</button>
+        <button onclick="sendTo('buy-used', this.textContent)">Расстойный шкаф б/у</button>
+        <button onclick="sendTo('buy-used', this.textContent)">Отсадочная машина б/у</button>
+      </div>
+      <div class="previews" id="prev-buy-used"></div>
+      <form class="composer" onsubmit="submitChat(event,'buy-used')">
+        <button type="button" class="attach-btn" onclick="document.getElementById('file-buy-used').click()">📎</button>
+        <input id="file-buy-used" type="file" accept="image/*" multiple hidden onchange="addPhotos('buy-used',this)">
+        <input id="input-buy-used" type="text" placeholder="Какое оборудование ищете?">
+        <button type="submit">Спросить</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Цех под ключ -->
+  <div id="screen-chat-buy-turnkey" hidden>
+    <button class="back-btn" onclick="goBack('category-buy')">← Назад</button>
+    <div class="chat-section">
+      <p class="panel-intro">Спланируем пекарню под ключ: список оборудования, обязательное vs желательное, минимальный и оптимальный бюджет, окупаемость.</p>
+      <div class="chat" id="chat-buy-turnkey"></div>
+      <div class="suggestions" id="sug-buy-turnkey">
+        <button onclick="sendTo('buy-turnkey', this.textContent)">Мини-пекарня 200 кг хлеба в день</button>
+        <button onclick="sendTo('buy-turnkey', this.textContent)">Кондитерский цех 300 кг</button>
+        <button onclick="sendTo('buy-turnkey', this.textContent)">Пекарня при магазине</button>
+      </div>
+      <div class="previews" id="prev-buy-turnkey"></div>
+      <form class="composer" onsubmit="submitChat(event,'buy-turnkey')">
+        <button type="button" class="attach-btn" onclick="document.getElementById('file-buy-turnkey').click()">📎</button>
+        <input id="file-buy-turnkey" type="file" accept="image/*" multiple hidden onchange="addPhotos('buy-turnkey',this)">
+        <input id="input-buy-turnkey" type="text" placeholder="Что планируете производить?">
+        <button type="submit">Отправить</button>
+      </form>
+    </div>
+    <div id="table-buy-turnkey"></div>
+  </div>
+
+  <!-- Продать одну позицию -->
+  <div id="screen-chat-sell-single" hidden>
+    <button class="back-btn" onclick="goBack('category-sell')">← Назад</button>
+    <div class="chat-section">
+      <div class="chat" id="chat-sell-single"></div>
+      <div class="suggestions" id="sug-sell-single">
+        <button onclick="sendTo('sell-single', this.textContent)">Тестомес Apach ATR 20</button>
+        <button onclick="sendTo('sell-single', this.textContent)">Печь конвекционная Unox</button>
+        <button onclick="sendTo('sell-single', this.textContent)">Расстойный шкаф б/у</button>
+      </div>
+      <div class="previews" id="prev-sell-single"></div>
+      <form class="composer" onsubmit="submitChat(event,'sell-single')">
+        <button type="button" class="attach-btn" onclick="document.getElementById('file-sell-single').click()">📎</button>
+        <input id="file-sell-single" type="file" accept="image/*" multiple hidden onchange="addPhotos('sell-single',this)">
+        <input id="input-sell-single" type="text" placeholder="Назовите оборудование или приложите фото…">
+        <button type="submit">Оценить</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Продать несколько -->
+  <div id="screen-chat-sell-warehouse" hidden>
+    <button class="back-btn" onclick="goBack('category-sell')">← Назад</button>
+    <div class="chat-section">
+      <p class="panel-intro">Перечислите оборудование — оценим каждую позицию и итоговую стоимость склада.</p>
+      <div class="chat" id="chat-sell-warehouse"></div>
+      <div class="previews" id="prev-sell-warehouse"></div>
+      <form class="composer" onsubmit="submitChat(event,'sell-warehouse')">
+        <button type="button" class="attach-btn" onclick="document.getElementById('file-sell-warehouse').click()">📎</button>
+        <input id="file-sell-warehouse" type="file" accept="image/*" multiple hidden onchange="addPhotos('sell-warehouse',this)">
+        <input id="input-sell-warehouse" type="text" placeholder="Перечислите позиции…">
+        <button type="submit">Отправить</button>
+      </form>
+    </div>
+    <div id="table-sell-warehouse"></div>
+  </div>
+
+  <!-- Сервис -->
+  <div id="screen-chat-service" hidden>
+    <button class="back-btn" onclick="goBack('category-service')">← Назад</button>
+    <div class="chat-section">
+      <div class="chat" id="chat-service"></div>
+      <div class="suggestions" id="sug-service">
+        <button onclick="sendTo('service', this.textContent)">Тестомес не месит, гудит</button>
+        <button onclick="sendTo('service', this.textContent)">Печь не держит температуру</button>
+        <button onclick="sendTo('service', this.textContent)">Расстойник не греет</button>
+      </div>
+      <div class="previews" id="prev-service"></div>
+      <form class="composer" onsubmit="submitChat(event,'service')">
+        <button type="button" class="attach-btn" onclick="document.getElementById('file-service').click()">📎</button>
+        <input id="file-service" type="file" accept="image/*" multiple hidden onchange="addPhotos('service',this)">
+        <input id="input-service" type="text" placeholder="Опишите симптом или приложите фото…">
+        <button type="submit">Диагностировать</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Запчасти -->
+  <div id="screen-chat-parts" hidden>
+    <button class="back-btn" onclick="goBack('category-service')">← Назад</button>
+    <div class="chat-section">
+      <div class="chat" id="chat-parts"></div>
+      <div class="suggestions" id="sug-parts">
+        <button onclick="sendTo('parts', this.textContent)">Крюк для тестомеса Apach</button>
+        <button onclick="sendTo('parts', this.textContent)">ТЭН для печи Муссон</button>
+        <button onclick="sendTo('parts', this.textContent)">Уплотнитель двери расстойника</button>
+      </div>
+      <div class="previews" id="prev-parts"></div>
+      <form class="composer" onsubmit="submitChat(event,'parts')">
+        <button type="button" class="attach-btn" onclick="document.getElementById('file-parts').click()">📎</button>
+        <input id="file-parts" type="file" accept="image/*" multiple hidden onchange="addPhotos('parts',this)">
+        <input id="input-parts" type="text" placeholder="Модель и нужная деталь…">
+        <button type="submit">Найти</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Перекупщик одна позиция -->
+  <div id="screen-chat-reseller-single" hidden>
+    <button class="back-btn" onclick="goBack('category-reseller')">← Назад</button>
+    <div class="chat-section">
+      <div class="chat" id="chat-reseller-single"></div>
+      <div class="suggestions" id="sug-reseller-single">
+        <button onclick="sendTo('reseller-single', this.textContent)">Тестомес Прима-300</button>
+        <button onclick="sendTo('reseller-single', this.textContent)">Печь Восход ХПЭ-500</button>
+        <button onclick="sendTo('reseller-single', this.textContent)">Расстойник Smeg б/у</button>
+      </div>
+      <div class="previews" id="prev-reseller-single"></div>
+      <form class="composer" onsubmit="submitChat(event,'reseller-single')">
+        <button type="button" class="attach-btn" onclick="document.getElementById('file-reseller-single').click()">📎</button>
+        <input id="file-reseller-single" type="file" accept="image/*" multiple hidden onchange="addPhotos('reseller-single',this)">
+        <input id="input-reseller-single" type="text" placeholder="Назовите модель…">
+        <button type="submit">Считать</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Перекупщик линия -->
+  <div id="screen-chat-reseller-line" hidden>
+    <button class="back-btn" onclick="goBack('category-reseller')">← Назад</button>
+    <div class="chat-section">
+      <p class="panel-intro">Перечисляйте позиции линии по одной — соберу таблицу с маржей и бонусом за комплектность.</p>
+      <div class="chat" id="chat-reseller-line"></div>
+      <div class="previews" id="prev-reseller-line"></div>
+      <form class="composer" onsubmit="submitChat(event,'reseller-line')">
+        <button type="button" class="attach-btn" onclick="document.getElementById('file-reseller-line').click()">📎</button>
+        <input id="file-reseller-line" type="file" accept="image/*" multiple hidden onchange="addPhotos('reseller-line',this)">
+        <input id="input-reseller-line" type="text" placeholder="Первая позиция линии…">
+        <button type="submit">Отправить</button>
+      </form>
+    </div>
+    <div id="table-reseller-line"></div>
+  </div>
+
+  <!-- Перекупщик склад -->
+  <div id="screen-chat-reseller-warehouse" hidden>
+    <button class="back-btn" onclick="goBack('category-reseller')">← Назад</button>
+    <div class="chat-section">
+      <p class="panel-intro">Перечислите что есть на складе — покажу что выгодно брать (зелёный / жёлтый / красный).</p>
+      <div class="chat" id="chat-reseller-warehouse"></div>
+      <div class="suggestions" id="sug-reseller-warehouse">
+        <button onclick="sendTo('reseller-warehouse', this.textContent)">Печь Восход 2018, тестомес Прима 2015, два расстойника</button>
+        <button onclick="sendTo('reseller-warehouse', this.textContent)">Пекарское б/у: расстойник, тестомес, конвекционная печь Unox</button>
+      </div>
+      <div class="previews" id="prev-reseller-warehouse"></div>
+      <form class="composer" onsubmit="submitChat(event,'reseller-warehouse')">
+        <button type="button" class="attach-btn" onclick="document.getElementById('file-reseller-warehouse').click()">📎</button>
+        <input id="file-reseller-warehouse" type="file" accept="image/*" multiple hidden onchange="addPhotos('reseller-warehouse',this)">
+        <input id="input-reseller-warehouse" type="text" placeholder="Перечислите позиции склада…">
+        <button type="submit">Оценить</button>
+      </form>
+    </div>
+    <div id="table-reseller-warehouse"></div>
+  </div>
+
+  <!-- AI Технолог - Технология выпечки -->
+  <div id="screen-chat-tech-baking" hidden>
+    <button class="back-btn" onclick="goBack('category-technologist')">← Назад</button>
+    <div class="chat-section" id="tech-gate-baking">
+      <div class="chat" id="chat-tech-baking"></div>
+      <div class="suggestions" id="sug-tech-baking">
+        <button onclick="sendTo('tech-baking', this.textContent)">Как отсаживать печенье курабье</button>
+        <button onclick="sendTo('tech-baking', this.textContent)">Режим выпечки багета</button>
+        <button onclick="sendTo('tech-baking', this.textContent)">Температура для ржаного хлеба</button>
+        <button onclick="sendTo('tech-baking', this.textContent)">Сколько пара нужно для чиабатты</button>
+      </div>
+      <div class="previews" id="prev-tech-baking"></div>
+      <form class="composer" onsubmit="submitChat(event,'tech-baking')">
+        <button type="button" class="attach-btn" onclick="document.getElementById('file-tech-baking').click()">📎</button>
+        <input id="file-tech-baking" type="file" accept="image/*" multiple hidden onchange="addPhotos('tech-baking',this)">
+        <input id="input-tech-baking" type="text" placeholder="Спросите про технологию выпечки…">
+        <button type="submit">Спросить</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- AI Технолог - Решение проблем -->
+  <div id="screen-chat-tech-troubleshoot" hidden>
+    <button class="back-btn" onclick="goBack('category-technologist')">← Назад</button>
+    <div class="chat-section">
+      <div class="chat" id="chat-tech-troubleshoot"></div>
+      <div class="suggestions" id="sug-tech-troubleshoot">
+        <button onclick="sendTo('tech-troubleshoot', this.textContent)">Хлеб не поднимается</button>
+        <button onclick="sendTo('tech-troubleshoot', this.textContent)">Печенье расплывается на листе</button>
+        <button onclick="sendTo('tech-troubleshoot', this.textContent)">Тесто рвётся при формовке</button>
+        <button onclick="sendTo('tech-troubleshoot', this.textContent)">Корка слишком бледная</button>
+      </div>
+      <div class="previews" id="prev-tech-troubleshoot"></div>
+      <form class="composer" onsubmit="submitChat(event,'tech-troubleshoot')">
+        <button type="button" class="attach-btn" onclick="document.getElementById('file-tech-troubleshoot').click()">📎</button>
+        <input id="file-tech-troubleshoot" type="file" accept="image/*" multiple hidden onchange="addPhotos('tech-troubleshoot',this)">
+        <input id="input-tech-troubleshoot" type="text" placeholder="Опишите проблему или приложите фото…">
+        <button type="submit">Найти причину</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- AI Технолог - Рецептуры -->
+  <div id="screen-chat-tech-recipe" hidden>
+    <button class="back-btn" onclick="goBack('category-technologist')">← Назад</button>
+    <div class="chat-section">
+      <div class="chat" id="chat-tech-recipe"></div>
+      <div class="suggestions" id="sug-tech-recipe">
+        <button onclick="sendTo('tech-recipe', this.textContent)">Рецептура песочного печенья для отсадки</button>
+        <button onclick="sendTo('tech-recipe', this.textContent)">Тесто для багета под конвекционную печь</button>
+        <button onclick="sendTo('tech-recipe', this.textContent)">Бисквит для тоннельной печи</button>
+      </div>
+      <div class="previews" id="prev-tech-recipe"></div>
+      <form class="composer" onsubmit="submitChat(event,'tech-recipe')">
+        <button type="button" class="attach-btn" onclick="document.getElementById('file-tech-recipe').click()">📎</button>
+        <input id="file-tech-recipe" type="file" accept="image/*" multiple hidden onchange="addPhotos('tech-recipe',this)">
+        <input id="input-tech-recipe" type="text" placeholder="Продукт и ваше оборудование…">
+        <button type="submit">Подобрать рецептуру</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- AI Технолог - Настройка -->
+  <div id="screen-chat-tech-setup" hidden>
+    <button class="back-btn" onclick="goBack('category-technologist')">← Назад</button>
+    <div class="chat-section">
+      <div class="chat" id="chat-tech-setup"></div>
+      <div class="suggestions" id="sug-tech-setup">
+        <button onclick="sendTo('tech-setup', this.textContent)">Как настроить отсадочную машину на печенье</button>
+        <button onclick="sendTo('tech-setup', this.textContent)">Настройка тестомеса под сдобное тесто</button>
+        <button onclick="sendTo('tech-setup', this.textContent)">Программа расстойника для багета</button>
+      </div>
+      <div class="previews" id="prev-tech-setup"></div>
+      <form class="composer" onsubmit="submitChat(event,'tech-setup')">
+        <button type="button" class="attach-btn" onclick="document.getElementById('file-tech-setup').click()">📎</button>
+        <input id="file-tech-setup" type="file" accept="image/*" multiple hidden onchange="addPhotos('tech-setup',this)">
+        <input id="input-tech-setup" type="text" placeholder="Оборудование и продукт…">
+        <button type="submit">Настроить</button>
+      </form>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+const API_BASE = 'https://indmart.ru/api';
+const MAX_PHOTOS = 5;
+const LEAD_MARKER = '[[LEAD]]';
+
+// ── State ────────────────────────────────────────────────────────────────────
+const chatHistories = {};
+const chatPhotos = {};
+
+function getHistory(key) {
+  if (!chatHistories[key]) chatHistories[key] = [];
+  return chatHistories[key];
+}
+function getPhotos(key) {
+  if (!chatPhotos[key]) chatPhotos[key] = [];
+  return chatPhotos[key];
+}
+
+// ── Navigation ───────────────────────────────────────────────────────────────
+let currentScreen = 'home';
+
+function goTo(screen) {
+  document.querySelectorAll('[id^="screen-"]').forEach(el => el.hidden = true);
+  const el = document.getElementById('screen-' + screen);
+  if (el) { el.hidden = false; currentScreen = screen; }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Init chat on first visit
+  const chatKey = screen.replace('chat-', '');
+  if (screen.startsWith('chat-') && getHistory(chatKey).length === 0) {
+    initChat(chatKey);
+  }
+}
+
+function goBack(target) {
+  goTo(target);
+}
+
+// ── System prompts ───────────────────────────────────────────────────────────
+const VISION = '\n\nЕсли пользователь прикрепляет фото оборудования — анализируй его для определения модели, состояния, неисправностей.';
+
+const SYSTEMS = {
+  'buy-new':
+    'Ты консультант по пекарному и кондитерскому оборудованию в России.\n\n' +
+    'ЭТАП 1 — БЫСТРЫЙ РАСЧЁТ. Задавай вопросы по одному:\n' +
+    '1. В каком регионе?\n2. Что производить?\n3. Объём в смену?\n4. Цена продажи продукта?\n\n' +
+    'После: подбери модели с ценами и быстрый расчёт окупаемости на типовых нормах региона. Укажи что данные типовые.\n\n' +
+    'В конце предложи: "Хотите точный расчёт? [Да] [Нет]"\n\n' +
+    'ЭТАП 2 (если согласился): сырьё → электричество → зарплаты → аренда → упаковка. Сравни быстрый vs точный.' + VISION,
+
+  'buy-used':
+    'Ты эксперт по рынку б/у пекарного и кондитерского оборудования в России.\n' +
+    'Расскажи про оборудование: средние цены б/у, надёжные бренды, риски, на что смотреть при осмотре.\n' +
+    'Затем спроси регион, продукт, объём — и сделай расчёт окупаемости.\n' +
+    'В конце предложи точный расчёт.' + VISION,
+
+  'buy-turnkey':
+    'Помоги спланировать пекарню или кондитерский цех под ключ.\n\n' +
+    'Задавай по одному вопросу: регион → продукт → объём → бюджет → цена продажи.\n\n' +
+    'Составь список оборудования: обязательное и желательное. Минимальный и оптимальный бюджет. Окупаемость.\n\n' +
+    'В КАЖДОМ ответе обновляй список:\n===ITEMS===\n{"items":[{"title":"...","brand":"...","price":...,"tier":"required"}],"payback_min_months":"10-14","payback_optimal_months":"14-18"}\n===END===' + VISION,
+
+  'sell-single':
+    'Ты помогаешь продавцу пекарного или кондитерского оборудования оценить позицию и разместить объявление.\n' +
+    'Назови рыночную цену б/у, диапазон, на что влияет цена. Дай рекомендации по описанию объявления.\n' +
+    'Предложи разместить на IndMart: https://indmart.ru/listings' + VISION,
+
+  'sell-warehouse':
+    'Помоги продавцу оценить склад пекарного/кондитерского оборудования.\n' +
+    'По каждой позиции: название, оценочная цена б/у, рекомендация (продавать сейчас / подождать / утилизировать).\n' +
+    'В КАЖДОМ ответе обновляй:\n===ITEMS===\n{"items":[{"title":"...","price_used":...,"notes":"..."}]}\n===END===' + VISION,
+
+  'service':
+    'Ты специалист по диагностике пекарного и кондитерского оборудования.\n' +
+    'По описанию симптомов: определи вероятную причину, шаги диагностики, способ устранения. ' +
+    'Укажи что можно сделать самостоятельно, а что требует мастера. Примерная стоимость ремонта.' + VISION,
+
+  'parts':
+    'Ты помогаешь найти запчасти для пекарного и кондитерского оборудования.\n' +
+    'Подбери артикул, поставщиков в России, примерную цену. ' +
+    'Если не знаешь точный артикул — объясни как его найти по шильдику или документации.' + VISION,
+
+  'reseller-single':
+    'Ты помогаешь перекупщику пекарного оборудования зарабатывать на арбитраже.\n' +
+    'Показывай: цена выкупа (дисконт 30-40% от рынка), цена перепродажи, маржа ₽ и %, срок оборота, риски.\n' +
+    'Формат — чёткая таблица с цифрами.' + VISION,
+
+  'reseller-line':
+    'Ты помогаешь перекупщику оценить линию пекарного оборудования для арбитража.\n' +
+    'По каждой позиции: buy_price (выкуп -30-40%), sell_price (перепродажа).\n' +
+    'Линия целиком продаётся дороже суммы частей (+15-25%).\n' +
+    'В КАЖДОМ ответе:\n===ITEMS===\n{"items":[{"title":"...","brand":"...","buy_price":...,"sell_price":...}],"line_bonus_pct":20}\n===END===' + VISION,
+
+  'reseller-warehouse':
+    'Ты помогаешь перекупщику выбрать что взять со склада пекарного оборудования.\n' +
+    'Каждую позицию оцени: зелёный (выгодно брать), жёлтый (можно, осторожно), красный (не брать).\n' +
+    'Для зелёных и жёлтых — цена выкупа и перепродажи.\n' +
+    'В КАЖДОМ ответе:\n===ITEMS===\n{"items":[{"title":"...","verdict":"green","buy_price":...,"sell_price":...,"reason":"..."}]}\n===END===' + VISION,
+
+  'tech-baking':
+    'Ты AI технолог хлебопекарного и кондитерского производства.\n' +
+    'Отвечай на вопросы по технологии выпечки: режимы печи (температура, время, пар), ' +
+    'особенности разных видов продукции, типичные ошибки и как их избежать.\n' +
+    'Специализация: пекарное и кондитерское производство — хлеб, булочки, печенье, торты, багеты.\n' +
+    'Давай конкретные цифры (градусы, минуты, % влажности). Объясняй почему именно так.' + VISION,
+
+  'tech-troubleshoot':
+    'Ты AI технолог хлебопекарного производства. Помогаешь решать технологические проблемы.\n' +
+    'По описанию дефекта определи: причину (рецептура? оборудование? технология?), ' +
+    'что именно пошло не так, как исправить. Давай конкретные рекомендации.\n' +
+    'Если нужна дополнительная информация — задай один уточняющий вопрос.' + VISION,
+
+  'tech-recipe':
+    'Ты AI технолог. Помогаешь адаптировать рецептуры под конкретное оборудование пекарни.\n' +
+    'Уточни: какое оборудование (марка/модель), его особенности, объём производства.\n' +
+    'Дай рецептуру с граммами на партию, параметры обработки теста, режимы выпечки.\n' +
+    'Учитывай российское сырьё и доступность ингредиентов.' + VISION,
+
+  'tech-setup':
+    'Ты AI технолог. Помогаешь настроить пекарное и кондитерское оборудование под конкретный продукт.\n' +
+    'Уточни модель оборудования и продукт. Дай конкретные параметры настройки: ' +
+    'скорость, время, температуру, давление, зазоры — в зависимости от типа машины.\n' +
+    'Объясни логику настройки чтобы технолог мог корректировать самостоятельно.' + VISION,
+};
+
+const GREETINGS = {
+  'buy-new': 'Здравствуйте! Помогу подобрать пекарное или кондитерское оборудование. Что планируете производить?',
+  'buy-used': 'Расскажу про рынок б/у пекарного оборудования: цены, бренды, риски. Какое оборудование ищете?',
+  'buy-turnkey': 'Спланируем пекарню или кондитерский цех под ключ. Что планируете производить и в каком объёме?',
+  'sell-single': 'Оценю ваше оборудование и помогу разместить объявление. Что продаёте?',
+  'sell-warehouse': 'Перечислите оборудование — оценю каждую позицию и помогу определить приоритеты продажи.',
+  'service': 'Диагностирую неисправность пекарного оборудования. Опишите симптом или приложите фото.',
+  'parts': 'Помогу найти запчасти для пекарного оборудования. Назовите модель и нужную деталь.',
+  'reseller-single': 'Считаю арбитраж: выкуп с дисконтом, перепродажа, маржа, срок оборота. Назовите модель.',
+  'reseller-line': 'Соберём таблицу по линии оборудования с маржей и бонусом за комплектность. Назовите первую позицию.',
+  'reseller-warehouse': 'Оценю склад: зелёный / жёлтый / красный — что брать выгодно. Перечислите позиции.',
+  'tech-baking': 'Я AI технолог хлебопекарного производства. Спрашивайте про режимы выпечки, температуры, пар — для любого вида продукции.',
+  'tech-troubleshoot': 'Помогу найти причину технологической проблемы. Опишите что происходит или приложите фото продукта.',
+  'tech-recipe': 'Подберу или адаптирую рецептуру под ваше оборудование. Какой продукт и что за оборудование?',
+  'tech-setup': 'Помогу настроить оборудование под конкретный продукт. Какая машина и что производите?',
+};
+
+// ── Init chat ────────────────────────────────────────────────────────────────
+function initChat(key) {
+  const greeting = GREETINGS[key];
+  if (greeting) addMessage(key, 'ai', greeting);
+}
+
+// ── Chat UI ──────────────────────────────────────────────────────────────────
+function addMessage(key, role, text) {
+  const chatEl = document.getElementById('chat-' + key);
+  if (!chatEl) return;
+  const row = document.createElement('div');
+  row.className = 'msg-row ' + role;
+  const avatar = document.createElement('span');
+  avatar.className = 'avatar';
+  avatar.textContent = role === 'user' ? '👤' : '🤖';
+  const bubble = document.createElement('div');
+  bubble.className = 'msg ' + role;
+  bubble.textContent = text;
+  if (role === 'user') { row.appendChild(bubble); row.appendChild(avatar); }
+  else { row.appendChild(avatar); row.appendChild(bubble); }
+  chatEl.appendChild(row);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return bubble;
+}
+
+function addTyping(key) {
+  const chatEl = document.getElementById('chat-' + key);
+  if (!chatEl) return null;
+  const row = document.createElement('div');
+  row.className = 'msg-row ai';
+  const avatar = document.createElement('span');
+  avatar.className = 'avatar';
+  avatar.textContent = '🤖';
+  const bubble = document.createElement('div');
+  bubble.className = 'msg ai typing';
+  bubble.textContent = 'печатает…';
+  row.appendChild(avatar);
+  row.appendChild(bubble);
+  chatEl.appendChild(row);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  bubble.removeRow = () => row.remove();
+  return bubble;
+}
+
+// ── Photos ───────────────────────────────────────────────────────────────────
+function addPhotos(key, input) {
+  const files = Array.from(input.files || []);
+  const photos = getPhotos(key);
+  const remaining = MAX_PHOTOS - photos.length;
+  const toAdd = files.slice(0, remaining);
+  Promise.all(toAdd.map(readBase64)).then(added => {
+    photos.push(...added);
+    renderPreviews(key);
+  });
+  input.value = '';
+}
+
+function readBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res({ dataUrl: r.result, data: r.result.split(',')[1], mediaType: file.type });
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+function renderPreviews(key) {
+  const el = document.getElementById('prev-' + key);
+  if (!el) return;
+  const photos = getPhotos(key);
+  el.innerHTML = photos.map((p, i) =>
+    `<div class="preview"><img src="${p.dataUrl}"><button class="remove" onclick="removePhoto('${key}',${i})">×</button></div>`
+  ).join('');
+}
+
+function removePhoto(key, idx) {
+  getPhotos(key).splice(idx, 1);
+  renderPreviews(key);
+}
+
+// ── Send message ─────────────────────────────────────────────────────────────
+async function submitChat(e, key) {
+  e.preventDefault();
+  const input = document.getElementById('input-' + key);
+  const text = input.value.trim();
+  const photos = getPhotos(key);
+  if (!text && !photos.length) return;
+
+  input.value = '';
+  const sugEl = document.getElementById('sug-' + key);
+  if (sugEl) sugEl.style.display = 'none';
+
+  // Show user message
+  if (photos.length) {
+    const chatEl = document.getElementById('chat-' + key);
+    const row = document.createElement('div');
+    row.className = 'msg-row user';
+    const avatar = document.createElement('span');
+    avatar.className = 'avatar';
+    avatar.textContent = '👤';
+    const bubble = document.createElement('div');
+    bubble.className = 'msg user';
+    photos.forEach(p => {
+      const img = document.createElement('img');
+      img.className = 'msg-photo';
+      img.src = p.dataUrl;
+      bubble.appendChild(img);
+    });
+    if (text) { const t = document.createElement('div'); t.textContent = text; bubble.appendChild(t); }
+    row.appendChild(bubble); row.appendChild(avatar);
+    chatEl.appendChild(row);
+    chatEl.scrollTop = chatEl.scrollHeight;
+  } else {
+    addMessage(key, 'user', text);
+  }
+
+  // Build history entry
+  const history = getHistory(key);
+  if (photos.length) {
+    const content = [];
+    photos.forEach(p => content.push({ type: 'image', source: { type: 'base64', media_type: p.mediaType, data: p.data } }));
+    if (text) content.push({ type: 'text', text });
+    history.push({ role: 'user', content });
+  } else {
+    history.push({ role: 'user', content: text });
+  }
+  getPhotos(key).length = 0;
+  renderPreviews(key);
+
+  // Disable submit
+  const form = document.querySelector(`#screen-chat-${key} .composer`);
+  const submitBtn = form?.querySelector('button[type=submit]');
+  if (submitBtn) submitBtn.disabled = true;
+
+  const typing = addTyping(key);
+
+  try {
+    const res = await fetch(API_BASE + '/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: history, system: SYSTEMS[key] || '', max_tokens: 1024 })
+    });
+    if (!res.ok) throw new Error('API ' + res.status);
+    const data = await res.json();
+    const reply = data.reply || '';
+    history.push({ role: 'assistant', content: reply });
+    if (typing) typing.removeRow();
+
+    // Handle structured replies
+    const parsed = extractItems(reply);
+    const cleaned = reply.replace(/===ITEMS===[\s\S]*?===END===/g, '').replace(LEAD_MARKER, '').trim();
+    addMessage(key, 'ai', cleaned || reply);
+
+    if (parsed) renderTable(key, parsed);
+
+    // Show lead form
+    if (reply.includes(LEAD_MARKER)) {
+      const leadEl = document.getElementById('lead-' + key);
+      if (leadEl) { leadEl.hidden = false; leadEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+    }
+  } catch(err) {
+    if (typing) typing.removeRow();
+    addMessage(key, 'ai', '⚠️ Ошибка соединения. Попробуйте ещё раз.');
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
+}
+
+function sendTo(key, text) {
+  const input = document.getElementById('input-' + key);
+  if (input) { input.value = text; }
+  const form = document.querySelector(`#screen-chat-${key} .composer`);
+  if (form) form.dispatchEvent(new Event('submit', { cancelable: true }));
+}
+
+// ── Tables ───────────────────────────────────────────────────────────────────
+function extractItems(text) {
+  const m = String(text || '').match(/===ITEMS===\s*([\s\S]*?)\s*===END===/);
+  if (!m) return null;
+  try { return JSON.parse(m[1]); } catch { return null; }
+}
+
+const fmtRub = n => Number(n || 0).toLocaleString('ru-RU') + ' ₽';
+
+function renderTable(key, data) {
+  const el = document.getElementById('table-' + key);
+  if (!el || !data.items) return;
+
+  if (key === 'reseller-line') {
+    const bonus = data.line_bonus_pct || 20;
+    const sumBuy = data.items.reduce((s, it) => s + (Number(it.buy_price) || 0), 0);
+    const sumSell = data.items.reduce((s, it) => s + (Number(it.sell_price) || 0), 0);
+    const bonusRub = Math.round(sumSell * bonus / 100);
+    const rows = data.items.map(it =>
+      `<tr><td>${it.title || ''} ${it.brand || ''}</td><td class="price-col">${fmtRub(it.buy_price)}</td><td class="price-col">${fmtRub(it.sell_price)}</td><td class="price-col">${fmtRub((it.sell_price||0)-(it.buy_price||0))}</td></tr>`
+    ).join('');
+    el.innerHTML = `<table class="warehouse-table"><thead><tr><th>Позиция</th><th class="price-col">Выкуп</th><th class="price-col">Продажа</th><th class="price-col">Маржа</th></tr></thead><tbody>${rows}<tr class="total-row"><td>Итого + бонус ${bonus}%</td><td class="price-col">${fmtRub(sumBuy)}</td><td class="price-col">${fmtRub(sumSell + bonusRub)}</td><td class="price-col">${fmtRub(sumSell + bonusRub - sumBuy)}</td></tr></tbody></table>`;
+    return;
+  }
+
+  if (key === 'reseller-warehouse') {
+    const verdictMap = { green: '🟢 Брать', yellow: '🟡 Осторожно', red: '🔴 Не брать' };
+    const rows = data.items.map(it =>
+      `<tr><td>${it.title || ''}</td><td>${verdictMap[it.verdict] || it.verdict}</td><td class="price-col">${it.buy_price ? fmtRub(it.buy_price) : '—'}</td><td class="price-col">${it.sell_price ? fmtRub(it.sell_price) : '—'}</td><td>${it.reason || ''}</td></tr>`
+    ).join('');
+    el.innerHTML = `<table class="warehouse-table"><thead><tr><th>Позиция</th><th>Вердикт</th><th class="price-col">Выкуп</th><th class="price-col">Продажа</th><th>Причина</th></tr></thead><tbody>${rows}</tbody></table>`;
+    return;
+  }
+
+  if (key === 'buy-turnkey') {
+    const sorted = [...data.items].sort((a, b) => (a.tier === 'required' ? 0 : 1) - (b.tier === 'required' ? 0 : 1));
+    const reqSum = sorted.filter(i => i.tier === 'required').reduce((s, i) => s + (Number(i.price) || 0), 0);
+    const desSum = sorted.filter(i => i.tier !== 'required').reduce((s, i) => s + (Number(i.price) || 0), 0);
+    const rows = sorted.map(it =>
+      `<tr class="${it.tier !== 'required' ? 'row-yellow' : ''}"><td>${it.title || ''} ${it.brand || ''}</td><td class="price-col">${fmtRub(it.price)}</td><td>${it.tier === 'required' ? 'Обязательное' : 'Желательное'}</td></tr>`
+    ).join('');
+    const pb1 = data.payback_min_months ? ` — окупаемость ${data.payback_min_months} мес` : '';
+    const pb2 = data.payback_optimal_months ? ` — окупаемость ${data.payback_optimal_months} мес` : '';
+    el.innerHTML = `<table class="warehouse-table"><thead><tr><th>Позиция</th><th class="price-col">Цена</th><th>Тип</th></tr></thead><tbody>${rows}<tr class="total-row"><td>Минимальный бюджет${pb1}</td><td class="price-col">${fmtRub(reqSum)}</td><td></td></tr><tr class="total-row"><td>Оптимальный бюджет${pb2}</td><td class="price-col">${fmtRub(reqSum+desSum)}</td><td></td></tr></tbody></table>`;
+    return;
+  }
+
+  // Generic warehouse table
+  const total = data.items.reduce((s, it) => s + (Number(it.price_used) || Number(it.price) || 0), 0);
+  const rows = data.items.map(it =>
+    `<tr><td>${it.title || ''} ${it.brand || ''}</td><td class="price-col">${fmtRub(it.price_used || it.price)}</td><td>${it.notes || it.inspect || ''}</td></tr>`
+  ).join('');
+  el.innerHTML = total ? `<table class="warehouse-table"><thead><tr><th>Позиция</th><th class="price-col">Цена</th><th>Примечание</th></tr></thead><tbody>${rows}<tr class="total-row"><td>Итого</td><td class="price-col">${fmtRub(total)}</td><td></td></tr></tbody></table>` : '';
+}
+
+// ── Lead form ────────────────────────────────────────────────────────────────
+async function submitLead(e, formId, chatKey) {
+  e.preventDefault();
+  const form = document.getElementById(formId);
+  const btn = form.querySelector('button[type=submit]');
+  btn.disabled = true;
+  const fd = new FormData(form);
+  const history = getHistory(chatKey);
+  const payload = {
+    name: fd.get('name'),
+    email: fd.get('email'),
+    phone: fd.get('phone'),
+    city: fd.get('city'),
+    chat: history.map(m => `${m.role === 'user' ? 'Пользователь' : 'AI'}: ${typeof m.content === 'string' ? m.content : JSON.stringify(m.content)}`).join('\n')
+  };
+  try {
+    const res = await fetch(API_BASE + '/leads', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    if (!res.ok) throw new Error('Server ' + res.status);
+    form.innerHTML = '<div class="success">✅ Спасибо! Свяжемся в ближайшее время.</div>';
+  } catch(err) {
+    btn.disabled = false;
+    alert('Не удалось отправить. ' + err.message);
+  }
+}
+
+// ── Auth ─────────────────────────────────────────────────────────────────────
+function openLoginModal() {
+  // Redirect to listings where login modal exists
+  window.location.href = '/listings#login';
+}
+
+// Check auth and show/hide trial banner
+const token = localStorage.getItem('indmart_token');
+if (token) {
+  document.getElementById('trialBanner').style.display = 'none';
+}
+
+// Init home screen
+document.getElementById('screen-home').hidden = false;
+</script>
+
+
+<script>
+(function() {
+  const token = localStorage.getItem('indmart_token');
+  const u = localStorage.getItem('indmart_user');
+  if (token && u) {
+    try {
+      const user = JSON.parse(u);
+      const name = user.username || user.email || 'User';
+      document.getElementById('navUser').style.display = 'block';
+      document.getElementById('navLoginBtn').style.display = 'none';
+      document.getElementById('userAvatar').textContent = name[0].toUpperCase();
+      document.getElementById('userName').textContent = '@' + name;
+    } catch(e) {}
+  }
+})();
+
+function toggleUserMenu() {
+  const m = document.getElementById('userDropdown');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+  const m = document.getElementById('userDropdown');
+  if (m && !e.target.closest('#navUser')) m.style.display = 'none';
+});
+</script>
+</body>
+</html>

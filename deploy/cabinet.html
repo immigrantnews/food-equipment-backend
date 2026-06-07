@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Личный кабинет — IndMart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #1B3A6B;
+  --navy-light: #254d8f;
+  --orange: #FF6B35;
+  --orange-dark: #e55a25;
+  --bg: #f8f9fc;
+  --card: #ffffff;
+  --border: #e0e4ef;
+  --text: #1a2236;
+  --muted: #8892a4;
+  --green: #059669;
+  --red: #dc2626;
+  --yellow: #d97706;
+  --radius: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; min-height: 100vh; }
+
+nav {
+  background: white;
+  border-bottom: 1px solid #eee;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+.nav-logo { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 20px; color: var(--navy); text-decoration: none; }
+.nav-logo span { color: var(--orange); }
+.nav-links { display: flex; gap: 4px; }
+.nav-link { color: #555; text-decoration: none; font-size: 14px; padding: 6px 12px; border-radius: 6px; }
+.nav-link:hover { color: var(--navy); background: #f5f7ff; }
+.nav-right { display: flex; gap: 8px; align-items: center; }
+.user-box { display: flex; align-items: center; gap: 8px; color: var(--navy); font-size: 13px; }
+.user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--orange); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: white; }
+.btn-logout { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 5px 12px; font-size: 12px; cursor: pointer; font-family: inherit; }
+.btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+.cabinet-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 24px;
+  align-items: start;
+  min-width: 0;
+}
+
+.sidebar {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  position: sticky;
+  top: 72px;
+  width: 200px;
+  flex-shrink: 0;
+}
+.sidebar-user {
+  padding: 24px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-avatar {
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--orange);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-weight: 700; color: white;
+  margin: 0 auto 12px;
+}
+.sidebar-name { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+.sidebar-email { font-size: 13px; color: var(--muted); }
+.sidebar-plan {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 10px; padding: 4px 10px; border-radius: 20px;
+  font-size: 12px; font-weight: 600;
+}
+.plan-free { background: #f0f0f0; color: var(--muted); }
+.plan-standard { background: #eff6ff; color: #1d4ed8; }
+.plan-pro { background: var(--navy); color: white; }
+
+.sidebar-nav { padding: 8px 0; }
+.sidebar-nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; font-size: 13px; color: #555;
+  cursor: pointer; border: none; background: none;
+  width: 100%; text-align: left; font-family: inherit;
+  transition: all 0.15s;
+}
+.sidebar-nav-item:hover { background: #f5f7ff; color: var(--navy); }
+.sidebar-nav-item.active { background: #f0f4ff; color: var(--navy); font-weight: 600; border-right: 3px solid var(--navy); }
+.sidebar-nav-item .ico { font-size: 18px; width: 22px; text-align: center; flex-shrink: 0; }
+
+.cabinet-main { display: flex; flex-direction: column; gap: 20px; }
+.section { display: none; }
+.section.active { display: block; }
+.section-title { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 20px; color: var(--navy); margin-bottom: 20px; }
+
+.info-card { background: white; border: 1.5px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; }
+.info-card h3 { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
+
+.field { margin-bottom: 16px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.ctl { width: 100%; height: 42px; border: 1.5px solid var(--border); border-radius: 8px; padding: 0 14px; font-size: 14px; font-family: inherit; color: var(--text); background: white; outline: none; transition: border-color 0.15s; }
+.ctl:focus { border-color: var(--navy); }
+.ctl:disabled { background: var(--bg); color: var(--muted); cursor: not-allowed; }
+.btn-save { height: 42px; background: var(--navy); color: white; border: none; border-radius: 8px; padding: 0 24px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.btn-save:hover { background: var(--navy-light); }
+
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+.stat-card { background: white; border: 1.5px solid var(--border); border-radius: var(--radius); padding: 20px; text-align: center; }
+.stat-num { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 28px; color: var(--navy); }
+.stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+.my-listing-item { background: white; border: 1.5px solid var(--border); border-radius: var(--radius); padding: 16px; display: flex; gap: 14px; align-items: center; margin-bottom: 12px; }
+.my-listing-photo { width: 80px; height: 80px; border-radius: 8px; background: var(--bg); flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 28px; }
+.my-listing-photo img { width: 100%; height: 100%; object-fit: cover; }
+.my-listing-info { flex: 1; min-width: 0; }
+.my-listing-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.my-listing-price { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 18px; color: var(--orange); margin-bottom: 6px; }
+.my-listing-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.status-badge { padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 600; }
+.status-active { background: #dcfce7; color: var(--green); }
+.status-pending { background: #fef3c7; color: var(--yellow); }
+.status-inactive { background: #f3f4f6; color: var(--muted); }
+.my-listing-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.btn-sm { height: 34px; padding: 0 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; border: 1.5px solid var(--border); background: white; color: var(--text); transition: all 0.15s; white-space: nowrap; }
+.btn-sm:hover { border-color: var(--navy); color: var(--navy); }
+.btn-sm.danger:hover { border-color: var(--red); color: var(--red); }
+.btn-sm.primary { background: var(--navy); color: white; border-color: var(--navy); }
+
+.plan-card { border: 2px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 12px; }
+.plan-card.current { border-color: var(--navy); background: #f8faff; }
+.plan-name { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 18px; color: var(--navy); margin-bottom: 4px; }
+.plan-price { font-size: 14px; color: var(--muted); margin-bottom: 12px; }
+.plan-price strong { font-size: 22px; font-weight: 800; color: var(--text); }
+.plan-features { list-style: none; display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.plan-features li { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.plan-features li::before { content: '✓'; color: var(--green); font-weight: 700; }
+.plan-features li.no { color: var(--muted); }
+.plan-features li.no::before { content: '✗'; color: var(--border); }
+.btn-plan { width: 100%; height: 44px; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; border: none; }
+.btn-plan.current { background: var(--bg); color: var(--muted); cursor: default; }
+.btn-plan.orange { background: var(--orange); color: white; }
+.btn-plan.orange:hover { background: var(--orange-dark); }
+.btn-plan.navy { background: var(--navy); color: white; }
+.btn-plan.navy:hover { background: var(--navy-light); }
+
+.trial-banner { background: linear-gradient(135deg, var(--navy), #2a52a0); border-radius: var(--radius); padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.trial-text { color: white; }
+.trial-text h3 { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 16px; margin-bottom: 4px; }
+.trial-text p { font-size: 13px; color: rgba(255,255,255,0.7); }
+.trial-days { background: var(--orange); color: white; border-radius: 10px; padding: 10px 20px; text-align: center; flex-shrink: 0; }
+.trial-days .num { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 28px; line-height: 1; }
+.trial-days .lbl { font-size: 11px; margin-top: 2px; }
+
+.notif-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--bg); }
+.notif-row:last-child { border-bottom: none; }
+.notif-info h4 { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.notif-info p { font-size: 12px; color: var(--muted); }
+.toggle { position: relative; width: 44px; height: 24px; display: inline-block; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; inset: 0; background: var(--border); border-radius: 24px; transition: 0.3s; }
+.slider:before { content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+.toggle input:checked + .slider { background: var(--navy); }
+.toggle input:checked + .slider:before { transform: translateX(20px); }
+
+.empty { text-align: center; padding: 48px; color: var(--muted); }
+.empty h3 { font-size: 16px; color: var(--text); margin-bottom: 8px; }
+.skeleton { background: linear-gradient(90deg, #f0f2f7 25%, #e5e8f0 50%, #f0f2f7 75%); background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: 8px; }
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+footer { background: white; border-top: 1px solid #eee; padding: 20px 24px; text-align: center; color: var(--muted); font-size: 13px; }
+.footer-logo { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 15px; color: var(--navy); }
+.footer-logo span { color: var(--orange); }
+
+@media (max-width: 768px) {
+  .cabinet-wrap { grid-template-columns: 1fr; }
+  .sidebar { position: static; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .my-listing-actions { flex-direction: column; }
+}
+@media (max-width: 900px) {
+  .plan-cards { grid-template-columns: 1fr; }
+}
+
+.listing-filter-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.filter-tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: white;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--muted);
+  transition: all 0.15s;
+}
+.filter-tab:hover { border-color: var(--navy); color: var(--navy); }
+.filter-tab.active { background: var(--navy); border-color: var(--navy); color: white; }
+.filter-tab .count { background: rgba(0,0,0,0.12); border-radius: 10px; padding: 1px 6px; font-size: 11px; }
+.filter-tab.active .count { background: rgba(255,255,255,0.2); }
+
+.listing-menu-wrap { position: relative; }
+.btn-dots {
+  width: 34px; height: 34px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted);
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.btn-dots:hover { border-color: var(--navy); color: var(--navy); }
+.dropdown-menu {
+  position: absolute;
+  right: 0; top: 38px;
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  min-width: 220px;
+  z-index: 9999;
+  display: none;
+  overflow: visible;
+}
+.dropdown-menu.open { display: block; }
+.listing-menu-wrap { position: relative; z-index: 10; }
+.dropdown-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 16px;
+  font-size: 14px; color: var(--text);
+  cursor: pointer; border: none; background: none;
+  width: 100%; text-align: left; font-family: inherit;
+  transition: background 0.1s;
+}
+.dropdown-item:hover { background: #f5f7ff; }
+.dropdown-item.danger { color: var(--red); }
+.dropdown-item.danger:hover { background: #fff0f0; }
+.dropdown-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+.user-menu-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; font-size: 14px; color: var(--text);
+  cursor: pointer; border: none; background: none;
+  width: 100%; text-align: left; font-family: inherit;
+  transition: background 0.1s;
+}
+.user-menu-item:hover { background: #f5f7ff; }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">Ind<span>Mart</span></a>
+  <div class="nav-links">
+    <a href="/listings" class="nav-link">Доска объявлений</a>
+    <a href="/consultant" class="nav-link">AI Консультант</a>
+    <a href="/baza" class="nav-link">База знаний</a>
+  </div>
+  <div class="nav-right" style="position:relative;">
+    <div class="user-box" style="cursor:pointer;" onclick="toggleUserMenu()">
+      <div class="user-avatar" id="navAvatar">A</div>
+      <span id="navName">...</span>
+      <span style="font-size:10px;color:var(--muted);margin-left:2px;">▼</span>
+    </div>
+    <div id="userMenu" style="display:none;position:absolute;right:0;top:44px;background:white;border:1.5px solid var(--border);border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12);min-width:200px;z-index:9999;overflow:hidden;">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+        <div id="menuAvatar" style="width:36px;height:36px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:white;flex-shrink:0;">A</div>
+        <div><div id="menuName" style="font-weight:600;font-size:14px;"></div><div id="menuPlan" style="font-size:12px;color:var(--muted);"></div></div>
+      </div>
+      <button class="user-menu-item" onclick="showSection('profile');closeUserMenu()">👤 Профиль</button>
+      <button class="user-menu-item" onclick="showSection('listings');closeUserMenu()">📋 Мои объявления</button>
+      <button class="user-menu-item" onclick="showSection('subscription');closeUserMenu()">⭐ Подписка</button>
+      <button class="user-menu-item" onclick="showSection('notifications');closeUserMenu()">🔔 Уведомления</button>
+      <div style="height:1px;background:var(--border);margin:4px 0;"></div>
+      <button class="user-menu-item" style="color:var(--red);" onclick="logout()">🚪 Выйти</button>
+    </div>
+  </div>
+</nav>
+
+<div class="cabinet-wrap">
+  <div class="sidebar">
+    <div class="sidebar-user">
+      <div class="sidebar-avatar" id="sidebarAvatar">A</div>
+      <div class="sidebar-name" id="sidebarName">...</div>
+      <div class="sidebar-email" id="sidebarEmail"></div>
+      <div class="sidebar-plan plan-free" id="sidebarPlan">Бесплатный</div>
+    </div>
+    <div style="padding:12px;">
+      <a href="/listings" style="display:block;text-align:center;background:var(--orange);color:white;border-radius:8px;padding:10px;font-size:13px;font-weight:600;text-decoration:none;margin-bottom:8px;">+ Разместить объявление</a>
+      <a href="/listings" style="display:block;text-align:center;background:var(--bg);color:var(--navy);border-radius:8px;padding:10px;font-size:13px;font-weight:600;text-decoration:none;">← Доска объявлений</a>
+    </div>
+  </div>
+
+  <div class="cabinet-main">
+
+    <!-- PROFILE -->
+    <div class="section active" id="section-profile">
+      <div class="section-title">Профиль</div>
+      <div class="info-card">
+        <h3>Личные данные</h3>
+        <div class="field"><label>Имя</label><input id="profileName" class="ctl" placeholder="Ваше имя"></div>
+        <div class="field"><label>Email</label><input id="profileEmail" class="ctl" type="email" placeholder="email@example.com"></div>
+        <div class="field">
+          <label>Telegram</label>
+          <input id="profileTg" class="ctl" disabled placeholder="username">
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;">Изменяется через авторизацию Telegram</div>
+        </div>
+        <div class="field"><label>Телефон</label><input id="profilePhone" class="ctl" placeholder="+7 900 000-00-00"></div>
+        <button class="btn-save" onclick="saveProfile()">Сохранить</button>
+        <span id="profileSaved" style="display:none;margin-left:12px;color:var(--green);font-size:13px;">✓ Сохранено</span>
+      </div>
+      <div class="info-card">
+        <h3>Статистика</h3>
+        <div class="stats-grid">
+          <div class="stat-card" onclick="showSection('listings', document.querySelector('.sidebar-nav-item:nth-child(2)'))" style="cursor:pointer;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--navy)'" onmouseout="this.style.borderColor='var(--border)'"><div class="stat-num" id="statListings">—</div><div class="stat-label" style="color:var(--navy);">Мои объявления →</div></div>
+          <div class="stat-card"><div class="stat-num" id="statViews">—</div><div class="stat-label">Просмотров</div></div>
+          <div class="stat-card"><div class="stat-num" id="statDays">—</div><div class="stat-label">Дней на сайте</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY LISTINGS -->
+    <div class="section" id="section-listings">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <div class="section-title" style="margin-bottom:0;">Мои объявления</div>
+        <a href="/listings#new" style="background:var(--orange);color:white;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;text-decoration:none;">+ Новое объявление</a>
+      </div>
+      <div class="listing-filter-tabs" id="listingTabs">
+        <button class="filter-tab active" onclick="filterListings('all', this)">Все <span class="count" id="countAll">0</span></button>
+        <button class="filter-tab" onclick="filterListings('active', this)">Активные <span class="count" id="countActive">0</span></button>
+        <button class="filter-tab" onclick="filterListings('pending', this)">На проверке <span class="count" id="countPending">0</span></button>
+        <button class="filter-tab" onclick="filterListings('inactive', this)">Неактивные <span class="count" id="countInactive">0</span></button>
+        <button class="filter-tab" onclick="filterListings('draft', this)">Черновики <span class="count" id="countDraft">0</span></button>
+      </div>
+      <div id="myListingsContent">
+        <div class="skeleton" style="height:100px;margin-bottom:12px;"></div>
+        <div class="skeleton" style="height:100px;margin-bottom:12px;"></div>
+      </div>
+    </div>
+
+    <!-- SUBSCRIPTION -->
+    <div class="section" id="section-subscription">
+      <div class="section-title">Подписка</div>
+      <div class="trial-banner" id="trialBanner" style="display:none;">
+        <div class="trial-text">
+          <h3>🎉 Пробный период Pro</h3>
+          <p>Используйте все возможности платформы бесплатно</p>
+        </div>
+        <div class="trial-days">
+          <div class="num" id="trialDaysLeft">7</div>
+          <div class="lbl">дней осталось</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;" class="plan-cards">
+        <div class="plan-card" id="planFree">
+          <div class="plan-name">Бесплатный</div>
+          <div class="plan-price">0 ₽/мес</div>
+          <ul class="plan-features">
+            <li>Доска объявлений</li>
+            <li>AI оценка расширения</li>
+            <li class="no">AI консультант</li>
+            <li class="no">Уведомления</li>
+            <li class="no">AI поиск</li>
+          </ul>
+          <button class="btn-plan current" id="btnFree">Текущий тариф</button>
+        </div>
+        <div class="plan-card" id="planStandard">
+          <div class="plan-name">Стандарт</div>
+          <div class="plan-price"><strong>2 990</strong> ₽/мес</div>
+          <ul class="plan-features">
+            <li>Всё из бесплатного</li>
+            <li>AI консультант 50/день</li>
+            <li>AI поиск 30/день</li>
+            <li>Все срочные уведомления</li>
+            <li>Улучшение объявлений AI</li>
+          </ul>
+          <button class="btn-plan orange" id="btnStandard" onclick="window.location.href='/upgrade'">Подключить</button>
+        </div>
+        <div class="plan-card" id="planPro">
+          <div class="plan-name">Pro</div>
+          <div class="plan-price"><strong>9 990</strong> ₽/мес</div>
+          <ul class="plan-features">
+            <li>Всё из Стандарт</li>
+            <li>AI консультант безлимит</li>
+            <li>AI поиск безлимит</li>
+            <li>AI Технолог</li>
+            <li>Приоритетная поддержка</li>
+          </ul>
+          <button class="btn-plan navy" id="btnPro" onclick="window.location.href='/upgrade'">Подключить Pro</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div class="section" id="section-notifications">
+      <div class="section-title">Уведомления</div>
+      <div class="info-card">
+        <h3>Telegram уведомления</h3>
+        <div class="notif-row">
+          <div class="notif-info"><h4>Срочные продажи</h4><p>Уведомления о новых срочных объявлениях</p></div>
+          <label class="toggle"><input type="checkbox" id="notifUrgent" checked onchange="saveNotif()"><span class="slider"></span></label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-info"><h4>Новые объявления по категориям</h4><p>Когда появляется новое оборудование в выбранных категориях</p></div>
+          <label class="toggle"><input type="checkbox" id="notifCategories" onchange="saveNotif()"><span class="slider"></span></label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-info"><h4>Просмотры моих объявлений</h4><p>Когда кто-то просматривает ваше объявление</p></div>
+          <label class="toggle"><input type="checkbox" id="notifViews" onchange="saveNotif()"><span class="slider"></span></label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-info"><h4>Новости и акции IndMart</h4><p>Обновления платформы и специальные предложения</p></div>
+          <label class="toggle"><input type="checkbox" id="notifNews" checked onchange="saveNotif()"><span class="slider"></span></label>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <div class="footer-logo">Ind<span>Mart</span></div>
+  <div>© 2026 IndMart · Пищевое оборудование б/у</div>
+</footer>
+
+<script>
+const API = '/api';
+let currentUser = null;
+let currentToken = null;
+
+function init() {
+  currentToken = localStorage.getItem('indmart_token');
+  const u = localStorage.getItem('indmart_user');
+  if (u) try { currentUser = JSON.parse(u); } catch(e) {}
+  if (!currentUser || !currentToken) { window.location.href = '/listings'; return; }
+
+  const name = currentUser.username || currentUser.email || 'User';
+  document.getElementById('navAvatar').textContent = name[0].toUpperCase();
+  document.getElementById('navName').textContent = '@' + name;
+  document.getElementById('menuAvatar').textContent = name[0].toUpperCase();
+  document.getElementById('menuName').textContent = currentUser.first_name || name;
+  document.getElementById('menuPlan').textContent = (currentUser.user_type || 'free') === 'pro' ? '⭐ Pro' : (currentUser.user_type === 'paid' ? 'Стандарт' : 'Бесплатный');
+  document.getElementById('sidebarAvatar').textContent = name[0].toUpperCase();
+  document.getElementById('sidebarName').textContent = currentUser.first_name || name;
+  document.getElementById('sidebarEmail').textContent = currentUser.email || '';
+
+  const plan = currentUser.user_type || 'free';
+  const planEl = document.getElementById('sidebarPlan');
+  if (plan === 'pro') { planEl.className = 'sidebar-plan plan-pro'; planEl.textContent = '⭐ Pro'; }
+  else if (plan === 'standard' || plan === 'paid') { planEl.className = 'sidebar-plan plan-standard'; planEl.textContent = 'Стандарт'; }
+  else { planEl.className = 'sidebar-plan plan-free'; planEl.textContent = 'Бесплатный'; }
+
+  document.getElementById('profileName').value = currentUser.first_name || '';
+  document.getElementById('profileEmail').value = currentUser.email || '';
+  document.getElementById('profileTg').value = currentUser.username || '';
+  document.getElementById('profilePhone').value = currentUser.phone || '';
+
+  // Trial banner
+  if (currentUser.trial_expires_at) {
+    const daysLeft = Math.ceil((new Date(currentUser.trial_expires_at) - Date.now()) / 86400000);
+    if (daysLeft > 0) {
+      document.getElementById('trialBanner').style.display = 'flex';
+      document.getElementById('trialDaysLeft').textContent = daysLeft;
+    }
+  }
+
+  // Days on site
+  if (currentUser.created_at) {
+    const days = Math.floor((Date.now() - new Date(currentUser.created_at)) / 86400000);
+    document.getElementById('statDays').textContent = days || 1;
+  }
+
+  highlightPlan(plan);
+  loadMyListings();
+  loadNotifSettings();
+}
+
+function highlightPlan(plan) {
+  if (plan === 'pro') {
+    document.getElementById('planPro').classList.add('current');
+    document.getElementById('btnPro').className = 'btn-plan current';
+    document.getElementById('btnPro').textContent = 'Текущий тариф';
+  } else if (plan === 'standard' || plan === 'paid') {
+    document.getElementById('planStandard').classList.add('current');
+    document.getElementById('btnStandard').className = 'btn-plan current';
+    document.getElementById('btnStandard').textContent = 'Текущий тариф';
+  } else {
+    document.getElementById('planFree').classList.add('current');
+  }
+}
+
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+}
+
+function toggleUserMenu() {
+  const menu = document.getElementById('userMenu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+function closeUserMenu() {
+  document.getElementById('userMenu').style.display = 'none';
+}
+
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('userMenu');
+  if (!e.target.closest('.nav-right')) menu.style.display = 'none';
+});
+
+let allMyListings = [];
+let currentListingFilter = 'all';
+
+async function loadMyListings() {
+  const container = document.getElementById('myListingsContent');
+  try {
+    const res = await fetch(API + '/board/listings?my=true', {
+      headers: { 'Authorization': 'Bearer ' + currentToken }
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    allMyListings = data.listings || data || [];
+    document.getElementById('statListings').textContent = allMyListings.length;
+    updateListingCounts();
+    renderMyListings(allMyListings);
+  } catch(e) {
+    container.innerHTML = '<div class="empty"><h3>Ошибка загрузки</h3></div>';
+  }
+}
+
+function updateListingCounts() {
+  document.getElementById('countAll').textContent = allMyListings.length;
+  document.getElementById('countActive').textContent = allMyListings.filter(l => l.status === 'active').length;
+  document.getElementById('countPending').textContent = allMyListings.filter(l => l.status === 'pending').length;
+  document.getElementById('countInactive').textContent = allMyListings.filter(l => l.status === 'inactive' || !l.status).length;
+  document.getElementById('countDraft').textContent = allMyListings.filter(l => l.status === 'draft').length;
+}
+
+function filterListings(filter, btn) {
+  currentListingFilter = filter;
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  const filtered = filter === 'all' ? allMyListings : allMyListings.filter(l => l.status === filter);
+  renderMyListings(filtered);
+}
+
+function renderMyListings(items) {
+  const container = document.getElementById('myListingsContent');
+  if (!items.length) {
+    container.innerHTML = `<div class="empty">
+      <div style="font-size:48px;margin-bottom:12px;">📋</div>
+      <h3>Нет объявлений</h3>
+      <p style="margin-bottom:16px;">Разместите первое объявление — это бесплатно</p>
+      <a href="/listings#new" style="background:var(--orange);color:white;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:600;text-decoration:none;">+ Разместить объявление</a>
+    </div>`;
+    return;
+  }
+  container.innerHTML = items.map(l => {
+    const price = l.price ? Number(l.price).toLocaleString('ru-RU') + ' ₽' : 'Цена не указана';
+    const photo = l.photos && l.photos.length ? `<img src="${l.photos[0]}">` : '🔧';
+    const status = l.status === 'active' ? '<span class="status-badge status-active">✓ Активно</span>' :
+                   l.status === 'pending' ? '<span class="status-badge status-pending">⏳ На проверке</span>' :
+                   l.status === 'draft' ? '<span class="status-badge" style="background:#f3f4f6;color:var(--muted);">Черновик</span>' :
+                   '<span class="status-badge status-inactive">Неактивно</span>';
+    const menuId = 'menu_' + l.id;
+    const isActive = l.status === 'active';
+    const isAuto = !!l.auto_publish;
+    return `<div class="my-listing-item">
+      <div class="my-listing-photo">${photo}</div>
+      <div class="my-listing-info">
+        <div class="my-listing-title">${esc(l.title)}</div>
+        <div class="my-listing-price">${price}</div>
+        <div class="my-listing-meta">${status}${l.city ? `<span style="font-size:12px;color:var(--muted);">📍 ${esc(l.city)}</span>` : ''}<span style="font-size:12px;color:var(--muted);">${timeAgo(l.created_at)}</span></div>
+      </div>
+      <div class="listing-menu-wrap">
+        <button class="btn-dots" onclick="toggleMenu(event, '${menuId}')">⋯</button>
+        <div class="dropdown-menu" id="${menuId}">
+          <button class="dropdown-item" onclick="window.location.href='/listings/${l.id}'">👁 Просмотр</button>
+          <button class="dropdown-item" onclick="editListing(${l.id})">✏️ Редактировать</button>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item" onclick="togglePublish(${l.id}, '${l.status}')">${isActive ? '⏸ Снять с публикации' : '▶ Опубликовать'}</button>
+          <button class="dropdown-item" onclick="toggleAutopublish(${l.id}, ${isAuto})">${isAuto ? '🔄 Выкл. автопубликацию' : '🔄 Вкл. автопубликацию'}</button>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item danger" onclick="deleteListing(${l.id})">🗑 Удалить</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleMenu(e, id) {
+  e.stopPropagation();
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => {
+    if (m.id !== id) m.classList.remove('open');
+  });
+  document.getElementById(id).classList.toggle('open');
+}
+
+document.addEventListener('click', () => {
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+});
+
+async function togglePublish(id, currentStatus) {
+  const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+  try {
+    const res = await fetch(API + '/board/listings/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
+      body: JSON.stringify({ status: newStatus })
+    });
+    if (res.ok) {
+      const idx = allMyListings.findIndex(l => l.id === id);
+      if (idx !== -1) allMyListings[idx].status = newStatus;
+      updateListingCounts();
+      renderMyListings(currentListingFilter === 'all' ? allMyListings : allMyListings.filter(l => l.status === currentListingFilter));
+    }
+  } catch(e) {}
+}
+
+async function toggleAutopublish(id, currentAuto) {
+  const newAuto = !currentAuto;
+  document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+  try {
+    const res = await fetch(API + '/board/listings/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + currentToken },
+      body: JSON.stringify({ auto_publish: newAuto })
+    });
+    if (res.ok) {
+      const idx = allMyListings.findIndex(l => l.id === id);
+      if (idx !== -1) allMyListings[idx].auto_publish = newAuto;
+      renderMyListings(currentListingFilter === 'all' ? allMyListings : allMyListings.filter(l => l.status === currentListingFilter));
+    }
+  } catch(e) {}
+}
+
+function saveNotif() {
+  localStorage.setItem('indmart_notif', JSON.stringify({
+    urgent: document.getElementById('notifUrgent').checked,
+    categories: document.getElementById('notifCategories').checked,
+    views: document.getElementById('notifViews').checked,
+    news: document.getElementById('notifNews').checked,
+  }));
+}
+
+function loadNotifSettings() {
+  const s = JSON.parse(localStorage.getItem('indmart_notif') || '{}');
+  if (s.urgent !== undefined) document.getElementById('notifUrgent').checked = s.urgent;
+  if (s.categories !== undefined) document.getElementById('notifCategories').checked = s.categories;
+  if (s.views !== undefined) document.getElementById('notifViews').checked = s.views;
+  if (s.news !== undefined) document.getElementById('notifNews').checked = s.news;
+}
+
+function logout() {
+  localStorage.removeItem('indmart_token');
+  localStorage.removeItem('indmart_user');
+  window.location.href = '/';
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function timeAgo(iso) {
+  if (!iso) return '';
+  const d = new Date(iso), diff = (Date.now()-d)/1000;
+  if (diff < 3600) return Math.floor(diff/60) + ' мин назад';
+  if (diff < 86400) return Math.floor(diff/3600) + ' ч назад';
+  return Math.floor(diff/86400) + ' дн назад';
+}
+
+init();
+</script>
+</body>
+</html>

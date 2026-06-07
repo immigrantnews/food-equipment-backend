@@ -611,11 +611,18 @@ footer {
   </div>
   <div class="nav-right">
     <button class="btn-post" onclick="showNew()">+ Разместить объявление</button>
-    <div id="navUser" style="display:none">
-      <div class="user-box">
+    <div id="navUser" style="display:none;position:relative;">
+      <div class="user-box" style="cursor:pointer;" onclick="toggleUserMenu()">
         <div class="user-avatar" id="userAvatar">A</div>
         <span id="userName">User</span>
-        <button class="btn-logout" onclick="logout()">Выйти</button>
+        <span style="font-size:10px;color:var(--muted);margin-left:2px;">▼</span>
+      </div>
+      <div id="userDropdown" style="display:none;position:absolute;right:0;top:44px;background:white;border:1.5px solid #e0e4ef;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12);min-width:200px;z-index:9999;overflow:hidden;">
+        <a href="/cabinet" style="display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:14px;color:#1a2236;text-decoration:none;" onmouseover="this.style.background='#f5f7ff'" onmouseout="this.style.background=''">👤 Личный кабинет</a>
+        <a href="/cabinet#listings" style="display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:14px;color:#1a2236;text-decoration:none;" onmouseover="this.style.background='#f5f7ff'" onmouseout="this.style.background=''">📋 Мои объявления</a>
+        <a href="/cabinet#subscription" style="display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:14px;color:#1a2236;text-decoration:none;" onmouseover="this.style.background='#f5f7ff'" onmouseout="this.style.background=''">⭐ Подписка</a>
+        <div style="height:1px;background:#e0e4ef;margin:4px 0;"></div>
+        <button onclick="logout()" style="display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:14px;color:#dc2626;background:none;border:none;width:100%;cursor:pointer;font-family:inherit;" onmouseover="this.style.background='#fff0f0'" onmouseout="this.style.background=''">🚪 Выйти</button>
       </div>
     </div>
     <button id="navLoginBtn" class="btn-login" onclick="openLoginModal()">Войти через Telegram</button>
@@ -1538,6 +1545,24 @@ function doSort() {
 
 // Popstate
 window.addEventListener('popstate', handleRoute);
+
+function toggleUserMenu() {
+  const m = document.getElementById('userDropdown');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+  const m = document.getElementById('userDropdown');
+  if (m && !e.target.closest('#navUser')) m.style.display = 'none';
+});
+
+function toggleUserMenu() {
+  const m = document.getElementById('userDropdown');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+  const m = document.getElementById('userDropdown');
+  if (m && !e.target.closest('#navUser')) m.style.display = 'none';
+});
 
 // ── Init ──────────────────────────────────────────────────────────────────
 initAuth();

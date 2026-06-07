@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Тарифы — IndMart | Пищевое оборудование б/у</title>
+<meta name="description" content="Тарифы IndMart. Бесплатный, Стандарт и Pro. AI консультант, оценка оборудования, уведомления о срочных продажах.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #1B3A6B;
+  --navy-light: #254d8f;
+  --orange: #FF6B35;
+  --orange-dark: #e55a25;
+  --bg: #f8f9fc;
+  --card: #ffffff;
+  --border: #e0e4ef;
+  --text: #1a2236;
+  --muted: #8892a4;
+  --green: #059669;
+  --radius: 14px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+
+nav {
+  background: white;
+  border-bottom: 1px solid #eee;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+.nav-logo { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 20px; color: var(--navy); text-decoration: none; }
+.nav-logo span { color: var(--orange); }
+.nav-links { display: flex; gap: 4px; }
+.nav-link { color: #555; text-decoration: none; font-size: 14px; padding: 6px 12px; border-radius: 6px; }
+.nav-link:hover { color: var(--navy); background: #f5f7ff; }
+.nav-right { display: flex; gap: 8px; align-items: center; position: relative; }
+.user-box { display: flex; align-items: center; gap: 8px; color: var(--navy); font-size: 13px; cursor: pointer; }
+.user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--orange); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: white; }
+.btn-login { background: white; color: var(--navy); border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; font-size: 13px; cursor: pointer; font-family: inherit; }
+.btn-login:hover { background: #f5f7ff; }
+
+/* Hero */
+.hero {
+  text-align: center;
+  padding: 64px 24px 48px;
+  background: white;
+  border-bottom: 1px solid var(--border);
+}
+.hero h1 {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  font-size: clamp(28px, 4vw, 42px);
+  color: var(--navy);
+  margin-bottom: 12px;
+}
+.hero h1 span { color: var(--orange); }
+.hero p { color: var(--muted); font-size: 16px; max-width: 520px; margin: 0 auto 32px; line-height: 1.6; }
+
+/* Trial badge */
+.trial-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--navy), var(--navy-light));
+  color: white;
+  padding: 10px 20px;
+  border-radius: 100px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 32px;
+}
+.trial-badge span { background: var(--orange); padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+
+/* Billing toggle */
+.billing-toggle {
+  display: inline-flex;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 100px;
+  padding: 4px;
+  gap: 2px;
+}
+.billing-btn {
+  padding: 8px 18px;
+  border-radius: 100px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--muted);
+  transition: all 0.2s;
+  position: relative;
+}
+.billing-btn.active { background: white; color: var(--navy); font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+.billing-btn .discount {
+  position: absolute;
+  top: -8px;
+  right: -4px;
+  background: var(--green);
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 5px;
+  border-radius: 10px;
+}
+
+/* Plans grid */
+.plans-wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  align-items: stretch;
+}
+
+.plan-card {
+  background: white;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s;
+}
+.plan-card:hover { box-shadow: 0 8px 32px rgba(27,58,107,0.1); }
+.plan-card.featured {
+  border-color: var(--navy);
+  border-width: 2px;
+  position: relative;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(27,58,107,0.15);
+}
+
+.popular-badge {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--navy);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 14px;
+  border-radius: 100px;
+  white-space: nowrap;
+}
+
+.plan-name {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  font-size: 20px;
+  color: var(--navy);
+  margin-bottom: 6px;
+}
+.plan-desc { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+
+.plan-price-wrap { margin-bottom: 24px; }
+.plan-price {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  font-size: 38px;
+  color: var(--text);
+  line-height: 1;
+}
+.plan-price sup { font-size: 18px; vertical-align: super; }
+.plan-period { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.plan-total { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.plan-save {
+  display: inline-block;
+  background: #dcfce7;
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-top: 6px;
+}
+
+.plan-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+  flex: 1;
+}
+.plan-features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.plan-features li .check { color: var(--green); font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.plan-features li .cross { color: var(--border); font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.plan-features li.muted { color: var(--muted); }
+
+.btn-plan {
+  width: 100%;
+  height: 48px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  transition: all 0.15s;
+}
+.btn-free { background: var(--bg); color: var(--navy); border: 1.5px solid var(--border); }
+.btn-free:hover { background: #eef2ff; }
+.btn-standard { background: var(--navy); color: white; }
+.btn-standard:hover { background: var(--navy-light); }
+.btn-pro { background: var(--orange); color: white; }
+.btn-pro:hover { background: var(--orange-dark); }
+
+/* Comparison table */
+.compare-wrap {
+  max-width: 900px;
+  margin: 0 auto 80px;
+  padding: 0 24px;
+}
+.compare-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  font-size: 24px;
+  color: var(--navy);
+  text-align: center;
+  margin-bottom: 24px;
+}
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1.5px solid var(--border);
+}
+.compare-table th {
+  padding: 16px;
+  text-align: center;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--navy);
+  background: #f8faff;
+  border-bottom: 1.5px solid var(--border);
+}
+.compare-table th:first-child { text-align: left; }
+.compare-table td {
+  padding: 14px 16px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--bg);
+  text-align: center;
+}
+.compare-table td:first-child { text-align: left; color: var(--text); font-weight: 500; }
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table tr:hover td { background: #f8faff; }
+.check-green { color: var(--green); font-size: 18px; }
+.check-no { color: var(--border); font-size: 18px; }
+
+/* FAQ */
+.faq-wrap {
+  max-width: 720px;
+  margin: 0 auto 80px;
+  padding: 0 24px;
+}
+.faq-title { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 24px; color: var(--navy); text-align: center; margin-bottom: 24px; }
+.faq-item { background: white; border: 1.5px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
+.faq-q { padding: 18px 20px; font-weight: 600; font-size: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+.faq-q:hover { background: #f8faff; }
+.faq-q .arrow { transition: transform 0.2s; color: var(--muted); font-size: 12px; }
+.faq-q.open .arrow { transform: rotate(180deg); }
+.faq-a { padding: 0 20px; max-height: 0; overflow: hidden; transition: all 0.3s; font-size: 14px; color: var(--muted); line-height: 1.7; }
+.faq-a.open { padding: 0 20px 18px; max-height: 200px; }
+
+footer {
+  background: white;
+  border-top: 1px solid #eee;
+  padding: 28px 24px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+.footer-logo { font-family: 'Montserrat', sans-serif; font-weight: 800; font-size: 16px; color: var(--navy); margin-bottom: 6px; }
+.footer-logo span { color: var(--orange); }
+.footer-links { display: flex; justify-content: center; gap: 20px; margin-bottom: 10px; }
+.footer-links a { color: var(--muted); text-decoration: none; font-size: 13px; }
+.footer-links a:hover { color: var(--navy); }
+
+@media (max-width: 900px) { .plans-grid { grid-template-columns: 1fr; } .plan-card.featured { transform: none; } }
+@media (max-width: 600px) { .nav-links { display: none; } .billing-btn { padding: 6px 12px; font-size: 12px; } }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">Ind<span>Mart</span></a>
+  <div class="nav-links">
+    <a href="/listings" class="nav-link">Доска объявлений</a>
+    <a href="/consultant" class="nav-link">AI Консультант</a>
+    <a href="/baza" class="nav-link">База знаний</a>
+  </div>
+  <div class="nav-right">
+    <div id="navUser" style="display:none;position:relative;">
+      <div class="user-box" onclick="toggleUserMenu()">
+        <div class="user-avatar" id="userAvatar">A</div>
+        <span id="userName"></span>
+        <span style="font-size:10px;color:var(--muted);">▼</span>
+      </div>
+      <div id="userDropdown" style="display:none;position:absolute;right:0;top:44px;background:white;border:1.5px solid #e0e4ef;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.12);min-width:200px;z-index:9999;overflow:hidden;">
+        <a href="/cabinet" style="display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:14px;color:#1a2236;text-decoration:none;" onmouseover="this.style.background='#f5f7ff'" onmouseout="this.style.background=''">👤 Личный кабинет</a>
+        <a href="/cabinet" style="display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:14px;color:#1a2236;text-decoration:none;" onmouseover="this.style.background='#f5f7ff'" onmouseout="this.style.background=''">📋 Мои объявления</a>
+        <div style="height:1px;background:#e0e4ef;margin:4px 0;"></div>
+        <button onclick="localStorage.removeItem('indmart_token');localStorage.removeItem('indmart_user');location.reload();" style="display:flex;align-items:center;gap:10px;padding:11px 16px;font-size:14px;color:#dc2626;background:none;border:none;width:100%;cursor:pointer;font-family:inherit;" onmouseover="this.style.background='#fff0f0'" onmouseout="this.style.background=''">🚪 Выйти</button>
+      </div>
+    </div>
+    <button id="navLoginBtn" class="btn-login" onclick="window.location.href='/listings'">Войти</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="trial-badge">🎁 <span>7 дней бесплатно</span> при регистрации — попробуйте Pro</div>
+  <h1>Выберите <span>тариф</span></h1>
+  <p>Начните бесплатно. Обновитесь когда будете готовы. Без скрытых платежей.</p>
+
+  <div class="billing-toggle">
+    <button class="billing-btn active" id="btnMonthly" onclick="setBilling('monthly')">Месяц</button>
+    <button class="billing-btn" id="btn6month" onclick="setBilling('6month')">6 месяцев <span class="discount">-17%</span></button>
+    <button class="billing-btn" id="btnYearly" onclick="setBilling('yearly')">Год <span class="discount">-33%</span></button>
+  </div>
+</div>
+
+<!-- PLANS -->
+<div class="plans-wrap">
+  <div class="plans-grid">
+
+    <!-- FREE -->
+    <div class="plan-card">
+      <div class="plan-name">Бесплатный</div>
+      <div class="plan-desc">Для знакомства с платформой</div>
+      <div class="plan-price-wrap">
+        <div class="plan-price">0 <sup>₽</sup></div>
+        <div class="plan-period">навсегда бесплатно</div>
+      </div>
+      <ul class="plan-features">
+        <li><span class="check">✓</span> Доска объявлений</li>
+        <li><span class="check">✓</span> AI оценка расширения — безлимит</li>
+        <li><span class="check">✓</span> Разместить объявление</li>
+        <li class="muted"><span class="cross">✗</span> AI консультант</li>
+        <li class="muted"><span class="cross">✗</span> AI поиск по доске</li>
+        <li class="muted"><span class="cross">✗</span> Уведомления срочных продаж</li>
+        <li class="muted"><span class="cross">✗</span> AI технолог</li>
+      </ul>
+      <button class="btn-plan btn-free" onclick="window.location.href='/listings'">Начать бесплатно</button>
+    </div>
+
+    <!-- STANDARD -->
+    <div class="plan-card featured">
+      <div class="popular-badge">⭐ Популярный</div>
+      <div class="plan-name">Стандарт</div>
+      <div class="plan-desc">Для перекупщиков и владельцев пекарен</div>
+      <div class="plan-price-wrap">
+        <div class="plan-price" id="priceStandard">2 990 <sup>₽</sup></div>
+        <div class="plan-period" id="periodStandard">в месяц</div>
+        <div class="plan-total" id="totalStandard"></div>
+        <div class="plan-save" id="saveStandard" style="display:none;"></div>
+      </div>
+      <ul class="plan-features">
+        <li><span class="check">✓</span> Всё из бесплатного</li>
+        <li><span class="check">✓</span> AI консультант — 50 запросов/день</li>
+        <li><span class="check">✓</span> AI поиск по доске — 30/день</li>
+        <li><span class="check">✓</span> Все срочные уведомления</li>
+        <li><span class="check">✓</span> Улучшение объявлений с AI</li>
+        <li><span class="check">✓</span> Оценка оборудования по фото</li>
+        <li class="muted"><span class="cross">✗</span> AI технолог</li>
+      </ul>
+      <button class="btn-plan btn-standard" onclick="pay('standard')">Подключить Стандарт</button>
+    </div>
+
+    <!-- PRO -->
+    <div class="plan-card">
+      <div class="plan-name">Pro</div>
+      <div class="plan-desc">Для профессионалов и команд</div>
+      <div class="plan-price-wrap">
+        <div class="plan-price" id="pricePro">9 990 <sup>₽</sup></div>
+        <div class="plan-period" id="periodPro">в месяц</div>
+        <div class="plan-total" id="totalPro"></div>
+        <div class="plan-save" id="savePro" style="display:none;"></div>
+      </div>
+      <ul class="plan-features">
+        <li><span class="check">✓</span> Всё из Стандарт</li>
+        <li><span class="check">✓</span> AI консультант — безлимит</li>
+        <li><span class="check">✓</span> AI поиск — безлимит</li>
+        <li><span class="check">✓</span> AI технолог — рецептуры и производство</li>
+        <li><span class="check">✓</span> Приоритетная поддержка</li>
+        <li><span class="check">✓</span> Ранний доступ к новым функциям</li>
+        <li><span class="check">✓</span> API доступ (скоро)</li>
+      </ul>
+      <button class="btn-plan btn-pro" onclick="pay('pro')">Подключить Pro</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- COMPARISON TABLE -->
+<div class="compare-wrap">
+  <div class="compare-title">Подробное сравнение</div>
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Функция</th>
+        <th>Бесплатный</th>
+        <th>Стандарт</th>
+        <th>Pro</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Доска объявлений</td><td><span class="check-green">✓</span></td><td><span class="check-green">✓</span></td><td><span class="check-green">✓</span></td></tr>
+      <tr><td>AI оценка (расширение)</td><td>Безлимит</td><td>Безлимит</td><td>Безлимит</td></tr>
+      <tr><td>Разместить объявление</td><td><span class="check-green">✓</span></td><td><span class="check-green">✓</span></td><td><span class="check-green">✓</span></td></tr>
+      <tr><td>AI консультант</td><td><span class="check-no">✗</span></td><td>50/день</td><td>Безлимит</td></tr>
+      <tr><td>AI поиск по доске</td><td><span class="check-no">✗</span></td><td>30/день</td><td>Безлимит</td></tr>
+      <tr><td>Срочные уведомления</td><td>Раз в 3 дня</td><td><span class="check-green">✓</span> Все</td><td><span class="check-green">✓</span> Все</td></tr>
+      <tr><td>Улучшение объявлений AI</td><td><span class="check-no">✗</span></td><td><span class="check-green">✓</span></td><td><span class="check-green">✓</span></td></tr>
+      <tr><td>Оценка по фото</td><td><span class="check-no">✗</span></td><td><span class="check-green">✓</span></td><td><span class="check-green">✓</span></td></tr>
+      <tr><td>AI технолог</td><td><span class="check-no">✗</span></td><td><span class="check-no">✗</span></td><td><span class="check-green">✓</span></td></tr>
+      <tr><td>Приоритетная поддержка</td><td><span class="check-no">✗</span></td><td><span class="check-no">✗</span></td><td><span class="check-green">✓</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FAQ -->
+<div class="faq-wrap">
+  <div class="faq-title">Частые вопросы</div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">Что такое 7 дней бесплатно? <span class="arrow">▼</span></div>
+    <div class="faq-a">После регистрации вы автоматически получаете 7 дней Pro тарифа бесплатно. Карта не нужна. После окончания пробного периода аккаунт переходит на бесплатный тариф.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">Можно ли отменить подписку? <span class="arrow">▼</span></div>
+    <div class="faq-a">Да, вы можете отменить подписку в любое время в личном кабинете. После отмены доступ к платным функциям сохраняется до конца оплаченного периода.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">Как работает оплата за 6 месяцев и год? <span class="arrow">▼</span></div>
+    <div class="faq-a">При выборе 6 месяцев или года вы оплачиваете сразу весь период со скидкой. Это выгоднее чем платить помесячно. Возврат возможен в течение 14 дней с момента оплаты.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">Что такое AI технолог? <span class="arrow">▼</span></div>
+    <div class="faq-a">AI технолог — специальный режим консультанта для решения производственных задач: технология выпечки, рецептуры, настройка оборудования, решение проблем на производстве. Доступен только на тарифе Pro.</div>
+  </div>
+
+  <div class="faq-item">
+    <div class="faq-q" onclick="toggleFaq(this)">Есть ли способы оплаты кроме карты? <span class="arrow">▼</span></div>
+    <div class="faq-a">Да, мы принимаем банковские карты Visa, Mastercard, МИР, а также оплату по счёту для юридических лиц. Для оплаты по счёту напишите на support@indmart.ru.</div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-logo">Ind<span>Mart</span></div>
+  <div class="footer-links">
+    <a href="/">Главная</a>
+    <a href="/listings">Объявления</a>
+    <a href="/consultant">AI Консультант</a>
+    <a href="/privacy.html">Политика конфиденциальности</a>
+  </div>
+  <div>© 2026 IndMart · Пищевое оборудование б/у</div>
+</footer>
+
+<script>
+// Auth
+(function() {
+  const u = localStorage.getItem('indmart_user');
+  if (u) {
+    try {
+      const user = JSON.parse(u);
+      const name = user.username || user.email || 'User';
+      document.getElementById('navUser').style.display = 'block';
+      document.getElementById('navLoginBtn').style.display = 'none';
+      document.getElementById('userAvatar').textContent = name[0].toUpperCase();
+      document.getElementById('userName').textContent = '@' + name;
+    } catch(e) {}
+  }
+})();
+
+function toggleUserMenu() {
+  const m = document.getElementById('userDropdown');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', function(e) {
+  const m = document.getElementById('userDropdown');
+  if (m && !e.target.closest('#navUser')) m.style.display = 'none';
+});
+
+// Pricing
+const prices = {
+  monthly:  { standard: 2990,  pro: 9990  },
+  '6month': { standard: 14940, pro: 50940 }, // 2490/mo * 6, 8490/mo * 6
+  yearly:   { standard: 23880, pro: 83880 }, // 1990/mo * 12, 6990/mo * 12
+};
+const monthly = {
+  monthly:  { standard: 2990, pro: 9990 },
+  '6month': { standard: 2490, pro: 8490 },
+  yearly:   { standard: 1990, pro: 6990 },
+};
+const saves = {
+  monthly:  { standard: null, pro: null },
+  '6month': { standard: 'Экономия 3 000 ₽', pro: 'Экономия 9 000 ₽' },
+  yearly:   { standard: 'Экономия 11 880 ₽', pro: 'Экономия 35 880 ₽' },
+};
+
+let currentBilling = 'monthly';
+
+function setBilling(type) {
+  currentBilling = type;
+  ['btnMonthly', 'btn6month', 'btnYearly'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById(type === 'monthly' ? 'btnMonthly' : type === '6month' ? 'btn6month' : 'btnYearly').classList.add('active');
+
+  const sPrice = monthly[type].standard;
+  const pPrice = monthly[type].pro;
+
+  document.getElementById('priceStandard').innerHTML = sPrice.toLocaleString('ru-RU') + ' <sup>₽</sup>';
+  document.getElementById('pricePro').innerHTML = pPrice.toLocaleString('ru-RU') + ' <sup>₽</sup>';
+
+  if (type === 'monthly') {
+    document.getElementById('periodStandard').textContent = 'в месяц';
+    document.getElementById('periodPro').textContent = 'в месяц';
+    document.getElementById('totalStandard').textContent = '';
+    document.getElementById('totalPro').textContent = '';
+    document.getElementById('saveStandard').style.display = 'none';
+    document.getElementById('savePro').style.display = 'none';
+  } else {
+    const months = type === '6month' ? 6 : 12;
+    const totalS = prices[type].standard;
+    const totalP = prices[type].pro;
+    document.getElementById('periodStandard').textContent = 'в месяц';
+    document.getElementById('periodPro').textContent = 'в месяц';
+    document.getElementById('totalStandard').textContent = 'Итого: ' + totalS.toLocaleString('ru-RU') + ' ₽ за ' + months + ' мес.';
+    document.getElementById('totalPro').textContent = 'Итого: ' + totalP.toLocaleString('ru-RU') + ' ₽ за ' + months + ' мес.';
+    document.getElementById('saveStandard').textContent = saves[type].standard;
+    document.getElementById('savePro').textContent = saves[type].pro;
+    document.getElementById('saveStandard').style.display = 'inline-block';
+    document.getElementById('savePro').style.display = 'inline-block';
+  }
+}
+
+function pay(plan) {
+  const token = localStorage.getItem('indmart_token');
+  if (!token) { window.location.href = '/listings'; return; }
+  alert('Оплата скоро появится! Напишите нам в Telegram @IndMartSupport для оформления подписки.');
+}
+
+function toggleFaq(el) {
+  el.classList.toggle('open');
+  el.nextElementSibling.classList.toggle('open');
+}
+</script>
+</body>
+</html>
