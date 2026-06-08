@@ -1937,6 +1937,43 @@ def listing_ssr(listing_id: str, request: Request):
     return HTMLResponse(content=html)
 
 # ---------- KB Article Generator ----------
+
+
+# ---------- Knowledge Base GET ----------
+@app.get("/baza")
+def kb_index():
+    conn = get_db_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT section, category, title, slug, description FROM knowledge_base ORDER BY section, category, title")
+            rows = cur.fetchall()
+    finally:
+        conn.close()
+    sections = {}
+    for r in rows:
+        s = r[0]
+        if s not in sections:
+            sections[s] = []
+        sections[s].append({"category": r[1], "title": r[2], "slug": r[3], "description": r[4]})
+    return {"sections": sections}
+
+@app.get("/baza/{slug:path}")
+def kb_article(slug: str):
+    conn = get_db_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, slug, section, category, title, description, content, meta_description, updated_at FROM knowledge_base WHERE slug=%s", (slug,))
+            row = cur.fetchone()
+    finally:
+        conn.close()
+    if not row:
+        raise HTTPException(404, "Статья не найдена")
+    return {
+        "id": row[0], "slug": row[1], "section": row[2], "category": row[3],
+        "title": row[4], "description": row[5], "content": row[6],
+        "meta_description": row[7], "updated_at": row[8].isoformat() if row[8] else None
+    }
+
 @app.post("/baza/generate")
 async def kb_generate(data: dict = Body(...), authorization: str = Header(None)):
     check_admin(authorization)
@@ -1973,35 +2010,40 @@ async def kb_generate(data: dict = Body(...), authorization: str = Header(None))
     listings_text = '\n'.join([f"- {r[0]}: {r[1]}₽, {r[2]}" for r in listings]) if listings else "Нет данных"
     market_text = '\n'.join([f"- {r[0]}: {r[1]}₽, {r[2]}, вердикт: {r[3]}" for r in market]) if market else "Нет данных"
 
-    prompt = f"""Напиши подробную SEO-статью для сайта IndMart о категории: {title}
+    prompt = f"""Напиши короткую практическую статью для перекупщиков пищевого оборудования на IndMart.ru.
 
-Раздел: {section}
-Категория: {category}
+Тема: {title}
+Реальные объявления: {listings_text}
+Данные рынка: {market_text}
 
-Реальные объявления на IndMart:
-{listings_text}
+Структура (строго):
+## Коротко о категории
+2-3 предложения. Только факты — что это, где применяется, почему покупают б/у.
 
-Данные рынка (Авито и др.):
-{market_text}
+## Виды
+Маркированный список, 3-5 видов. Одна строка на каждый.
 
-Структура статьи:
-1. Что такое {title} — краткое описание (2-3 предложения)
-2. Виды и типы — основные разновидности
-3. Популярные бренды — топ-5 брендов с описанием
-4. Цены на б/у рынке — диапазоны цен по классам
-5. На что смотреть при покупке б/у — 5-7 конкретных советов
-6. Частые вопросы (FAQ) — 3-4 вопроса и ответа
+## Цены на б/у рынке
+Таблица Markdown:
+| Класс | Объём/мощность | Цена б/у |
+|---|---|---|
+| Бюджетный | ... | ... ₽ |
+| Средний | ... | ... ₽ |
+| Профессиональный | ... | ... ₽ |
 
-Требования:
-- Пиши для профессионалов: перекупщики и владельцы пекарен
-- Конкретные цифры и факты
-- Русский язык, деловой стиль
-- Объём: 800-1200 слов
-- Упомяни что купить и продать можно на IndMart.ru
+## Топ брендов
+Список 4-5 брендов. Формат: **Название** — 1 предложение, цена б/у.
 
-Верни только текст статьи в формате Markdown."""
+## На что смотреть при покупке
+Нумерованный список, 5 конкретных пунктов.
 
-    text, _ = ai.chat([{"role": "user", "content": prompt}], max_tokens=2000)
+## Где купить
+1-2 предложения про IndMart.ru.
+
+Требования: без воды, только цифры, 300-400 слов, Markdown.
+Верни только текст статьи."""
+
+    text, _ = ai.chat([ChatMessage(role="user", content=prompt)], max_tokens=2000)
 
     # Сохраняем в БД
     meta = f"Купить {title} б/у — цены, бренды, советы по выбору на IndMart"

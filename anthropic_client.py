@@ -18,7 +18,7 @@ def _client() -> Anthropic:
     s = get_settings()
     if not s.anthropic_api_key:
         raise RuntimeError("ANTHROPIC_API_KEY должен быть задан")
-    return Anthropic(api_key=s.anthropic_api_key, timeout=30.0)
+    return Anthropic(api_key=s.anthropic_api_key, timeout=120.0)
 
 
 DEFAULT_SYSTEM = (
